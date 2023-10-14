@@ -1,0 +1,1123 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>icarus.tools.cacheperf &#8212; Icarus 0.8.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinxdoc.css" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Icarus 0.8.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">icarus.tools.cacheperf</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for icarus.tools.cacheperf</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Functions for modelling and evaluating the performance of cache</span>
+<span class="sd">replacement policies.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">math</span>
+
+<span class="kn">from</span> <span class="nn">icarus.tools</span> <span class="kn">import</span> <span class="n">DiscreteDist</span><span class="p">,</span> <span class="n">TruncatedZipfDist</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">scipy.optimize</span> <span class="kn">import</span> <span class="n">fsolve</span>
+<span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
+
+<span class="kn">from</span> <span class="nn">icarus.util</span> <span class="kn">import</span> <span class="n">path_links</span>
+<span class="kn">from</span> <span class="nn">icarus.tools</span> <span class="kn">import</span> <span class="n">TruncatedZipfDist</span><span class="p">,</span> <span class="n">DiscreteDist</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;fagin_characteristic_time&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;fagin_per_content_cache_hit_ratio&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;fagin_cache_hit_ratio&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;che_characteristic_time&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;che_per_content_cache_hit_ratio&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;che_cache_hit_ratio&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;che_characteristic_time_simplified&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;che_per_content_cache_hit_ratio_simplified&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;che_cache_hit_ratio_simplified&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;che_characteristic_time_generalized&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;che_per_content_cache_hit_ratio_generalized&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;che_cache_hit_ratio_generalized&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;laoutaris_characteristic_time&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;laoutaris_per_content_cache_hit_ratio&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;laoutaris_cache_hit_ratio&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;optimal_cache_hit_ratio&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;numeric_per_content_cache_hit_ratio&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;numeric_cache_hit_ratio&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;numeric_cache_hit_ratio_2_layers&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;trace_driven_cache_hit_ratio&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;hashrouting_model&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;hashrouting_model_ring&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;hashrouting_model_mesh&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+
+
+<div class="viewcode-block" id="fagin_characteristic_time"><a class="viewcode-back" href="../../../apidoc/icarus.tools.html#icarus.tools.cacheperf.fagin_characteristic_time">[docs]</a><span class="k">def</span> <span class="nf">fagin_characteristic_time</span><span class="p">(</span><span class="n">pdf</span><span class="p">,</span> <span class="n">cache_size</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return the characteristic time of an LRU cache under a given IRM</span>
+<span class="sd">    workload, as defined by Fagin.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    pdf : array-like</span>
+<span class="sd">        The probability density function of an item being requested</span>
+<span class="sd">    cache_size : int</span>
+<span class="sd">        The size of the cache (in number of items)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    r : float</span>
+<span class="sd">        The characteristic time.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">pdf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">pdf</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">func_r</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="mi">1</span> <span class="o">-</span> <span class="n">pdf</span><span class="p">)</span> <span class="o">**</span> <span class="n">r</span><span class="p">)</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">pdf</span><span class="p">)</span> <span class="o">+</span> <span class="n">cache_size</span>
+
+    <span class="k">return</span> <span class="n">fsolve</span><span class="p">(</span><span class="n">func_r</span><span class="p">,</span> <span class="n">x0</span><span class="o">=</span><span class="n">cache_size</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="fagin_per_content_cache_hit_ratio"><a class="viewcode-back" href="../../../apidoc/icarus.tools.html#icarus.tools.cacheperf.fagin_per_content_cache_hit_ratio">[docs]</a><span class="k">def</span> <span class="nf">fagin_per_content_cache_hit_ratio</span><span class="p">(</span><span class="n">pdf</span><span class="p">,</span> <span class="n">cache_size</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Estimate the cache hit ratio of an item or of all items using the Fagin&#39;s</span>
+<span class="sd">    approximation. This version uses a single characteristic time for all</span>
+<span class="sd">    contents.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    pdf : array-like</span>
+<span class="sd">        The probability density function of an item being requested</span>
+<span class="sd">    cache_size : int</span>
+<span class="sd">        The size of the cache (in number of items)</span>
+<span class="sd">    target : int, optional</span>
+<span class="sd">        The item index for which cache hit ratio is requested. If not</span>
+<span class="sd">        specified, the function calculates the cache hit ratio of all the items</span>
+<span class="sd">        in the population.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    cache_hit_ratio : array of float or float</span>
+<span class="sd">        If target is None, returns an array with the cache hit ratios of all</span>
+<span class="sd">        items in the population. If a target is specified, then it returns</span>
+<span class="sd">        the cache hit ratio of only the specified item.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">items</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pdf</span><span class="p">))</span> <span class="k">if</span> <span class="n">target</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[</span><span class="n">target</span><span class="p">]</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">fagin_characteristic_time</span><span class="p">(</span><span class="n">pdf</span><span class="p">,</span> <span class="n">cache_size</span><span class="p">)</span>
+    <span class="n">hit_ratio</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span> <span class="o">-</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">pdf</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">**</span> <span class="n">r</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">items</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">hit_ratio</span> <span class="k">if</span> <span class="n">target</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">hit_ratio</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="fagin_cache_hit_ratio"><a class="viewcode-back" href="../../../apidoc/icarus.tools.html#icarus.tools.cacheperf.fagin_cache_hit_ratio">[docs]</a><span class="k">def</span> <span class="nf">fagin_cache_hit_ratio</span><span class="p">(</span><span class="n">pdf</span><span class="p">,</span> <span class="n">cache_size</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Estimate the overall cache hit ratio of an LRU cache under generic IRM</span>
+<span class="sd">    demand using the Fagin&#39;s approximation. This version uses a single</span>
+<span class="sd">    characteristic time for all contents.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    pdf : array-like</span>
+<span class="sd">        The probability density function of an item being requested</span>
+<span class="sd">    cache_size : int</span>
+<span class="sd">        The size of the cache (in number of items)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    cache_hit_ratio : float</span>
+<span class="sd">        The overall cache hit ratio</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ch</span> <span class="o">=</span> <span class="n">fagin_per_content_cache_hit_ratio</span><span class="p">(</span><span class="n">pdf</span><span class="p">,</span> <span class="n">cache_size</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="n">pdf</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">ch</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pdf</span><span class="p">)))</span></div>
+
+
+<div class="viewcode-block" id="che_characteristic_time"><a class="viewcode-back" href="../../../apidoc/icarus.tools.html#icarus.tools.cacheperf.che_characteristic_time">[docs]</a><span class="k">def</span> <span class="nf">che_characteristic_time</span><span class="p">(</span><span class="n">pdf</span><span class="p">,</span> <span class="n">cache_size</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return the characteristic time of an item or of all items, as defined by</span>
+<span class="sd">    Che et al.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    pdf : array-like</span>
+<span class="sd">        The probability density function of an item being requested</span>
+<span class="sd">    cache_size : int</span>
+<span class="sd">        The size of the cache (in number of items)</span>
+<span class="sd">    target : int, optional</span>
+<span class="sd">        The item index [1,N] for which characteristic time is requested. If not</span>
+<span class="sd">        specified, the function calculates the characteristic time of all the</span>
+<span class="sd">        items in the population.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    r : array of float or float</span>
+<span class="sd">        If target is None, returns an array with the characteristic times of</span>
+<span class="sd">        all items in the population. If a target is specified, then it returns</span>
+<span class="sd">        the characteristic time of only the specified item.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">func_r</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="nb">sum</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">pdf</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="n">r</span><span class="p">)</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pdf</span><span class="p">))</span> <span class="k">if</span> <span class="n">j</span> <span class="o">!=</span> <span class="n">i</span><span class="p">)</span>
+            <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">pdf</span><span class="p">)</span>
+            <span class="o">+</span> <span class="mi">1</span>
+            <span class="o">+</span> <span class="n">cache_size</span>
+        <span class="p">)</span>
+
+    <span class="n">items</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pdf</span><span class="p">))</span> <span class="k">if</span> <span class="n">target</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[</span><span class="n">target</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="p">[</span><span class="n">fsolve</span><span class="p">(</span><span class="n">func_r</span><span class="p">,</span> <span class="n">x0</span><span class="o">=</span><span class="n">cache_size</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">i</span><span class="p">))</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">items</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">r</span> <span class="k">if</span> <span class="n">target</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">r</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="che_per_content_cache_hit_ratio"><a class="viewcode-back" href="../../../apidoc/icarus.tools.html#icarus.tools.cacheperf.che_per_content_cache_hit_ratio">[docs]</a><span class="k">def</span> <span class="nf">che_per_content_cache_hit_ratio</span><span class="p">(</span><span class="n">pdf</span><span class="p">,</span> <span class="n">cache_size</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Estimate the cache hit ratio of an item or of all items using the Che&#39;s</span>
+<span class="sd">    approximation.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    pdf : array-like</span>
+<span class="sd">        The probability density function of an item being requested</span>
+<span class="sd">    cache_size : int</span>
+<span class="sd">        The size of the cache (in number of items)</span>
+<span class="sd">    target : int, optional</span>
+<span class="sd">        The item index for which cache hit ratio is requested. If not</span>
+<span class="sd">        specified, the function calculates the cache hit ratio of all the items</span>
+<span class="sd">        in the population.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    cache_hit_ratio : array of float or float</span>
+<span class="sd">        If target is None, returns an array with the cache hit ratios of all</span>
+<span class="sd">        items in the population. If a target is specified, then it returns</span>
+<span class="sd">        the cache hit ratio of only the specified item.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">items</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pdf</span><span class="p">))</span> <span class="k">if</span> <span class="n">target</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[</span><span class="n">target</span><span class="p">]</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">che_characteristic_time</span><span class="p">(</span><span class="n">pdf</span><span class="p">,</span> <span class="n">cache_size</span><span class="p">)</span>
+    <span class="n">hit_ratio</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span> <span class="o">-</span> <span class="n">math</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">pdf</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">r</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">items</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">hit_ratio</span> <span class="k">if</span> <span class="n">target</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">hit_ratio</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="che_cache_hit_ratio"><a class="viewcode-back" href="../../../apidoc/icarus.tools.html#icarus.tools.cacheperf.che_cache_hit_ratio">[docs]</a><span class="k">def</span> <span class="nf">che_cache_hit_ratio</span><span class="p">(</span><span class="n">pdf</span><span class="p">,</span> <span class="n">cache_size</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Estimate the overall cache hit ratio of an LRU cache under generic IRM</span>
+<span class="sd">    demand using the Che&#39;s approximation.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    pdf : array-like</span>
+<span class="sd">        The probability density function of an item being requested</span>
+<span class="sd">    cache_size : int</span>
+<span class="sd">        The size of the cache (in number of items)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    cache_hit_ratio : float</span>
+<span class="sd">        The overall cache hit ratio</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ch</span> <span class="o">=</span> <span class="n">che_per_content_cache_hit_ratio</span><span class="p">(</span><span class="n">pdf</span><span class="p">,</span> <span class="n">cache_size</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="n">pdf</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">ch</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pdf</span><span class="p">)))</span></div>
+
+
+<div class="viewcode-block" id="che_characteristic_time_simplified"><a class="viewcode-back" href="../../../apidoc/icarus.tools.html#icarus.tools.cacheperf.che_characteristic_time_simplified">[docs]</a><span class="k">def</span> <span class="nf">che_characteristic_time_simplified</span><span class="p">(</span><span class="n">pdf</span><span class="p">,</span> <span class="n">cache_size</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return the characteristic time of an LRU cache under a given IRM</span>
+<span class="sd">    workload, as defined by Che et al.</span>
+<span class="sd">    This function computes one single characteristic time for all contents.</span>
+<span class="sd">    This further approximation is normally accurate for workloads with</span>
+<span class="sd">    reduced skewness in their popularity distribution.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    pdf : array-like</span>
+<span class="sd">        The probability density function of an item being requested</span>
+<span class="sd">    cache_size : int</span>
+<span class="sd">        The size of the cache (in number of items)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    r : float</span>
+<span class="sd">        The characteristic time.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">pdf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">pdf</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">func_r</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">pdf</span> <span class="o">*</span> <span class="n">r</span><span class="p">))</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">pdf</span><span class="p">)</span> <span class="o">+</span> <span class="n">cache_size</span>
+
+    <span class="k">return</span> <span class="n">fsolve</span><span class="p">(</span><span class="n">func_r</span><span class="p">,</span> <span class="n">x0</span><span class="o">=</span><span class="n">cache_size</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="che_per_content_cache_hit_ratio_simplified"><a class="viewcode-back" href="../../../apidoc/icarus.tools.html#icarus.tools.cacheperf.che_per_content_cache_hit_ratio_simplified">[docs]</a><span class="k">def</span> <span class="nf">che_per_content_cache_hit_ratio_simplified</span><span class="p">(</span><span class="n">pdf</span><span class="p">,</span> <span class="n">cache_size</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Estimate the cache hit ratio of an item or of all items using the Che&#39;s</span>
+<span class="sd">    approximation. This version uses a single characteristic time for all</span>
+<span class="sd">    contents.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    pdf : array-like</span>
+<span class="sd">        The probability density function of an item being requested</span>
+<span class="sd">    cache_size : int</span>
+<span class="sd">        The size of the cache (in number of items)</span>
+<span class="sd">    target : int, optional</span>
+<span class="sd">        The item index for which cache hit ratio is requested. If not</span>
+<span class="sd">        specified, the function calculates the cache hit ratio of all the items</span>
+<span class="sd">        in the population.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    cache_hit_ratio : array of float or float</span>
+<span class="sd">        If target is None, returns an array with the cache hit ratios of all</span>
+<span class="sd">        items in the population. If a target is specified, then it returns</span>
+<span class="sd">        the cache hit ratio of only the specified item.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">items</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pdf</span><span class="p">))</span> <span class="k">if</span> <span class="n">target</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[</span><span class="n">target</span><span class="p">]</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">che_characteristic_time_simplified</span><span class="p">(</span><span class="n">pdf</span><span class="p">,</span> <span class="n">cache_size</span><span class="p">)</span>
+    <span class="n">hit_ratio</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span> <span class="o">-</span> <span class="n">math</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">pdf</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">r</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">items</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">hit_ratio</span> <span class="k">if</span> <span class="n">target</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">hit_ratio</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="che_cache_hit_ratio_simplified"><a class="viewcode-back" href="../../../apidoc/icarus.tools.html#icarus.tools.cacheperf.che_cache_hit_ratio_simplified">[docs]</a><span class="k">def</span> <span class="nf">che_cache_hit_ratio_simplified</span><span class="p">(</span><span class="n">pdf</span><span class="p">,</span> <span class="n">cache_size</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Estimate the overall cache hit ratio of an LRU cache under generic IRM</span>
+<span class="sd">    demand using the Che&#39;s approximation. This version uses a single</span>
+<span class="sd">    characteristic time for all contents.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    pdf : array-like</span>
+<span class="sd">        The probability density function of an item being requested</span>
+<span class="sd">    cache_size : int</span>
+<span class="sd">        The size of the cache (in number of items)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    cache_hit_ratio : float</span>
+<span class="sd">        The overall cache hit ratio</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ch</span> <span class="o">=</span> <span class="n">che_per_content_cache_hit_ratio_simplified</span><span class="p">(</span><span class="n">pdf</span><span class="p">,</span> <span class="n">cache_size</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="n">pdf</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">ch</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pdf</span><span class="p">)))</span></div>
+
+
+<span class="k">def</span> <span class="nf">che_p_in_func</span><span class="p">(</span><span class="n">pdf</span><span class="p">,</span> <span class="n">policy</span><span class="p">,</span> <span class="o">**</span><span class="n">policy_args</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return function to compute cache hit ratio of a policy given probability</span>
+<span class="sd">    of a content being requested and characteristic time</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    pdf : array-like</span>
+<span class="sd">        The probability density function of an item being requested</span>
+<span class="sd">    policy : str</span>
+<span class="sd">        The cache replacement policy (&#39;LRU&#39;, &#39;q-LRU&#39;, &#39;FIFO&#39;, &#39;RANDOM&#39;)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">policy</span> <span class="o">==</span> <span class="s2">&quot;LRU&quot;</span><span class="p">:</span>
+        <span class="k">def</span> <span class="nf">p_in</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span> <span class="k">return</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">p</span> <span class="o">*</span> <span class="n">t</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">policy</span> <span class="o">==</span> <span class="s2">&quot;q-LRU&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s2">&quot;q&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">policy_args</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;q parameter not specified&quot;</span><span class="p">)</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="n">policy_args</span><span class="p">[</span><span class="s2">&quot;q&quot;</span><span class="p">]</span>
+        <span class="n">p_in</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="k">lambda</span> <span class="n">p</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="n">q</span>
+            <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">p</span> <span class="o">*</span> <span class="n">t</span><span class="p">))</span>
+            <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">p</span> <span class="o">*</span> <span class="n">t</span><span class="p">)</span> <span class="o">+</span> <span class="n">q</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">p</span> <span class="o">*</span> <span class="n">t</span><span class="p">)))</span>
+        <span class="p">)</span>
+    <span class="k">elif</span> <span class="n">policy</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;FIFO&quot;</span><span class="p">,</span> <span class="s2">&quot;RANDOM&quot;</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">p_in</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span> <span class="k">return</span> <span class="n">p</span> <span class="o">*</span> <span class="n">t</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">p</span> <span class="o">*</span> <span class="n">t</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;policy </span><span class="si">{}</span><span class="s2"> not recognized&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">policy</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">p_in</span>
+
+
+<div class="viewcode-block" id="che_characteristic_time_generalized"><a class="viewcode-back" href="../../../apidoc/icarus.tools.html#icarus.tools.cacheperf.che_characteristic_time_generalized">[docs]</a><span class="k">def</span> <span class="nf">che_characteristic_time_generalized</span><span class="p">(</span><span class="n">pdf</span><span class="p">,</span> <span class="n">cache_size</span><span class="p">,</span> <span class="n">policy</span><span class="p">,</span> <span class="o">**</span><span class="n">policy_args</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return the characteristic time of a cache under a given IRM demand</span>
+<span class="sd">    according to the the extension of Che&#39;s approximation proposed by Martina</span>
+<span class="sd">    et al.</span>
+<span class="sd">    This function computes one single characteristic time for all content items.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    pdf : array-like</span>
+<span class="sd">        The probability density function of an item being requested</span>
+<span class="sd">    cache_size : int</span>
+<span class="sd">        The size of the cache (in number of items)</span>
+<span class="sd">    policy : str</span>
+<span class="sd">        The cache replacement policy (&#39;LRU&#39;, &#39;q-LRU&#39;, &#39;FIFO&#39;, &#39;RANDOM&#39;)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    r : float</span>
+<span class="sd">        The characteristic time.</span>
+
+<span class="sd">    Rereferences</span>
+<span class="sd">    ------------</span>
+<span class="sd">    V. Martina, M. Garetto, and E. Leonardi, &quot;A unified approach to the</span>
+<span class="sd">    performance analysis of caching systems,&quot; in Proceedings of the 2014</span>
+<span class="sd">    IEEE Conference on Computer Communications (INFOCOM&#39;14), April 2014</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">p_in</span> <span class="o">=</span> <span class="n">che_p_in_func</span><span class="p">(</span><span class="n">pdf</span><span class="p">,</span> <span class="n">policy</span><span class="p">,</span> <span class="o">**</span><span class="n">policy_args</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">func_t</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">p_in</span><span class="p">(</span><span class="n">pdf</span><span class="p">,</span> <span class="n">t</span><span class="p">))</span> <span class="o">-</span> <span class="n">cache_size</span>
+
+    <span class="k">return</span> <span class="n">fsolve</span><span class="p">(</span><span class="n">func_t</span><span class="p">,</span> <span class="n">x0</span><span class="o">=</span><span class="n">cache_size</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="che_per_content_cache_hit_ratio_generalized"><a class="viewcode-back" href="../../../apidoc/icarus.tools.html#icarus.tools.cacheperf.che_per_content_cache_hit_ratio_generalized">[docs]</a><span class="k">def</span> <span class="nf">che_per_content_cache_hit_ratio_generalized</span><span class="p">(</span><span class="n">pdf</span><span class="p">,</span> <span class="n">cache_size</span><span class="p">,</span> <span class="n">policy</span><span class="p">,</span> <span class="o">**</span><span class="n">policy_args</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Estimate the cache hit ratio of an item or of all items in a cache</span>
+<span class="sd">    subject to IRM demand according to the extension of Che&#39;s approximation</span>
+<span class="sd">    proposed by Martina et al.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    pdf : array-like</span>
+<span class="sd">        The probability density function of an item being requested</span>
+<span class="sd">    cache_size : int</span>
+<span class="sd">        The size of the cache (in number of items)</span>
+<span class="sd">    policy : str, optional</span>
+<span class="sd">        The cache replacement policy (&#39;LRU&#39;, &#39;q-LRU&#39;, &#39;FIFO&#39;, &#39;RANDOM&#39;)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    cache_hit_ratio : array of float or float</span>
+<span class="sd">        If target is None, returns an array with the cache hit ratios of all</span>
+<span class="sd">        items in the population. If a target is specified, then it returns</span>
+<span class="sd">        the cache hit ratio of only the specified item.</span>
+
+<span class="sd">    Rereferences</span>
+<span class="sd">    ------------</span>
+<span class="sd">    V. Martina, M. Garetto, and E. Leonardi, &quot;A unified approach to the</span>
+<span class="sd">    performance analysis of caching systems,&quot; in Proceedings of the 2014</span>
+<span class="sd">    IEEE Conference on Computer Communications (INFOCOM&#39;14), April 2014</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">p_in</span> <span class="o">=</span> <span class="n">che_p_in_func</span><span class="p">(</span><span class="n">pdf</span><span class="p">,</span> <span class="n">policy</span><span class="p">,</span> <span class="o">**</span><span class="n">policy_args</span><span class="p">)</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">che_characteristic_time_generalized</span><span class="p">(</span><span class="n">pdf</span><span class="p">,</span> <span class="n">cache_size</span><span class="p">,</span> <span class="n">policy</span><span class="p">,</span> <span class="o">**</span><span class="n">policy_args</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">p_in</span><span class="p">(</span><span class="n">pdf</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="che_cache_hit_ratio_generalized"><a class="viewcode-back" href="../../../apidoc/icarus.tools.html#icarus.tools.cacheperf.che_cache_hit_ratio_generalized">[docs]</a><span class="k">def</span> <span class="nf">che_cache_hit_ratio_generalized</span><span class="p">(</span><span class="n">pdf</span><span class="p">,</span> <span class="n">cache_size</span><span class="p">,</span> <span class="n">policy</span><span class="o">=</span><span class="s2">&quot;LRU&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">policy_args</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Estimate the overall cache hit ratio of a cache subject to IRM demand</span>
+<span class="sd">    according to the extension of Che&#39;s approximation proposed by Martina et al.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    pdf : array-like</span>
+<span class="sd">        The probability density function of an item being requested</span>
+<span class="sd">    cache_size : int</span>
+<span class="sd">        The size of the cache (in number of items)</span>
+<span class="sd">    policy : str, optional</span>
+<span class="sd">        The cache replacement policy (&#39;LRU&#39;, &#39;q-LRU&#39;, &#39;FIFO&#39;, &#39;RANDOM&#39;)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    cache_hit_ratio : float</span>
+<span class="sd">        The overall cache hit ratio</span>
+
+<span class="sd">    Rereferences</span>
+<span class="sd">    ------------</span>
+<span class="sd">    V. Martina, M. Garetto, and E. Leonardi, &quot;A unified approach to the</span>
+<span class="sd">    performance analysis of caching systems,&quot; in Proceedings of the 2014</span>
+<span class="sd">    IEEE Conference on Computer Communications (INFOCOM&#39;14), April 2014</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ch</span> <span class="o">=</span> <span class="n">che_per_content_cache_hit_ratio_generalized</span><span class="p">(</span>
+        <span class="n">pdf</span><span class="p">,</span> <span class="n">cache_size</span><span class="p">,</span> <span class="n">policy</span><span class="p">,</span> <span class="o">**</span><span class="n">policy_args</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="n">pdf</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">ch</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pdf</span><span class="p">)))</span></div>
+
+
+<div class="viewcode-block" id="laoutaris_characteristic_time"><a class="viewcode-back" href="../../../apidoc/icarus.tools.html#icarus.tools.cacheperf.laoutaris_characteristic_time">[docs]</a><span class="k">def</span> <span class="nf">laoutaris_characteristic_time</span><span class="p">(</span><span class="n">alpha</span><span class="p">,</span> <span class="n">population</span><span class="p">,</span> <span class="n">cache_size</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Estimates the Che&#39;s characteristic time of an LRU cache under general</span>
+<span class="sd">    power-law demand using the Laoutaris approximation.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    alpha : float</span>
+<span class="sd">        The coefficient of the demand power-law</span>
+<span class="sd">    population : int</span>
+<span class="sd">        The content population</span>
+<span class="sd">    cache_size : int</span>
+<span class="sd">        The cache size</span>
+<span class="sd">    order : int, optional</span>
+<span class="sd">        The order of the Taylor expansion. Supports only 2 and 3</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    cache_hit_ratio : float</span>
+<span class="sd">        The cache hit ratio</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    http://arxiv.org/pdf/0705.1970.pdf</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">H</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">alpha</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">l</span> <span class="o">**</span> <span class="n">alpha</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">N</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">cubrt</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute cubic root of a number</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x : float</span>
+<span class="sd">            Number whose cubic root is to be calculated</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        cubrt : float</span>
+<span class="sd">            The cubic root</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">exp</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="mi">3</span>
+        <span class="k">return</span> <span class="n">x</span> <span class="o">**</span> <span class="n">exp</span> <span class="k">if</span> <span class="n">x</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="k">else</span> <span class="o">-</span><span class="p">((</span><span class="o">-</span><span class="n">x</span><span class="p">)</span> <span class="o">**</span> <span class="n">exp</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">solve_3rd_order_equation</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">d</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculate the real solutions of the 3rd order equations</span>
+<span class="sd">        a*x**3 + b*x**2 + c*x + d = 0</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        a : float</span>
+<span class="sd">            Coefficent of 3rd degree monomial</span>
+<span class="sd">        b : float</span>
+<span class="sd">            Coefficent of 2nd degree monomial</span>
+<span class="sd">        c : float</span>
+<span class="sd">            Coefficent of 1st degree monomial</span>
+<span class="sd">        d : float</span>
+<span class="sd">            Constant</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        roots : tuple</span>
+<span class="sd">            Tuple of real solutions.</span>
+<span class="sd">            The tuple may comprise either 1 or 3 values</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        The method used to calculate roots is described in this paper:</span>
+<span class="sd">        http://www.nickalls.org/dick/papers/maths/cubic1993.pdf</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Compute parameters</span>
+        <span class="n">x_N</span> <span class="o">=</span> <span class="o">-</span><span class="n">b</span> <span class="o">/</span> <span class="p">(</span><span class="mi">3</span> <span class="o">*</span> <span class="n">a</span><span class="p">)</span>
+        <span class="n">y_N</span> <span class="o">=</span> <span class="n">a</span> <span class="o">*</span> <span class="n">x_N</span> <span class="o">**</span> <span class="mi">3</span> <span class="o">+</span> <span class="n">b</span> <span class="o">*</span> <span class="n">x_N</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">c</span> <span class="o">*</span> <span class="n">x_N</span> <span class="o">+</span> <span class="n">d</span>
+        <span class="n">delta_2</span> <span class="o">=</span> <span class="p">(</span><span class="n">b</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">-</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">a</span> <span class="o">*</span> <span class="n">c</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">9</span> <span class="o">*</span> <span class="n">a</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">h_2</span> <span class="o">=</span> <span class="mi">4</span> <span class="o">*</span> <span class="p">(</span><span class="n">a</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">delta_2</span> <span class="o">**</span> <span class="mi">3</span><span class="p">)</span>
+        <span class="c1"># Calculate discriminator and find roots</span>
+        <span class="n">discr</span> <span class="o">=</span> <span class="n">y_N</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">h_2</span>
+        <span class="k">if</span> <span class="n">discr</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">r_x</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">x_N</span>
+                <span class="o">+</span> <span class="n">cubrt</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">/</span> <span class="n">a</span> <span class="o">*</span> <span class="p">(</span><span class="o">-</span><span class="n">y_N</span> <span class="o">+</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">discr</span><span class="p">)))</span>
+                <span class="o">+</span> <span class="n">cubrt</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">/</span> <span class="n">a</span> <span class="o">*</span> <span class="p">(</span><span class="o">-</span><span class="n">y_N</span> <span class="o">-</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">discr</span><span class="p">))),</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">discr</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">delta</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">delta_2</span><span class="p">)</span>
+            <span class="n">r1</span> <span class="o">=</span> <span class="n">r2</span> <span class="o">=</span> <span class="n">x_N</span> <span class="o">+</span> <span class="n">delta</span>
+            <span class="n">r3</span> <span class="o">=</span> <span class="n">x_N</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">delta</span>
+            <span class="n">r_x</span> <span class="o">=</span> <span class="p">(</span><span class="n">r1</span><span class="p">,</span> <span class="n">r2</span><span class="p">,</span> <span class="n">r3</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>  <span class="c1"># discr &lt; 0</span>
+            <span class="n">h</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">h_2</span><span class="p">)</span>
+            <span class="n">delta</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">delta_2</span><span class="p">)</span>
+            <span class="n">Theta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="o">-</span><span class="n">y_N</span> <span class="o">/</span> <span class="n">h</span><span class="p">)</span> <span class="o">/</span> <span class="mf">3.0</span>
+            <span class="n">r1</span> <span class="o">=</span> <span class="n">x_N</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">delta</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">Theta</span><span class="p">)</span>
+            <span class="n">r2</span> <span class="o">=</span> <span class="n">x_N</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">delta</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">3</span> <span class="o">-</span> <span class="n">Theta</span><span class="p">)</span>
+            <span class="n">r3</span> <span class="o">=</span> <span class="n">x_N</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">delta</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">3</span> <span class="o">+</span> <span class="n">Theta</span><span class="p">)</span>
+            <span class="n">r_x</span> <span class="o">=</span> <span class="p">(</span><span class="n">r1</span><span class="p">,</span> <span class="n">r2</span><span class="p">,</span> <span class="n">r3</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">r_x</span>
+
+    <span class="c1"># Get parameters</span>
+    <span class="n">C</span> <span class="o">=</span> <span class="n">cache_size</span>
+    <span class="n">N</span> <span class="o">=</span> <span class="n">population</span>
+    <span class="c1"># Calculate harmonics</span>
+    <span class="n">H_N_a</span> <span class="o">=</span> <span class="n">H</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span>
+    <span class="n">H_N_2a</span> <span class="o">=</span> <span class="n">H</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">alpha</span><span class="p">)</span>
+    <span class="n">H_N_3a</span> <span class="o">=</span> <span class="n">H</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">alpha</span><span class="p">)</span>
+    <span class="n">H_N_4a</span> <span class="o">=</span> <span class="n">H</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">alpha</span><span class="p">)</span>
+    <span class="n">Lambda</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">H_N_a</span>
+    <span class="c1"># Find values of r</span>
+    <span class="k">if</span> <span class="n">order</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">alpha_2</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">Lambda</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">H_N_2a</span><span class="p">)</span>
+            <span class="o">-</span> <span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">Lambda</span> <span class="o">**</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">C</span> <span class="o">*</span> <span class="n">H_N_3a</span><span class="p">)</span>
+            <span class="o">+</span> <span class="p">(</span><span class="mf">0.25</span> <span class="o">*</span> <span class="n">Lambda</span> <span class="o">**</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">C</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">H_N_4a</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">alpha_1</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="o">-</span><span class="p">(</span><span class="n">Lambda</span> <span class="o">*</span> <span class="n">H_N_a</span><span class="p">)</span>
+            <span class="o">+</span> <span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">Lambda</span> <span class="o">**</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">C</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">H_N_3a</span><span class="p">)</span>
+            <span class="o">-</span> <span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">Lambda</span> <span class="o">**</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">C</span> <span class="o">**</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">H_N_4a</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">alpha_0</span> <span class="o">=</span> <span class="n">C</span> <span class="o">+</span> <span class="p">(</span><span class="mf">0.25</span> <span class="o">*</span> <span class="n">Lambda</span> <span class="o">**</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">C</span> <span class="o">**</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">H_N_4a</span><span class="p">)</span>
+        <span class="c1"># Calculate discriminant to verify if there are real solutions</span>
+        <span class="n">discr</span> <span class="o">=</span> <span class="n">alpha_1</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">-</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">alpha_2</span> <span class="o">*</span> <span class="n">alpha_0</span>
+        <span class="k">if</span> <span class="n">discr</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Could not find real values for the &quot;</span>
+                <span class="s2">&quot;characteristic time. Try using a 3rd order &quot;</span>
+                <span class="s2">&quot;expansion&quot;</span>
+            <span class="p">)</span>
+        <span class="c1"># Calculate roots of the 2nd order equation</span>
+        <span class="n">r1</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="n">alpha_1</span> <span class="o">+</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">discr</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">alpha_2</span><span class="p">)</span>
+        <span class="n">r2</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="n">alpha_1</span> <span class="o">-</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">discr</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">alpha_2</span><span class="p">)</span>
+        <span class="n">r_x</span> <span class="o">=</span> <span class="p">(</span><span class="n">r1</span><span class="p">,</span> <span class="n">r2</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">order</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="c1"># Additional parameters</span>
+        <span class="n">H_N_5a</span> <span class="o">=</span> <span class="n">H</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="mi">5</span> <span class="o">*</span> <span class="n">alpha</span><span class="p">)</span>
+        <span class="n">H_N_6a</span> <span class="o">=</span> <span class="n">H</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="mi">6</span> <span class="o">*</span> <span class="n">alpha</span><span class="p">)</span>
+        <span class="c1"># Calculate coefficients of the 3rd order equation</span>
+        <span class="n">alpha_3</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="o">-</span><span class="p">(</span><span class="n">Lambda</span> <span class="o">**</span> <span class="mi">3</span> <span class="o">/</span> <span class="mi">6</span> <span class="o">*</span> <span class="n">H_N_3a</span><span class="p">)</span>
+            <span class="o">+</span> <span class="p">(</span><span class="n">Lambda</span> <span class="o">**</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">C</span> <span class="o">/</span> <span class="mi">6</span> <span class="o">*</span> <span class="n">H_N_4a</span><span class="p">)</span>
+            <span class="o">-</span> <span class="p">(</span><span class="n">Lambda</span> <span class="o">**</span> <span class="mi">5</span> <span class="o">*</span> <span class="n">C</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">/</span> <span class="mi">12</span> <span class="o">*</span> <span class="n">H_N_5a</span><span class="p">)</span>
+            <span class="o">+</span> <span class="p">(</span><span class="n">Lambda</span> <span class="o">**</span> <span class="mi">6</span> <span class="o">*</span> <span class="n">C</span> <span class="o">**</span> <span class="mi">3</span> <span class="o">/</span> <span class="mi">36</span> <span class="o">*</span> <span class="n">H_N_6a</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">alpha_2</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="p">(</span><span class="n">Lambda</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">H_N_2a</span><span class="p">)</span>
+            <span class="o">-</span> <span class="p">(</span><span class="n">Lambda</span> <span class="o">**</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">C</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">/</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">H_N_4a</span><span class="p">)</span>
+            <span class="o">+</span> <span class="p">(</span><span class="n">Lambda</span> <span class="o">**</span> <span class="mi">5</span> <span class="o">*</span> <span class="n">C</span> <span class="o">**</span> <span class="mi">3</span> <span class="o">/</span> <span class="mi">6</span> <span class="o">*</span> <span class="n">H_N_5a</span><span class="p">)</span>
+            <span class="o">-</span> <span class="p">(</span><span class="n">Lambda</span> <span class="o">**</span> <span class="mi">6</span> <span class="o">*</span> <span class="n">C</span> <span class="o">**</span> <span class="mi">4</span> <span class="o">/</span> <span class="mi">12</span> <span class="o">*</span> <span class="n">H_N_6a</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">alpha_1</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="o">-</span><span class="n">Lambda</span> <span class="o">*</span> <span class="n">H_N_a</span>
+            <span class="o">+</span> <span class="p">(</span><span class="n">Lambda</span> <span class="o">**</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">C</span> <span class="o">**</span> <span class="mi">3</span> <span class="o">/</span> <span class="mi">6</span> <span class="o">*</span> <span class="n">H_N_4a</span><span class="p">)</span>
+            <span class="o">-</span> <span class="p">(</span><span class="n">Lambda</span> <span class="o">**</span> <span class="mi">5</span> <span class="o">*</span> <span class="n">C</span> <span class="o">**</span> <span class="mi">4</span> <span class="o">/</span> <span class="mi">12</span> <span class="o">*</span> <span class="n">H_N_5a</span><span class="p">)</span>
+            <span class="o">+</span> <span class="p">(</span><span class="n">Lambda</span> <span class="o">**</span> <span class="mi">6</span> <span class="o">*</span> <span class="n">C</span> <span class="o">**</span> <span class="mi">5</span> <span class="o">/</span> <span class="mi">12</span> <span class="o">*</span> <span class="n">H_N_6a</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">alpha_0</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">C</span>
+            <span class="o">-</span> <span class="p">(</span><span class="n">Lambda</span> <span class="o">**</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">C</span> <span class="o">**</span> <span class="mi">4</span> <span class="o">/</span> <span class="mi">12</span> <span class="o">*</span> <span class="n">H_N_4a</span><span class="p">)</span>
+            <span class="o">-</span> <span class="p">(</span><span class="n">Lambda</span> <span class="o">**</span> <span class="mi">6</span> <span class="o">*</span> <span class="n">C</span> <span class="o">**</span> <span class="mi">6</span> <span class="o">/</span> <span class="mi">36</span> <span class="o">*</span> <span class="n">H_N_6a</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="c1"># Solve 3rd order equation</span>
+        <span class="n">r_x</span> <span class="o">=</span> <span class="n">solve_3rd_order_equation</span><span class="p">(</span><span class="n">alpha_3</span><span class="p">,</span> <span class="n">alpha_2</span><span class="p">,</span> <span class="n">alpha_1</span><span class="p">,</span> <span class="n">alpha_0</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Only 2nd and 3rd order solutions are supported&quot;</span><span class="p">)</span>
+    <span class="c1"># Find actual value of characteristic time (r) if exists</span>
+    <span class="c1"># We select the minimum positive r greater than C</span>
+    <span class="n">r_c</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">r_x</span> <span class="k">if</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="n">C</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">r_c</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">min</span><span class="p">(</span><span class="n">r_c</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Cannot compute cache hit ratio using this method. &quot;</span>
+            <span class="s2">&quot;Could not find positive values of characteristic time&quot;</span>
+            <span class="s2">&quot; greater than the cache size.&quot;</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="laoutaris_per_content_cache_hit_ratio"><a class="viewcode-back" href="../../../apidoc/icarus.tools.html#icarus.tools.cacheperf.laoutaris_per_content_cache_hit_ratio">[docs]</a><span class="k">def</span> <span class="nf">laoutaris_per_content_cache_hit_ratio</span><span class="p">(</span>
+    <span class="n">alpha</span><span class="p">,</span> <span class="n">population</span><span class="p">,</span> <span class="n">cache_size</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="kc">None</span>
+<span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Estimates the per-content cache hit ratio of an LRU cache under general</span>
+<span class="sd">    power-law demand using the Laoutaris approximation.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    alpha : float</span>
+<span class="sd">        The coefficient of the demand power-law distribution</span>
+<span class="sd">    population : int</span>
+<span class="sd">        The content population</span>
+<span class="sd">    cache_size : int</span>
+<span class="sd">        The cache size</span>
+<span class="sd">    order : int, optional</span>
+<span class="sd">        The order of the Taylor expansion. Supports only 2 and 3</span>
+<span class="sd">    target : int, optional</span>
+<span class="sd">        The item index [1,N] for which cache hit ratio is requested. If not</span>
+<span class="sd">        specified, the function calculates the cache hit ratio of all the items</span>
+<span class="sd">        in the population.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    cache_hit_ratio : array of float or float</span>
+<span class="sd">        If target is None, returns an array with the cache hit ratios of all</span>
+<span class="sd">        items in the population. If a target is specified, then it returns</span>
+<span class="sd">        the cache hit ratio of only the specified item.</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    http://arxiv.org/pdf/0705.1970.pdf</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">pdf</span> <span class="o">=</span> <span class="n">TruncatedZipfDist</span><span class="p">(</span><span class="n">alpha</span><span class="p">,</span> <span class="n">population</span><span class="p">)</span><span class="o">.</span><span class="n">pdf</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">laoutaris_characteristic_time</span><span class="p">(</span><span class="n">alpha</span><span class="p">,</span> <span class="n">population</span><span class="p">,</span> <span class="n">cache_size</span><span class="p">,</span> <span class="n">order</span><span class="p">)</span>
+    <span class="n">items</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pdf</span><span class="p">))</span> <span class="k">if</span> <span class="n">target</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[</span><span class="n">target</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="n">hit_ratio</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span> <span class="o">-</span> <span class="n">math</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">pdf</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">r</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">items</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">hit_ratio</span> <span class="k">if</span> <span class="n">target</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">hit_ratio</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="laoutaris_cache_hit_ratio"><a class="viewcode-back" href="../../../apidoc/icarus.tools.html#icarus.tools.cacheperf.laoutaris_cache_hit_ratio">[docs]</a><span class="k">def</span> <span class="nf">laoutaris_cache_hit_ratio</span><span class="p">(</span><span class="n">alpha</span><span class="p">,</span> <span class="n">population</span><span class="p">,</span> <span class="n">cache_size</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Estimate the cache hit ratio of an LRU cache under general power-law</span>
+<span class="sd">    demand using the Laoutaris approximation.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    alpha : float</span>
+<span class="sd">        The coefficient of the demand power-law distribution</span>
+<span class="sd">    population : int</span>
+<span class="sd">        The content population</span>
+<span class="sd">    cache_size : int</span>
+<span class="sd">        The cache size</span>
+<span class="sd">    order : int, optional</span>
+<span class="sd">        The order of the Taylor expansion. Supports only 2 and 3</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    cache_hit_ratio : float</span>
+<span class="sd">        The cache hit ratio</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    http://arxiv.org/pdf/0705.1970.pdf</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">pdf</span> <span class="o">=</span> <span class="n">TruncatedZipfDist</span><span class="p">(</span><span class="n">alpha</span><span class="p">,</span> <span class="n">population</span><span class="p">)</span><span class="o">.</span><span class="n">pdf</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">laoutaris_characteristic_time</span><span class="p">(</span><span class="n">alpha</span><span class="p">,</span> <span class="n">population</span><span class="p">,</span> <span class="n">cache_size</span><span class="p">,</span> <span class="n">order</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">pdf</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">math</span><span class="o">.</span><span class="n">e</span> <span class="o">**</span> <span class="o">-</span><span class="p">(</span><span class="n">r</span> <span class="o">*</span> <span class="n">pdf</span><span class="p">)))</span></div>
+
+
+<div class="viewcode-block" id="optimal_cache_hit_ratio"><a class="viewcode-back" href="../../../apidoc/icarus.tools.html#icarus.tools.cacheperf.optimal_cache_hit_ratio">[docs]</a><span class="k">def</span> <span class="nf">optimal_cache_hit_ratio</span><span class="p">(</span><span class="n">pdf</span><span class="p">,</span> <span class="n">cache_size</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return the value of the optimal cache hit ratio of a cache under IRM</span>
+<span class="sd">    stationary demand with a given pdf.</span>
+
+<span class="sd">    In practice this function returns the probability of a cache hit if cache</span>
+<span class="sd">    is filled with the *cache_size* most popular times. This value also</span>
+<span class="sd">    corresponds to the steady-state cache hit ratio of an LFU cache.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    pdf : array-like</span>
+<span class="sd">        The probability density function of an item being requested</span>
+<span class="sd">    cache_size : int</span>
+<span class="sd">        The size of the cache (in number of items)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    cache_hit_ratio : float</span>
+<span class="sd">        The optimal cache hit ratio</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">cache_size</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">pdf</span><span class="p">):</span>
+        <span class="k">return</span> <span class="mf">1.0</span>
+    <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">pdf</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)[:</span><span class="n">cache_size</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="numeric_per_content_cache_hit_ratio"><a class="viewcode-back" href="../../../apidoc/icarus.tools.html#icarus.tools.cacheperf.numeric_per_content_cache_hit_ratio">[docs]</a><span class="k">def</span> <span class="nf">numeric_per_content_cache_hit_ratio</span><span class="p">(</span>
+    <span class="n">pdf</span><span class="p">,</span> <span class="n">cache</span><span class="p">,</span> <span class="n">warmup</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">measure</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="kc">None</span>
+<span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Numerically compute the per-content cache hit ratio of a cache under IRM</span>
+<span class="sd">    stationary demand with a given pdf.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    pdf : array-like</span>
+<span class="sd">        The probability density function of an item being requested</span>
+<span class="sd">    cache : Cache</span>
+<span class="sd">        The cache object (i.e. the instance of a class subclassing</span>
+<span class="sd">        icarus.Cache)</span>
+<span class="sd">    warmup : int, optional</span>
+<span class="sd">        The number of warmup requests to generate. If not specified, it is set</span>
+<span class="sd">        to 10 times the content population</span>
+<span class="sd">    measure : int, optional</span>
+<span class="sd">        The number of measured requests to generate. If not specified, it is</span>
+<span class="sd">        set to 30 times the content population</span>
+<span class="sd">    seed : int, optional</span>
+<span class="sd">        The seed used to generate random numbers</span>
+<span class="sd">    target : int, optional</span>
+<span class="sd">        The item index [1, N] for which cache hit ratio is requested. If not</span>
+<span class="sd">        specified, the function calculates the cache hit ratio of all the items</span>
+<span class="sd">        in the population.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    cache_hit_ratio : array of float or float</span>
+<span class="sd">        If target is None, returns an array with the cache hit ratios of all</span>
+<span class="sd">        items in the population. If a target is specified, then it returns</span>
+<span class="sd">        the cache hit ratio of only the specified item.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">warmup</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">warmup</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">pdf</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">measure</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">measure</span> <span class="o">=</span> <span class="mi">30</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">pdf</span><span class="p">)</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="n">DiscreteDist</span><span class="p">(</span><span class="n">pdf</span><span class="p">,</span> <span class="n">seed</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">warmup</span><span class="p">):</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="n">z</span><span class="o">.</span><span class="n">rv</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">content</span><span class="p">):</span>
+            <span class="n">cache</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+    <span class="n">cache_hits</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pdf</span><span class="p">))</span>
+    <span class="n">requests</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pdf</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">measure</span><span class="p">):</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="n">z</span><span class="o">.</span><span class="n">rv</span><span class="p">()</span>
+        <span class="n">requests</span><span class="p">[</span><span class="n">content</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">content</span><span class="p">):</span>
+            <span class="n">cache_hits</span><span class="p">[</span><span class="n">content</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cache</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+    <span class="n">hit_ratio</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">requests</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">cache_hits</span> <span class="o">/</span> <span class="n">requests</span><span class="p">,</span> <span class="n">requests</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">hit_ratio</span> <span class="k">if</span> <span class="n">target</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">hit_ratio</span><span class="p">[</span><span class="n">target</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="numeric_cache_hit_ratio"><a class="viewcode-back" href="../../../apidoc/icarus.tools.html#icarus.tools.cacheperf.numeric_cache_hit_ratio">[docs]</a><span class="k">def</span> <span class="nf">numeric_cache_hit_ratio</span><span class="p">(</span><span class="n">pdf</span><span class="p">,</span> <span class="n">cache</span><span class="p">,</span> <span class="n">warmup</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">measure</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Numerically compute the cache hit ratio of a cache under IRM</span>
+<span class="sd">    stationary demand with a given pdf.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    pdf : array-like</span>
+<span class="sd">        The probability density function of an item being requested</span>
+<span class="sd">    cache : Cache</span>
+<span class="sd">        The cache object (i.e. the instance of a class subclassing</span>
+<span class="sd">        icarus.Cache)</span>
+<span class="sd">    warmup : int, optional</span>
+<span class="sd">        The number of warmup requests to generate. If not specified, it is set</span>
+<span class="sd">        to 10 times the content population</span>
+<span class="sd">    measure : int, optional</span>
+<span class="sd">        The number of measured requests to generate. If not specified, it is</span>
+<span class="sd">        set to 30 times the content population</span>
+<span class="sd">    seed : int, optional</span>
+<span class="sd">        The seed used to generate random numbers</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    cache_hit_ratio : float</span>
+<span class="sd">        The cache hit ratio</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">warmup</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">warmup</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">pdf</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">measure</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">measure</span> <span class="o">=</span> <span class="mi">30</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">pdf</span><span class="p">)</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="n">DiscreteDist</span><span class="p">(</span><span class="n">pdf</span><span class="p">,</span> <span class="n">seed</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">warmup</span><span class="p">):</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="n">z</span><span class="o">.</span><span class="n">rv</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">content</span><span class="p">):</span>
+            <span class="n">cache</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+    <span class="n">cache_hits</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">measure</span><span class="p">):</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="n">z</span><span class="o">.</span><span class="n">rv</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">content</span><span class="p">):</span>
+            <span class="n">cache_hits</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cache</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">cache_hits</span> <span class="o">/</span> <span class="n">measure</span></div>
+
+
+<div class="viewcode-block" id="numeric_cache_hit_ratio_2_layers"><a class="viewcode-back" href="../../../apidoc/icarus.tools.html#icarus.tools.cacheperf.numeric_cache_hit_ratio_2_layers">[docs]</a><span class="k">def</span> <span class="nf">numeric_cache_hit_ratio_2_layers</span><span class="p">(</span>
+    <span class="n">pdf</span><span class="p">,</span> <span class="n">l1_cache</span><span class="p">,</span> <span class="n">l2_cache</span><span class="p">,</span> <span class="n">warmup</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">measure</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="kc">None</span>
+<span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Numerically compute the cache hit ratio of a two-layer cache under IRM</span>
+<span class="sd">    stationary demand with a given pdf.</span>
+
+<span class="sd">    Differently from the numeric_cache_hit_ratio function, this function</span>
+<span class="sd">    allows users to compute the hits at layer 1, layer 2 and overall.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    pdf : array-like</span>
+<span class="sd">        The probability density function of an item being requested</span>
+<span class="sd">    cache : Cache</span>
+<span class="sd">        The cache object (i.e. the instance of a class subclassing</span>
+<span class="sd">        icarus.Cache)</span>
+<span class="sd">    warmup : int, optional</span>
+<span class="sd">        The number of warmup requests to generate. If not specified, it is set</span>
+<span class="sd">        to 10 times the content population</span>
+<span class="sd">    measure : int, optional</span>
+<span class="sd">        The number of measured requests to generate. If not specified, it is</span>
+<span class="sd">        set to 30 times the content population</span>
+<span class="sd">    seed : int, optional</span>
+<span class="sd">        The seed used to generate random numbers</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    cache_hit_ratio : dict</span>
+<span class="sd">        Dictionary with keys &quot;l1_hits&quot;, &quot;l2_hits&quot; and &quot;total_hits&quot;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">warmup</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">warmup</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">pdf</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">measure</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">measure</span> <span class="o">=</span> <span class="mi">30</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">pdf</span><span class="p">)</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="n">DiscreteDist</span><span class="p">(</span><span class="n">pdf</span><span class="p">,</span> <span class="n">seed</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">warmup</span><span class="p">):</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="n">z</span><span class="o">.</span><span class="n">rv</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">l1_cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">content</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">l2_cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">content</span><span class="p">):</span>
+                <span class="n">l2_cache</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+            <span class="n">l1_cache</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+    <span class="n">l1_hits</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">l1_misses</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">l2_hits</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">measure</span><span class="p">):</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="n">z</span><span class="o">.</span><span class="n">rv</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">l1_cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">content</span><span class="p">):</span>
+            <span class="n">l1_hits</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">l1_misses</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">l2_cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">content</span><span class="p">):</span>
+                <span class="n">l2_hits</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">l2_cache</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+            <span class="n">l1_cache</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;l1_hits&quot;</span><span class="p">:</span> <span class="n">l1_hits</span> <span class="o">/</span> <span class="n">measure</span><span class="p">,</span>
+        <span class="s2">&quot;l2_hits&quot;</span><span class="p">:</span> <span class="n">l2_hits</span> <span class="o">/</span> <span class="n">measure</span><span class="p">,</span>
+        <span class="s2">&quot;total_hits&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">l1_hits</span> <span class="o">+</span> <span class="n">l2_hits</span><span class="p">)</span> <span class="o">/</span> <span class="n">measure</span><span class="p">,</span>
+    <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="trace_driven_cache_hit_ratio"><a class="viewcode-back" href="../../../apidoc/icarus.tools.html#icarus.tools.cacheperf.trace_driven_cache_hit_ratio">[docs]</a><span class="k">def</span> <span class="nf">trace_driven_cache_hit_ratio</span><span class="p">(</span><span class="n">workload</span><span class="p">,</span> <span class="n">cache</span><span class="p">,</span> <span class="n">warmup_ratio</span><span class="o">=</span><span class="mf">0.25</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Compute cache hit ratio of a cache under an arbitrary trace-driven</span>
+<span class="sd">    workload.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    workload : list or array</span>
+<span class="sd">        List of URLs or content identifiers extracted from a trace. This list</span>
+<span class="sd">        only needs to contains content identifiers and not timestamps</span>
+<span class="sd">    cache : Cache</span>
+<span class="sd">        Instance of a cache object</span>
+<span class="sd">    warmup_ratio : float, optional</span>
+<span class="sd">        Ratio of requests of the workload used to warm up the cache (i.e. whose</span>
+<span class="sd">        cache hit/miss results are discarded)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    cache_hit_ratio : float</span>
+<span class="sd">        The cache hit ratio</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">warmup_ratio</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">warmup_ratio</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;warmup_ratio must be comprised between 0 and 1&quot;</span><span class="p">)</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">workload</span><span class="p">)</span>
+    <span class="n">cache_hits</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">n_warmup</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">warmup_ratio</span> <span class="o">*</span> <span class="n">n</span><span class="p">)</span>
+    <span class="n">n_req</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">content</span> <span class="ow">in</span> <span class="n">workload</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">content</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">n_req</span> <span class="o">&gt;=</span> <span class="n">n_warmup</span><span class="p">:</span>
+                <span class="n">cache_hits</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cache</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+        <span class="n">n_req</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">cache_hits</span> <span class="o">/</span> <span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="n">n_warmup</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="hashrouting_model"><a class="viewcode-back" href="../../../apidoc/icarus.tools.html#icarus.tools.cacheperf.hashrouting_model">[docs]</a><span class="k">def</span> <span class="nf">hashrouting_model</span><span class="p">(</span>
+    <span class="n">topology</span><span class="p">,</span> <span class="n">routing</span><span class="p">,</span> <span class="n">hit_ratio</span><span class="p">,</span> <span class="n">source_content_ratio</span><span class="p">,</span> <span class="n">req_rates</span><span class="p">,</span> <span class="n">paths</span><span class="o">=</span><span class="kc">None</span>
+<span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Compute overall latency of hashrouting over an arbitrary topology</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    topology : Topology</span>
+<span class="sd">        The topology</span>
+<span class="sd">    routing : str (&#39;SYMM | &#39;MULTICAST&#39;)</span>
+<span class="sd">        Content routing strategy</span>
+<span class="sd">    hit_ratio : float</span>
+<span class="sd">        Average cache hit ratio of the system of hash-routed caches</span>
+<span class="sd">    source_content_ratio : dict</span>
+<span class="sd">        Ratio of contents that each source serve</span>
+<span class="sd">    req_rates : dict</span>
+<span class="sd">        Rate of requests for each requester</span>
+<span class="sd">    paths : dict of dicts, optional</span>
+<span class="sd">        Network paths</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    latency : float</span>
+<span class="sd">        The average content retrieval latency</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    .. [1] L. Saino, I. Psaras and G. Pavlou, Framework and Algorithms for</span>
+<span class="sd">           Operator-managed Content Caching, in IEEE Transactions on</span>
+<span class="sd">           Network and Service Management (TNSM), Volume 17, Issue 1, March 2020</span>
+<span class="sd">           https://doi.org/10.1109/TNSM.2019.2956525</span>
+<span class="sd">    .. [2] L. Saino, On the Design of Efficient Caching Systems, Ph.D. thesis</span>
+<span class="sd">           University College London, Dec. 2015. Available:</span>
+<span class="sd">           http://discovery.ucl.ac.uk/1473436/</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">routing</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;SYMM&quot;</span><span class="p">,</span> <span class="s2">&quot;MULTICAST&quot;</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Routing </span><span class="si">{}</span><span class="s2"> not supported&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">routing</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">math</span><span class="o">.</span><span class="n">fabs</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">source_content_ratio</span><span class="o">.</span><span class="n">values</span><span class="p">())</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">0.0001</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The sum of source_content_ratio values must be 1&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">paths</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">paths</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">nx</span><span class="o">.</span><span class="n">all_pairs_dijkstra_path</span><span class="p">(</span><span class="n">topology</span><span class="p">))</span>
+    <span class="n">latencies</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">paths</span><span class="p">:</span>
+        <span class="n">latencies</span><span class="p">[</span><span class="n">u</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">paths</span><span class="p">[</span><span class="n">u</span><span class="p">]:</span>
+            <span class="n">links</span> <span class="o">=</span> <span class="n">path_links</span><span class="p">(</span><span class="n">paths</span><span class="p">[</span><span class="n">u</span><span class="p">][</span><span class="n">v</span><span class="p">])</span>
+            <span class="n">latencies</span><span class="p">[</span><span class="n">u</span><span class="p">][</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">topology</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">][</span><span class="s2">&quot;delay&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">links</span><span class="p">)</span>
+    <span class="c1"># Get all caching nodes</span>
+    <span class="n">caches</span> <span class="o">=</span> <span class="n">topology</span><span class="o">.</span><span class="n">cache_nodes</span><span class="p">()</span>
+    <span class="n">overall_req_rate</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">req_rates</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+
+    <span class="n">req_ratios</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="o">/</span> <span class="n">overall_req_rate</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">req_rates</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+    <span class="c1"># Calculate overall latency</span>
+
+    <span class="c1"># This is the latency component between receivers and caches</span>
+    <span class="k">if</span> <span class="n">routing</span> <span class="o">==</span> <span class="s2">&quot;SYMM&quot;</span><span class="p">:</span>
+        <span class="n">latency</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">caches</span><span class="p">))</span> <span class="o">*</span> <span class="nb">sum</span><span class="p">(</span>
+            <span class="n">rate</span> <span class="o">*</span> <span class="p">(</span><span class="n">latencies</span><span class="p">[</span><span class="n">recv</span><span class="p">][</span><span class="n">cache</span><span class="p">]</span> <span class="o">+</span> <span class="n">latencies</span><span class="p">[</span><span class="n">cache</span><span class="p">][</span><span class="n">recv</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">recv</span><span class="p">,</span> <span class="n">rate</span> <span class="ow">in</span> <span class="n">req_ratios</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">cache</span> <span class="ow">in</span> <span class="n">caches</span>
+        <span class="p">)</span>
+        <span class="c1"># This is the latency component between caches and sources</span>
+        <span class="n">latency</span> <span class="o">+=</span> <span class="p">((</span><span class="mi">1</span> <span class="o">-</span> <span class="n">hit_ratio</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">caches</span><span class="p">))</span> <span class="o">*</span> <span class="nb">sum</span><span class="p">(</span>
+            <span class="n">ratio</span> <span class="o">*</span> <span class="p">(</span><span class="n">latencies</span><span class="p">[</span><span class="n">cache</span><span class="p">][</span><span class="n">source</span><span class="p">]</span> <span class="o">+</span> <span class="n">latencies</span><span class="p">[</span><span class="n">source</span><span class="p">][</span><span class="n">cache</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">cache</span> <span class="ow">in</span> <span class="n">caches</span>
+            <span class="k">for</span> <span class="n">source</span><span class="p">,</span> <span class="n">ratio</span> <span class="ow">in</span> <span class="n">source_content_ratio</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">)</span>
+    <span class="k">elif</span> <span class="n">routing</span> <span class="o">==</span> <span class="s2">&quot;MULTICAST&quot;</span><span class="p">:</span>
+        <span class="c1"># Latency leg receiver-cache</span>
+        <span class="n">latency</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">caches</span><span class="p">))</span> <span class="o">*</span> <span class="nb">sum</span><span class="p">(</span>
+            <span class="n">rate</span> <span class="o">*</span> <span class="p">(</span><span class="n">latencies</span><span class="p">[</span><span class="n">recv</span><span class="p">][</span><span class="n">cache</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">recv</span><span class="p">,</span> <span class="n">rate</span> <span class="ow">in</span> <span class="n">req_ratios</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">cache</span> <span class="ow">in</span> <span class="n">caches</span>
+        <span class="p">)</span>
+        <span class="c1"># Latency leg cache-receiver (hit case)</span>
+        <span class="n">latency</span> <span class="o">+=</span> <span class="p">(</span><span class="n">hit_ratio</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">caches</span><span class="p">))</span> <span class="o">*</span> <span class="nb">sum</span><span class="p">(</span>
+            <span class="n">rate</span> <span class="o">*</span> <span class="p">(</span><span class="n">latencies</span><span class="p">[</span><span class="n">cache</span><span class="p">][</span><span class="n">recv</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">recv</span><span class="p">,</span> <span class="n">rate</span> <span class="ow">in</span> <span class="n">req_ratios</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">cache</span> <span class="ow">in</span> <span class="n">caches</span>
+        <span class="p">)</span>
+        <span class="c1"># Latency leg caches-sources (miss case)</span>
+        <span class="n">latency</span> <span class="o">+=</span> <span class="p">((</span><span class="mi">1</span> <span class="o">-</span> <span class="n">hit_ratio</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">caches</span><span class="p">))</span> <span class="o">*</span> <span class="nb">sum</span><span class="p">(</span>
+            <span class="n">ratio</span> <span class="o">*</span> <span class="p">(</span><span class="n">latencies</span><span class="p">[</span><span class="n">cache</span><span class="p">][</span><span class="n">source</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">cache</span> <span class="ow">in</span> <span class="n">caches</span>
+            <span class="k">for</span> <span class="n">source</span><span class="p">,</span> <span class="n">ratio</span> <span class="ow">in</span> <span class="n">source_content_ratio</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">)</span>
+        <span class="c1"># Latency leg sources-receivers (miss case)</span>
+        <span class="n">latency</span> <span class="o">+=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">hit_ratio</span><span class="p">)</span> <span class="o">*</span> <span class="nb">sum</span><span class="p">(</span>
+            <span class="n">source_ratio</span> <span class="o">*</span> <span class="n">req_ratio</span> <span class="o">*</span> <span class="p">(</span><span class="n">latencies</span><span class="p">[</span><span class="n">source</span><span class="p">][</span><span class="n">receiver</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">req_ratio</span> <span class="ow">in</span> <span class="n">req_ratios</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">source</span><span class="p">,</span> <span class="n">source_ratio</span> <span class="ow">in</span> <span class="n">source_content_ratio</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Should never reach this block anyway</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Routing </span><span class="si">{}</span><span class="s2"> not supported&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">routing</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">latency</span></div>
+
+
+<div class="viewcode-block" id="hashrouting_model_mesh"><a class="viewcode-back" href="../../../apidoc/icarus.tools.html#icarus.tools.cacheperf.hashrouting_model_mesh">[docs]</a><span class="k">def</span> <span class="nf">hashrouting_model_mesh</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">delay_int</span><span class="p">,</span> <span class="n">delay_ext</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Compute latency of hashrouting over a mesh topology</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    n : int</span>
+<span class="sd">        The number of nodes in the mesh</span>
+<span class="sd">    m : int</span>
+<span class="sd">        The number of nodes directly connected with an origin</span>
+<span class="sd">    h : float</span>
+<span class="sd">        The cumulative cache hit ratio of the network</span>
+<span class="sd">    delay_int : float</span>
+<span class="sd">        The latency on an internal link</span>
+<span class="sd">    delay_ext : float</span>
+<span class="sd">        The latency on an external link</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    latency : float</span>
+<span class="sd">        The average content retrieval latency</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    .. [1] L. Saino, I. Psaras and G. Pavlou, Framework and Algorithms for</span>
+<span class="sd">           Operator-managed Content Caching, in IEEE Transactions on</span>
+<span class="sd">           Network and Service Management (TNSM), Volume 17, Issue 1, March 2020</span>
+<span class="sd">           https://doi.org/10.1109/TNSM.2019.2956525</span>
+<span class="sd">    .. [2] L. Saino, On the Design of Efficient Caching Systems, Ph.D. thesis</span>
+<span class="sd">           University College London, Dec. 2015. Available:</span>
+<span class="sd">           http://discovery.ucl.ac.uk/1473436/</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">m</span> <span class="o">&gt;</span> <span class="n">n</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;m must be no greater than n&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">h</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">h</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;h must be comprised between 0 and 1&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span>
+        <span class="p">((</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">n</span><span class="p">)</span> <span class="o">*</span> <span class="n">delay_int</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">h</span><span class="p">)</span> <span class="o">*</span> <span class="p">(((</span><span class="n">n</span> <span class="o">-</span> <span class="n">m</span><span class="p">)</span> <span class="o">/</span> <span class="n">n</span><span class="p">)</span> <span class="o">*</span> <span class="n">delay_int</span> <span class="o">+</span> <span class="n">delay_ext</span><span class="p">)</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="hashrouting_model_ring"><a class="viewcode-back" href="../../../apidoc/icarus.tools.html#icarus.tools.cacheperf.hashrouting_model_ring">[docs]</a><span class="k">def</span> <span class="nf">hashrouting_model_ring</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">delay_int</span><span class="p">,</span> <span class="n">delay_ext</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Compute latency of hashrouting over a mesh topology</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    n : int</span>
+<span class="sd">        The number of nodes in the mesh</span>
+<span class="sd">    h : float</span>
+<span class="sd">        The cumulative cache hit ratio of the network</span>
+<span class="sd">    delay_int : float</span>
+<span class="sd">        The latency on an internal link</span>
+<span class="sd">    delay_ext : float</span>
+<span class="sd">        The latency on an external link</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    latency : float</span>
+<span class="sd">        The average content retrieval latency</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    .. [1] L. Saino, I. Psaras and G. Pavlou, Framework and Algorithms for</span>
+<span class="sd">           Operator-managed Content Caching, in IEEE Transactions on</span>
+<span class="sd">           Network and Service Management (TNSM), Volume 17, Issue 1, March 2020</span>
+<span class="sd">           https://doi.org/10.1109/TNSM.2019.2956525</span>
+<span class="sd">    .. [2] L. Saino, On the Design of Efficient Caching Systems, Ph.D. thesis</span>
+<span class="sd">           University College London, Dec. 2015. Available:</span>
+<span class="sd">           http://discovery.ucl.ac.uk/1473436/</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">h</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">h</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;h must be comprised between 0 and 1&quot;</span><span class="p">)</span>
+    <span class="n">avg_hop</span> <span class="o">=</span> <span class="p">(</span><span class="n">n</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">n</span><span class="p">)</span> <span class="k">if</span> <span class="n">n</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">n</span> <span class="o">/</span> <span class="mi">4</span>
+    <span class="k">return</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">avg_hop</span> <span class="o">*</span> <span class="n">delay_int</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">h</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">avg_hop</span> <span class="o">*</span> <span class="n">delay_int</span> <span class="o">+</span> <span class="n">delay_ext</span><span class="p">))</span></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Icarus 0.8.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">icarus.tools.cacheperf</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2016, Lorenzo Saino, Ioannis Psaras.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.1.1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,1068 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>icarus package &#8212; Icarus 0.8.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="icarus.execution package" href="icarus.execution.html" />
+    <link rel="prev" title="Icarus: Caching Simulator for Information Centric Networking (ICN)" href="../index.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="icarus.execution.html" title="icarus.execution package"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../index.html" title="Icarus: Caching Simulator for Information Centric Networking (ICN)"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Icarus 0.8.1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">icarus package</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="icarus-package">
+<h1>icarus package<a class="headerlink" href="#icarus-package" title="Permalink to this heading">¶</a></h1>
+<section id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Permalink to this heading">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="icarus.execution.html">icarus.execution package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="icarus.execution.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="icarus.execution.html#module-icarus.execution.collectors">icarus.execution.collectors module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="icarus.execution.html#module-icarus.execution.engine">icarus.execution.engine module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="icarus.execution.html#module-icarus.execution.network">icarus.execution.network module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="icarus.execution.html#module-icarus.execution">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="icarus.models.html">icarus.models package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="icarus.models.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="icarus.models.cache.html">icarus.models.cache package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="icarus.models.cache.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="icarus.models.cache.html#module-icarus.models.cache.policies">icarus.models.cache.policies module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="icarus.models.cache.html#module-icarus.models.cache.systems">icarus.models.cache.systems module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="icarus.models.cache.html#module-icarus.models.cache">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="icarus.models.strategy.html">icarus.models.strategy package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="icarus.models.strategy.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="icarus.models.strategy.html#module-icarus.models.strategy.base">icarus.models.strategy.base module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="icarus.models.strategy.html#module-icarus.models.strategy.hashrouting">icarus.models.strategy.hashrouting module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="icarus.models.strategy.html#module-icarus.models.strategy.offpath">icarus.models.strategy.offpath module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="icarus.models.strategy.html#module-icarus.models.strategy.onpath">icarus.models.strategy.onpath module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="icarus.models.strategy.html#module-icarus.models.strategy">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="icarus.models.html#module-icarus.models">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="icarus.results.html">icarus.results package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="icarus.results.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="icarus.results.html#module-icarus.results.plot">icarus.results.plot module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="icarus.results.html#module-icarus.results.readwrite">icarus.results.readwrite module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="icarus.results.html#module-icarus.results.visualize">icarus.results.visualize module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="icarus.results.html#module-icarus.results">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="icarus.scenarios.html">icarus.scenarios package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="icarus.scenarios.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="icarus.scenarios.html#module-icarus.scenarios.algorithms">icarus.scenarios.algorithms module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="icarus.scenarios.html#module-icarus.scenarios.cacheplacement">icarus.scenarios.cacheplacement module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="icarus.scenarios.html#module-icarus.scenarios.contentplacement">icarus.scenarios.contentplacement module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="icarus.scenarios.html#module-icarus.scenarios.topology">icarus.scenarios.topology module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="icarus.scenarios.html#module-icarus.scenarios.workload">icarus.scenarios.workload module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="icarus.scenarios.html#module-icarus.scenarios">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="icarus.tools.html">icarus.tools package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="icarus.tools.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="icarus.tools.html#module-icarus.tools.cacheperf">icarus.tools.cacheperf module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="icarus.tools.html#module-icarus.tools.stats">icarus.tools.stats module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="icarus.tools.html#module-icarus.tools.traces">icarus.tools.traces module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="icarus.tools.html#module-icarus.tools">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this heading">¶</a></h2>
+</section>
+<section id="module-icarus.main">
+<span id="icarus-main-module"></span><h2>icarus.main module<a class="headerlink" href="#module-icarus.main" title="Permalink to this heading">¶</a></h2>
+<p>Run the Icarus simulator.</p>
+<p>This script automatically adds Icarus source folder to the PYTHONPATH and then
+executes the simulator according to the settings specified in the provided
+configuration file.</p>
+<p>Usage:</p>
+<blockquote>
+<div><p>icarus run -r RESULTS [-c CONFIG_OVERRIDE] [-v] config
+icarus results print [–json] RESULTS
+icarus results merge -o OUTPUT INPUT_1 … INPUT_N</p>
+</div></blockquote>
+</section>
+<section id="module-icarus.orchestration">
+<span id="icarus-orchestration-module"></span><h2>icarus.orchestration module<a class="headerlink" href="#module-icarus.orchestration" title="Permalink to this heading">¶</a></h2>
+<p>Orchestrate the execution of all experiments.</p>
+<p>The orchestrator is responsible for scheduling experiments specified in the
+user-provided settings.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="icarus.orchestration.Orchestrator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Orchestrator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">settings</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">summary_freq</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/orchestration.html#Orchestrator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.orchestration.Orchestrator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Orchestrator.</p>
+<p>It is responsible for orchestrating the execution of all experiments and
+aggregate results.</p>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.orchestration.Orchestrator.error_callback" title="icarus.orchestration.Orchestrator.error_callback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">error_callback</span></code></a>(msg)</p></td>
+<td><p>Callback method called in case of error in Python &gt; 3.2</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#icarus.orchestration.Orchestrator.experiment_callback" title="icarus.orchestration.Orchestrator.experiment_callback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">experiment_callback</span></code></a>(args)</p></td>
+<td><p>Callback method called by run_scenario</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.orchestration.Orchestrator.run" title="icarus.orchestration.Orchestrator.run"><code class="xref py py-obj docutils literal notranslate"><span class="pre">run</span></code></a>()</p></td>
+<td><p>Run the orchestrator.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#icarus.orchestration.Orchestrator.stop" title="icarus.orchestration.Orchestrator.stop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">stop</span></code></a>()</p></td>
+<td><p>Stop the execution of the orchestrator</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.orchestration.Orchestrator.error_callback">
+<span class="sig-name descname"><span class="pre">error_callback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/orchestration.html#Orchestrator.error_callback"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.orchestration.Orchestrator.error_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Callback method called in case of error in Python &gt; 3.2</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>msg</strong><span class="classifier">string</span></dt><dd><p>Error message</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.orchestration.Orchestrator.experiment_callback">
+<span class="sig-name descname"><span class="pre">experiment_callback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/orchestration.html#Orchestrator.experiment_callback"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.orchestration.Orchestrator.experiment_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Callback method called by run_scenario</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>args</strong><span class="classifier">tuple</span></dt><dd><p>Tuple of arguments</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.orchestration.Orchestrator.run">
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/orchestration.html#Orchestrator.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.orchestration.Orchestrator.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run the orchestrator.</p>
+<p>This call is blocking, whether multiple processes are used or not. This
+methods returns only after all experiments are executed.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.orchestration.Orchestrator.stop">
+<span class="sig-name descname"><span class="pre">stop</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/orchestration.html#Orchestrator.stop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.orchestration.Orchestrator.stop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stop the execution of the orchestrator</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.orchestration.run_scenario">
+<span class="sig-name descname"><span class="pre">run_scenario</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">settings</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">curr_exp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_exp</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/orchestration.html#run_scenario"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.orchestration.run_scenario" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run a single scenario experiment</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>settings</strong><span class="classifier">Settings</span></dt><dd><p>The simulator settings</p>
+</dd>
+<dt><strong>params</strong><span class="classifier">Tree</span></dt><dd><p>experiment parameters tree</p>
+</dd>
+<dt><strong>curr_exp</strong><span class="classifier">int</span></dt><dd><p>sequence number of the experiment</p>
+</dd>
+<dt><strong>n_exp</strong><span class="classifier">int</span></dt><dd><p>Number of scheduled experiments</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>results</strong><span class="classifier">3-tuple</span></dt><dd><p>A (params, results, duration) 3-tuple. The first element is a dictionary
+which stores all the attributes of the experiment. The second element
+is a dictionary which stores the results. The third element is an
+integer expressing the wall-clock duration of the experiment (in
+seconds)</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-icarus.registry">
+<span id="icarus-registry-module"></span><h2>icarus.registry module<a class="headerlink" href="#module-icarus.registry" title="Permalink to this heading">¶</a></h2>
+<p>Registry keeping track of all registered pluggable components</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.registry.register_cache_placement">
+<span class="sig-name descname"><span class="pre">register_cache_placement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#icarus.registry.register_cache_placement" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decorator that register a class or a function to a register.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>name</strong><span class="classifier">str</span></dt><dd><p>The name assigned to the class or function to store in the register</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.registry.register_cache_policy">
+<span class="sig-name descname"><span class="pre">register_cache_policy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#icarus.registry.register_cache_policy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decorator that register a class or a function to a register.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>name</strong><span class="classifier">str</span></dt><dd><p>The name assigned to the class or function to store in the register</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.registry.register_content_placement">
+<span class="sig-name descname"><span class="pre">register_content_placement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#icarus.registry.register_content_placement" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decorator that register a class or a function to a register.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>name</strong><span class="classifier">str</span></dt><dd><p>The name assigned to the class or function to store in the register</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.registry.register_data_collector">
+<span class="sig-name descname"><span class="pre">register_data_collector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#icarus.registry.register_data_collector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decorator that register a class or a function to a register.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>name</strong><span class="classifier">str</span></dt><dd><p>The name assigned to the class or function to store in the register</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.registry.register_decorator">
+<span class="sig-name descname"><span class="pre">register_decorator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">register</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/registry.html#register_decorator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.registry.register_decorator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a decorator that register a class or function to a specified
+register</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>register</strong><span class="classifier">dict</span></dt><dd><p>The register to which the class or function is register</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>decorator</strong><span class="classifier">func</span></dt><dd><p>The decorator</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.registry.register_results_reader">
+<span class="sig-name descname"><span class="pre">register_results_reader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#icarus.registry.register_results_reader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decorator that register a class or a function to a register.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>name</strong><span class="classifier">str</span></dt><dd><p>The name assigned to the class or function to store in the register</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.registry.register_results_writer">
+<span class="sig-name descname"><span class="pre">register_results_writer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#icarus.registry.register_results_writer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decorator that register a class or a function to a register.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>name</strong><span class="classifier">str</span></dt><dd><p>The name assigned to the class or function to store in the register</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.registry.register_strategy">
+<span class="sig-name descname"><span class="pre">register_strategy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#icarus.registry.register_strategy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decorator that register a class or a function to a register.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>name</strong><span class="classifier">str</span></dt><dd><p>The name assigned to the class or function to store in the register</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.registry.register_topology_factory">
+<span class="sig-name descname"><span class="pre">register_topology_factory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#icarus.registry.register_topology_factory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decorator that register a class or a function to a register.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>name</strong><span class="classifier">str</span></dt><dd><p>The name assigned to the class or function to store in the register</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.registry.register_workload">
+<span class="sig-name descname"><span class="pre">register_workload</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#icarus.registry.register_workload" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decorator that register a class or a function to a register.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>name</strong><span class="classifier">str</span></dt><dd><p>The name assigned to the class or function to store in the register</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-icarus.release">
+<span id="icarus-release-module"></span><h2>icarus.release module<a class="headerlink" href="#module-icarus.release" title="Permalink to this heading">¶</a></h2>
+<p>This module contains all the information related to the current release of the
+library including descriptions, version number, authors and contact
+information.</p>
+</section>
+<section id="module-icarus.runner">
+<span id="icarus-runner-module"></span><h2>icarus.runner module<a class="headerlink" href="#module-icarus.runner" title="Permalink to this heading">¶</a></h2>
+<p>Launches a simulation campaign and save results.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.runner.handler">
+<span class="sig-name descname"><span class="pre">handler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">settings</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">orch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">signum</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/runner.html#handler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.runner.handler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Signal handler</p>
+<p>This function is called when the simulator receive SIGTERM, SIGHUP, SIGKILL
+or SIGQUIT from the OS.</p>
+<p>Its function is simply to write on a file the partial results.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>settings</strong><span class="classifier">Settings</span></dt><dd><p>The simulator settings</p>
+</dd>
+<dt><strong>orch</strong><span class="classifier">Orchestrator</span></dt><dd><p>The instance of the orchestrator</p>
+</dd>
+<dt><strong>output</strong><span class="classifier">str</span></dt><dd><p>The output file</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.runner.run">
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_override</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/runner.html#run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.runner.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run function. It starts the simulator.
+experiments</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>config</strong><span class="classifier">str</span></dt><dd><p>Path of the configuration file</p>
+</dd>
+<dt><strong>output</strong><span class="classifier">str</span></dt><dd><p>The file name where results will be saved</p>
+</dd>
+<dt><strong>config_override</strong><span class="classifier">dict, optional</span></dt><dd><p>Configuration parameters overriding parameters in the file</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-icarus.util">
+<span id="icarus-util-module"></span><h2>icarus.util module<a class="headerlink" href="#module-icarus.util" title="Permalink to this heading">¶</a></h2>
+<p>Utility functions</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="icarus.util.AnyValue">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AnyValue</span></span><a class="reference internal" href="../_modules/icarus/util.html#AnyValue"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.util.AnyValue" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Pseudo-value that returns True when compared to any other object.</p>
+<p>This object can be used for example to store parameters in resultsets.</p>
+<p>One concrete usage example is the following: let’s assume that a user runs
+an experiment using various strategies under different values of a
+specific parameter and that the user knows that one strategy does not
+depend on that parameters while others do.
+If a user wants to plot the sensitivity of all these strategies against
+this parameter, he would want the strategy insensitive to that parameter to
+be selected from the resultset when filtering it against any value of that
+parameter. This can be achieved by setting AnyValue() to this parameter in
+the result related to that strategy.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="icarus.util.SequenceNumber">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SequenceNumber</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">initval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/util.html#SequenceNumber"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.util.SequenceNumber" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>This class models an increasing sequence number.</p>
+<p>It is used to assign a sequence number for an experiment in a thread-safe
+manner.</p>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.util.SequenceNumber.assign" title="icarus.util.SequenceNumber.assign"><code class="xref py py-obj docutils literal notranslate"><span class="pre">assign</span></code></a>()</p></td>
+<td><p>Assigns a new sequence number.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#icarus.util.SequenceNumber.current" title="icarus.util.SequenceNumber.current"><code class="xref py py-obj docutils literal notranslate"><span class="pre">current</span></code></a>()</p></td>
+<td><p>Return the latest sequence number assigned</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.util.SequenceNumber.assign">
+<span class="sig-name descname"><span class="pre">assign</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/util.html#SequenceNumber.assign"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.util.SequenceNumber.assign" title="Permalink to this definition">¶</a></dt>
+<dd><p>Assigns a new sequence number.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>seq</strong><span class="classifier">int</span></dt><dd><p>The sequence number</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.util.SequenceNumber.current">
+<span class="sig-name descname"><span class="pre">current</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/util.html#SequenceNumber.current"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.util.SequenceNumber.current" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the latest sequence number assigned</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>seq</strong><span class="classifier">int</span></dt><dd><p>The latest assigned sequence number</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="icarus.util.Settings">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Settings</span></span><a class="reference internal" href="../_modules/icarus/util.html#Settings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.util.Settings" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Object storing all settings</p>
+<dl class="field-list simple">
+<dt class="field-odd">Attributes<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><a class="reference internal" href="#icarus.util.Settings.frozen" title="icarus.util.Settings.frozen"><code class="xref py py-obj docutils literal notranslate"><span class="pre">frozen</span></code></a></dt><dd><p>Return whether the object is frozen or not.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.util.Settings.freeze" title="icarus.util.Settings.freeze"><code class="xref py py-obj docutils literal notranslate"><span class="pre">freeze</span></code></a>()</p></td>
+<td><p>Freeze the objects.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#icarus.util.Settings.get" title="icarus.util.Settings.get"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get</span></code></a>(name)</p></td>
+<td><p>Return value of settings with given name</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.util.Settings.read_from" title="icarus.util.Settings.read_from"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_from</span></code></a>(path[, freeze])</p></td>
+<td><p>Initialize settings by reading from a file</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#icarus.util.Settings.set" title="icarus.util.Settings.set"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set</span></code></a>(name, value)</p></td>
+<td><p>Sets a given value for a settings with given name</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.util.Settings.freeze">
+<span class="sig-name descname"><span class="pre">freeze</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/util.html#Settings.freeze"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.util.Settings.freeze" title="Permalink to this definition">¶</a></dt>
+<dd><p>Freeze the objects. No settings can be added or modified any more</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="icarus.util.Settings.frozen">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">frozen</span></span><a class="headerlink" href="#icarus.util.Settings.frozen" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return whether the object is frozen or not.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.util.Settings.get">
+<span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/util.html#Settings.get"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.util.Settings.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return value of settings with given name</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>name</strong><span class="classifier">str</span></dt><dd><p>Name of the setting</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>value</strong><span class="classifier">any hashable type</span></dt><dd><p>The value of the setting</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.util.Settings.read_from">
+<span class="sig-name descname"><span class="pre">read_from</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freeze</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/util.html#Settings.read_from"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.util.Settings.read_from" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize settings by reading from a file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The path of the file from which settings are read</p>
+</dd>
+<dt><strong>freeze</strong><span class="classifier">bool, optional</span></dt><dd><p>If <em>True</em>, freezes object so that settings cannot be changed</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.util.Settings.set">
+<span class="sig-name descname"><span class="pre">set</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/util.html#Settings.set"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.util.Settings.set" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets a given value for a settings with given name</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>name</strong><span class="classifier">str</span></dt><dd><p>Name of the setting</p>
+</dd>
+<dt><strong>value</strong><span class="classifier">any hashable type</span></dt><dd><p>The value of the setting</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="icarus.util.Tree">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Tree</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">attr</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/util.html#Tree"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.util.Tree" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/collections.html#collections.defaultdict" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">defaultdict</span></code></a></p>
+<p>Tree data structure</p>
+<p>This class models a tree data structure that is mainly used to store
+experiment parameters and results in a hierarchical form that makes it
+easier to search and filter data in them.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Attributes<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">default_factory</span></code></dt><dd><p>Factory for default value called by __missing__().</p>
+</dd>
+<dt><a class="reference internal" href="#icarus.util.Tree.empty" title="icarus.util.Tree.empty"><code class="xref py py-obj docutils literal notranslate"><span class="pre">empty</span></code></a></dt><dd><p>Return True if the tree is empty, False otherwise</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">clear</span></code>()</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">copy</span></code>()</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.util.Tree.dict" title="icarus.util.Tree.dict"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dict</span></code></a>([str_keys])</p></td>
+<td><p>Convert the tree in nested dictionaries</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fromkeys</span></code>(iterable[, value])</p></td>
+<td><p>Create a new dictionary with keys from iterable and values set to value.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get</span></code>(key[, default])</p></td>
+<td><p>Return the value for key if key is in the dictionary, else default.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#icarus.util.Tree.getval" title="icarus.util.Tree.getval"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getval</span></code></a>(path)</p></td>
+<td><p>Get the value at a specific path, None if not there</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">items</span></code>()</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">keys</span></code>()</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.util.Tree.match" title="icarus.util.Tree.match"><code class="xref py py-obj docutils literal notranslate"><span class="pre">match</span></code></a>(condition)</p></td>
+<td><p>Check if the tree matches a given condition.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#icarus.util.Tree.paths" title="icarus.util.Tree.paths"><code class="xref py py-obj docutils literal notranslate"><span class="pre">paths</span></code></a>()</p></td>
+<td><p>Return a dictionary mapping all paths to final (non-tree) values and the values.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">pop</span></code>(k[,d])</p></td>
+<td><p>If key is not found, d is returned if given, otherwise KeyError is raised</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">popitem</span></code>(/)</p></td>
+<td><p>Remove and return a (key, value) pair as a 2-tuple.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">setdefault</span></code>(key[, default])</p></td>
+<td><p>Insert key with a value of default if key is not in the dictionary.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#icarus.util.Tree.setval" title="icarus.util.Tree.setval"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setval</span></code></a>(path, val)</p></td>
+<td><p>Set a value at a specific path</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.util.Tree.update" title="icarus.util.Tree.update"><code class="xref py py-obj docutils literal notranslate"><span class="pre">update</span></code></a>(e)</p></td>
+<td><p>Update tree from e, similarly to dict.update</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">values</span></code>()</p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.util.Tree.dict">
+<span class="sig-name descname"><span class="pre">dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">str_keys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/util.html#Tree.dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.util.Tree.dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert the tree in nested dictionaries</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>str_key</strong><span class="classifier">bool, optional</span></dt><dd><p>Convert keys to string. This is useful for example to dump a dict
+into a JSON object that requires keys to be strings</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>d</strong><span class="classifier">dict</span></dt><dd><p>A nested dict representation of the tree</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="icarus.util.Tree.empty">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">empty</span></span><a class="headerlink" href="#icarus.util.Tree.empty" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True if the tree is empty, False otherwise</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.util.Tree.getval">
+<span class="sig-name descname"><span class="pre">getval</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/util.html#Tree.getval"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.util.Tree.getval" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the value at a specific path, None if not there</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>path</strong><span class="classifier">iterable</span></dt><dd><p>Path to the desired value</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>val</strong><span class="classifier">any type</span></dt><dd><p>The value at the given path</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.util.Tree.match">
+<span class="sig-name descname"><span class="pre">match</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">condition</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/util.html#Tree.match"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.util.Tree.match" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if the tree matches a given condition.</p>
+<p>The condition is another tree. This method iterates to all the values
+of the condition and verify that all values of the condition tree are
+present in this tree and have the same value.</p>
+<p>Note that the operation is not symmetric i.e.
+self.match(condition) != condition.match(self). In fact, this method
+return True if this tree has values not present in the condition tree
+while it would return False if the condition has values not present
+in this tree.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>condition</strong><span class="classifier">Tree</span></dt><dd><p>The condition to check</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>match</strong><span class="classifier">bool</span></dt><dd><p>True if the tree matches the condition, False otherwise.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.util.Tree.paths">
+<span class="sig-name descname"><span class="pre">paths</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/util.html#Tree.paths"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.util.Tree.paths" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a dictionary mapping all paths to final (non-tree) values
+and the values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>paths</strong><span class="classifier">dict</span></dt><dd><p>Path-value mapping</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.util.Tree.setval">
+<span class="sig-name descname"><span class="pre">setval</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/util.html#Tree.setval"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.util.Tree.setval" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set a value at a specific path</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>path</strong><span class="classifier">iterable</span></dt><dd><p>Path to the value</p>
+</dd>
+<dt><strong>val</strong><span class="classifier">any type</span></dt><dd><p>The value to set at the given path</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.util.Tree.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">e</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/util.html#Tree.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.util.Tree.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update tree from e, similarly to dict.update</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>e</strong><span class="classifier">Tree</span></dt><dd><p>The tree to update from</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.util.apportionment">
+<span class="sig-name descname"><span class="pre">apportionment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fracs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/util.html#apportionment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.util.apportionment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Allocate items to buckets according to a given proportion.</p>
+<p>This function uses the Largest remainder method with the Hare quota.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>n</strong><span class="classifier">int</span></dt><dd><p>Number of items to allocate to buckets</p>
+</dd>
+<dt><strong>fracs</strong><span class="classifier">list of float</span></dt><dd><p>Proportion of items to allocate to each bucket</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.util.config_logging">
+<span class="sig-name descname"><span class="pre">config_logging</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">log_level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'INFO'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/util.html#config_logging"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.util.config_logging" title="Permalink to this definition">¶</a></dt>
+<dd><p>Configure logging level</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>log_level</strong><span class="classifier">int</span></dt><dd><p>The granularity of logging</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.util.inheritdoc">
+<span class="sig-name descname"><span class="pre">inheritdoc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cls</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/util.html#inheritdoc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.util.inheritdoc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decorator that inherits docstring from the overridden method of the
+superclass.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>cls</strong><span class="classifier">Class</span></dt><dd><p>The superclass from which the method docstring is inherit</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>This decorator requires to specify the superclass the contains the method
+(with the same name of the method to which this decorator is applied) whose
+docstring is to be replicated. It is possible to implement more complex
+decorators which identify the superclass automatically. There are examples
+available in the Web (e.g., <a class="reference external" href="http://code.activestate.com/recipes/576862/">http://code.activestate.com/recipes/576862/</a>),
+however, the increased complexity leads to issues of interactions with
+other decorators.
+This implementation is simple, easy to understand and works well with
+Icarus code.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.util.iround">
+<span class="sig-name descname"><span class="pre">iround</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/util.html#iround"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.util.iround" title="Permalink to this definition">¶</a></dt>
+<dd><p>Round float to closest integer</p>
+<p>This code was taken from here:
+<a class="reference external" href="http://www.daniweb.com/software-development/python/threads/299459/round-to-nearest-integer">http://www.daniweb.com/software-development/python/threads/299459/round-to-nearest-integer</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>x</strong><span class="classifier">float</span></dt><dd><p>The number to round</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>xr</strong><span class="classifier">int</span></dt><dd><p>The rounded number</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.util.multicast_tree">
+<span class="sig-name descname"><span class="pre">multicast_tree</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shortest_paths</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">destinations</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/util.html#multicast_tree"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.util.multicast_tree" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a multicast tree expressed as a set of edges, without any
+ordering</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>shortest_paths</strong><span class="classifier">dict of dicts</span></dt><dd><p>Return all pairs shortest paths</p>
+</dd>
+<dt><strong>source</strong><span class="classifier">any hashable object</span></dt><dd><p>The source node of the multicast tree</p>
+</dd>
+<dt><strong>destinations</strong><span class="classifier">iterable</span></dt><dd><p>All destinations of the multicast tree</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.util.overlay_betweenness_centrality">
+<span class="sig-name descname"><span class="pre">overlay_betweenness_centrality</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">origins</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">destinations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalized</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">endpoints</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/util.html#overlay_betweenness_centrality"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.util.overlay_betweenness_centrality" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the betweenness centrality of a graph but only regarding the
+paths from a set of origins nodes to a set of destinations node.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>topology</strong><span class="classifier">fnss.Topology</span></dt><dd><p>The topology</p>
+</dd>
+<dt><strong>origins</strong><span class="classifier">iterable, optional</span></dt><dd><p>The origin nodes. If not specified, nodes with <em>receiver</em> stack are
+selected</p>
+</dd>
+<dt><strong>destinations</strong><span class="classifier">iterable, optional</span></dt><dd><p>The destination nodes. If not specified, nodes with <em>source</em> stack are
+selected</p>
+</dd>
+<dt><strong>normalized</strong><span class="classifier">bool, optional</span></dt><dd><p>If <em>True</em>, returned normalized values</p>
+</dd>
+<dt><strong>endpoints</strong><span class="classifier">bool, optional</span></dt><dd><p>If <em>True</em> endpoints are included in path calculation.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>betw</strong><span class="classifier">dict</span></dt><dd><p>Dictionary of betweenness centralities keyed by node</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.util.path_links">
+<span class="sig-name descname"><span class="pre">path_links</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/util.html#path_links"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.util.path_links" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert a path expressed as list of nodes into a path expressed as a
+list of edges.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>path</strong><span class="classifier">list</span></dt><dd><p>List of nodes</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>path</strong><span class="classifier">list</span></dt><dd><p>List of edges</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.util.step_cdf">
+<span class="sig-name descname"><span class="pre">step_cdf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/util.html#step_cdf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.util.step_cdf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert an empirical CDF in set of points representing steps.</p>
+<p>Normally this is conversion is done for plotting purposes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>x</strong><span class="classifier">array</span></dt><dd><p>The x values of the CDF</p>
+</dd>
+<dt><strong>y</strong><span class="classifier">array</span></dt><dd><p>The y values of the CDF</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>x</strong><span class="classifier">array</span></dt><dd><p>The x values of the CDF</p>
+</dd>
+<dt><strong>y</strong><span class="classifier">array</span></dt><dd><p>The y values of the CDF</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.util.timestr">
+<span class="sig-name descname"><span class="pre">timestr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">with_seconds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/util.html#timestr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.util.timestr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a time interval in seconds and returns it formatted in a string.</p>
+<p>The returned string includes days, hours, minutes and seconds as
+appropriate.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>sec</strong><span class="classifier">float</span></dt><dd><p>The time interval</p>
+</dd>
+<dt><strong>with_seconds</strong><span class="classifier">bool</span></dt><dd><p>If <em>True</em> the time string includes seconds, otherwise only minutes</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>timestr</strong><span class="classifier">str</span></dt><dd><p>A string expressing the time in days, hours, minutes and seconds</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-icarus">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-icarus" title="Permalink to this heading">¶</a></h2>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">icarus package</a><ul>
+<li><a class="reference internal" href="#subpackages">Subpackages</a></li>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-icarus.main">icarus.main module</a></li>
+<li><a class="reference internal" href="#module-icarus.orchestration">icarus.orchestration module</a></li>
+<li><a class="reference internal" href="#module-icarus.registry">icarus.registry module</a></li>
+<li><a class="reference internal" href="#module-icarus.release">icarus.release module</a></li>
+<li><a class="reference internal" href="#module-icarus.runner">icarus.runner module</a></li>
+<li><a class="reference internal" href="#module-icarus.util">icarus.util module</a></li>
+<li><a class="reference internal" href="#module-icarus">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="../index.html"
+                          title="previous chapter">Icarus: Caching Simulator for Information Centric Networking (ICN)</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="icarus.execution.html"
+                          title="next chapter">icarus.execution package</a></p>
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="icarus.execution.html" title="icarus.execution package"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../index.html" title="Icarus: Caching Simulator for Information Centric Networking (ICN)"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Icarus 0.8.1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">icarus package</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2016, Lorenzo Saino, Ioannis Psaras.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.1.1.
+    </div>
+  </body>
+</html>

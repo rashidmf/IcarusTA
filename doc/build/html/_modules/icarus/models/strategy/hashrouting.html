@@ -1,0 +1,930 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>icarus.models.strategy.hashrouting &#8212; Icarus 0.8.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinxdoc.css" />
+    <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+    <script src="../../../../_static/jquery.js"></script>
+    <script src="../../../../_static/underscore.js"></script>
+    <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">Icarus 0.8.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">icarus.models.strategy.hashrouting</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for icarus.models.strategy.hashrouting</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Implementations of all hash-routing strategies&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
+
+<span class="kn">from</span> <span class="nn">icarus.registry</span> <span class="kn">import</span> <span class="n">register_strategy</span>
+<span class="kn">from</span> <span class="nn">icarus.util</span> <span class="kn">import</span> <span class="n">inheritdoc</span><span class="p">,</span> <span class="n">multicast_tree</span><span class="p">,</span> <span class="n">path_links</span>
+<span class="kn">from</span> <span class="nn">icarus.scenarios.algorithms</span> <span class="kn">import</span> <span class="n">extract_cluster_level_topology</span>
+
+<span class="kn">from</span> <span class="nn">.base</span> <span class="kn">import</span> <span class="n">Strategy</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;Hashrouting&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;HashroutingEdge&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;HashroutingOnPath&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;HashroutingClustered&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;HashroutingSymmetric&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;HashroutingAsymmetric&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;HashroutingMulticast&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;HashroutingHybridAM&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;HashroutingHybridSM&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+
+
+<span class="k">class</span> <span class="nc">BaseHashrouting</span><span class="p">(</span><span class="n">Strategy</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Base class for all hash-routing implementations.&quot;&quot;&quot;</span>
+
+    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">Strategy</span><span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">view</span><span class="p">,</span> <span class="n">controller</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">view</span><span class="p">,</span> <span class="n">controller</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cache_nodes</span> <span class="o">=</span> <span class="n">view</span><span class="o">.</span><span class="n">cache_nodes</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_cache_nodes</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cache_nodes</span><span class="p">)</span>
+        <span class="c1"># Allocate results of hash function to caching nodes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cache_assignment</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">i</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache_nodes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cache_nodes</span><span class="p">))</span>
+        <span class="p">}</span>
+        <span class="c1"># Check if there are clusters</span>
+        <span class="k">if</span> <span class="s2">&quot;clusters&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">topology</span><span class="p">()</span><span class="o">.</span><span class="n">graph</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">clusters</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">topology</span><span class="p">()</span><span class="o">.</span><span class="n">graph</span><span class="p">[</span><span class="s2">&quot;clusters&quot;</span><span class="p">]</span>
+            <span class="c1"># Convert to list in case it comes as set or iterable</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">cluster</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">clusters</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">clusters</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">cluster</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cluster_size</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="n">i</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">clusters</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">clusters</span><span class="p">))</span>
+            <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">authoritative_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">cluster</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the authoritative cache node for the given content</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        content : any hashable type</span>
+<span class="sd">            The identifier of the content</span>
+<span class="sd">        cluster : int, optional</span>
+<span class="sd">            If the topology is divided in clusters, then retun the authoritative</span>
+<span class="sd">            cache responsible for the content in the specified cluster</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        authoritative_cache : any hashable type</span>
+<span class="sd">            The node on which the authoritative cache is deployed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># TODO: I should probably consider using a better non-cryptographic hash</span>
+        <span class="c1"># function, like xxhash</span>
+        <span class="n">h</span> <span class="o">=</span> <span class="nb">hash</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">cluster</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">clusters</span><span class="p">[</span><span class="n">cluster</span><span class="p">][</span><span class="n">h</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">cluster_size</span><span class="p">[</span><span class="n">cluster</span><span class="p">]]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache_assignment</span><span class="p">[</span><span class="n">h</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_cache_nodes</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">process_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">log</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+            <span class="s2">&quot;Cannot use BaseHashrouting class as is. &quot;</span>
+            <span class="s2">&quot;This class is meant to be extended by other classes.&quot;</span>
+        <span class="p">)</span>
+
+
+<div class="viewcode-block" id="Hashrouting"><a class="viewcode-back" href="../../../../apidoc/icarus.models.strategy.html#icarus.models.strategy.hashrouting.Hashrouting">[docs]</a><span class="nd">@register_strategy</span><span class="p">(</span><span class="s2">&quot;HASHROUTING&quot;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">Hashrouting</span><span class="p">(</span><span class="n">BaseHashrouting</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Unified implementation of the three basic hash-routing schemes:</span>
+<span class="sd">    symmetric, asymmetric and multicast.</span>
+
+<span class="sd">    Hash-routing implementations are described in [1]_.</span>
+
+<span class="sd">    According to these strategies, edge nodes receiving a content request</span>
+<span class="sd">    compute a hash function mapping the content identifier to a specific caching</span>
+<span class="sd">    node and forward the request to that specific node. If the cache holds the</span>
+<span class="sd">    requested content, it is returned to the user, otherwise it is forwarded to</span>
+<span class="sd">    the original source. Similarly, when a content is delivered to the</span>
+<span class="sd">    requesting user, it can be cached only by the caching node associated to the</span>
+<span class="sd">    content identifier by the hash function.</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    .. [1] L. Saino, I. Psaras and G. Pavlou, Hash-routing Schemes for</span>
+<span class="sd">           Information-Centric Networking, in Proceedings of ACM SIGCOMM ICN&#39;13</span>
+<span class="sd">           workshop. Available:</span>
+<span class="sd">           https://lorenzosaino.github.io/publications/hashrouting-icn13.pdf</span>
+<span class="sd">    .. [2] L. Saino, On the Design of Efficient Caching Systems, Ph.D. thesis</span>
+<span class="sd">           University College London, Dec. 2015. Available:</span>
+<span class="sd">           http://discovery.ucl.ac.uk/1473436/</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">view</span><span class="p">,</span> <span class="n">controller</span><span class="p">,</span> <span class="n">routing</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Constructor</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        view : NetworkView</span>
+<span class="sd">            An instance of the network view</span>
+<span class="sd">        controller : NetworkController</span>
+<span class="sd">            An instance of the network controller</span>
+<span class="sd">        routing : str (SYMM | ASYMM | MULTICAST)</span>
+<span class="sd">            Content routing option</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">view</span><span class="p">,</span> <span class="n">controller</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">routing</span> <span class="o">=</span> <span class="n">routing</span>
+
+<div class="viewcode-block" id="Hashrouting.process_event"><a class="viewcode-back" href="../../../../apidoc/icarus.models.strategy.html#icarus.models.strategy.hashrouting.Hashrouting.process_event">[docs]</a>    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">Strategy</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">process_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">log</span><span class="p">):</span>
+        <span class="c1"># get all required data</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">content_source</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+        <span class="n">cache</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">authoritative_cache</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+        <span class="c1"># handle (and log if required) actual request</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">start_session</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">log</span><span class="p">)</span>
+        <span class="c1"># Forward request to authoritative cache</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_request_path</span><span class="p">(</span><span class="n">receiver</span><span class="p">,</span> <span class="n">cache</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">get_content</span><span class="p">(</span><span class="n">cache</span><span class="p">):</span>
+            <span class="c1"># We have a cache hit here</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_path</span><span class="p">(</span><span class="n">cache</span><span class="p">,</span> <span class="n">receiver</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Cache miss: go all the way to source</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_request_path</span><span class="p">(</span><span class="n">cache</span><span class="p">,</span> <span class="n">source</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">get_content</span><span class="p">(</span><span class="n">source</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;The content is not found the expected source&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">routing</span> <span class="o">==</span> <span class="s2">&quot;SYMM&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_path</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">cache</span><span class="p">)</span>
+                <span class="c1"># Insert in cache</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">put_content</span><span class="p">(</span><span class="n">cache</span><span class="p">)</span>
+                <span class="c1"># Forward to receiver</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_path</span><span class="p">(</span><span class="n">cache</span><span class="p">,</span> <span class="n">receiver</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">routing</span> <span class="o">==</span> <span class="s2">&quot;ASYMM&quot;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">cache</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">receiver</span><span class="p">):</span>
+                    <span class="c1"># Forward to cache</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_path</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">cache</span><span class="p">)</span>
+                    <span class="c1"># Insert in cache</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">put_content</span><span class="p">(</span><span class="n">cache</span><span class="p">)</span>
+                    <span class="c1"># Forward to receiver</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_path</span><span class="p">(</span><span class="n">cache</span><span class="p">,</span> <span class="n">receiver</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># Forward to receiver straight away</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_path</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">receiver</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">routing</span> <span class="o">==</span> <span class="s2">&quot;MULTICAST&quot;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">cache</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">receiver</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_path</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">cache</span><span class="p">)</span>
+                    <span class="c1"># Insert in cache</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">put_content</span><span class="p">(</span><span class="n">cache</span><span class="p">)</span>
+                    <span class="c1"># Forward to receiver</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_path</span><span class="p">(</span><span class="n">cache</span><span class="p">,</span> <span class="n">receiver</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># Multicast</span>
+                    <span class="n">cache_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">cache</span><span class="p">)</span>
+                    <span class="n">recv_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">receiver</span><span class="p">)</span>
+
+                    <span class="c1"># find what is the node that has to fork the content flow</span>
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">min</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">cache_path</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">recv_path</span><span class="p">)])):</span>
+                        <span class="k">if</span> <span class="n">cache_path</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">!=</span> <span class="n">recv_path</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
+                            <span class="n">fork_node</span> <span class="o">=</span> <span class="n">cache_path</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+                            <span class="k">break</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">fork_node</span> <span class="o">=</span> <span class="n">cache</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_path</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">fork_node</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_path</span><span class="p">(</span><span class="n">fork_node</span><span class="p">,</span> <span class="n">receiver</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_path</span><span class="p">(</span>
+                        <span class="n">fork_node</span><span class="p">,</span> <span class="n">cache</span><span class="p">,</span> <span class="n">main_path</span><span class="o">=</span><span class="kc">False</span>
+                    <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">put_content</span><span class="p">(</span><span class="n">cache</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Routing </span><span class="si">%s</span><span class="s2"> not supported&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">routing</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">end_session</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="HashroutingEdge"><a class="viewcode-back" href="../../../../apidoc/icarus.models.strategy.html#icarus.models.strategy.hashrouting.HashroutingEdge">[docs]</a><span class="nd">@register_strategy</span><span class="p">(</span><span class="s2">&quot;HR_EDGE_CACHE&quot;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">HashroutingEdge</span><span class="p">(</span><span class="n">BaseHashrouting</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Hybrid hash-routing and edge caching.</span>
+
+<span class="sd">    According to this strategy a fraction of the caching space in each cache is</span>
+<span class="sd">    reserved for local caching. When a request is issued by a user, it is</span>
+<span class="sd">    routed to the closes caching node and this caching node holds a copy of</span>
+<span class="sd">    requested content in its local cache even if not authoritative for the</span>
+<span class="sd">    requested content.</span>
+
+<span class="sd">    Here we assume that each receiver is directly connected to one gateway,</span>
+<span class="sd">    which is on the path to all other caches.</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    .. [2] L. Saino, On the Design of Efficient Caching Systems, Ph.D. thesis</span>
+<span class="sd">           University College London, Dec. 2015. Available:</span>
+<span class="sd">           http://discovery.ucl.ac.uk/1473436/</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">view</span><span class="p">,</span> <span class="n">controller</span><span class="p">,</span> <span class="n">routing</span><span class="p">,</span> <span class="n">edge_cache_ratio</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Constructor</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        view : NetworkView</span>
+<span class="sd">            An instance of the network view</span>
+<span class="sd">        controller : NetworkController</span>
+<span class="sd">            An instance of the network controller</span>
+<span class="sd">        routing : str</span>
+<span class="sd">            Content routing scheme: SYMM, ASYMM or MULTICAST</span>
+<span class="sd">        edge_cache_ratio : float [0, 1]</span>
+<span class="sd">            Ratio of cache allocated to uncoordinated edge cache</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">edge_cache_ratio</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">edge_cache_ratio</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;edge_cache_ratio must be between 0 and 1&quot;</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">view</span><span class="p">,</span> <span class="n">controller</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">routing</span> <span class="o">=</span> <span class="n">routing</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">reserve_local_cache</span><span class="p">(</span><span class="n">edge_cache_ratio</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">proxy</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">v</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">topology</span><span class="p">()</span><span class="o">.</span><span class="n">adj</span><span class="p">[</span><span class="n">v</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">topology</span><span class="p">()</span><span class="o">.</span><span class="n">receivers</span><span class="p">()</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span>
+            <span class="n">v</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">topology</span><span class="p">()</span><span class="o">.</span><span class="n">cache_nodes</span><span class="p">()</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">proxy</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;There are receivers connected to a proxy without cache&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="HashroutingEdge.process_event"><a class="viewcode-back" href="../../../../apidoc/icarus.models.strategy.html#icarus.models.strategy.hashrouting.HashroutingEdge.process_event">[docs]</a>    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">Strategy</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">process_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">log</span><span class="p">):</span>
+        <span class="c1"># get all required data</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">content_source</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+        <span class="n">cache</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">authoritative_cache</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+        <span class="c1"># handle (and log if required) actual request</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">start_session</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">log</span><span class="p">)</span>
+        <span class="n">proxy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">proxy</span><span class="p">[</span><span class="n">receiver</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_request_hop</span><span class="p">(</span><span class="n">receiver</span><span class="p">,</span> <span class="n">proxy</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">proxy</span> <span class="o">!=</span> <span class="n">cache</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">get_content_local_cache</span><span class="p">(</span><span class="n">proxy</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_hop</span><span class="p">(</span><span class="n">proxy</span><span class="p">,</span> <span class="n">receiver</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">end_session</span><span class="p">()</span>
+                <span class="k">return</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Forward request to authoritative cache</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_request_path</span><span class="p">(</span><span class="n">proxy</span><span class="p">,</span> <span class="n">cache</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">get_content</span><span class="p">(</span><span class="n">cache</span><span class="p">):</span>
+            <span class="c1"># We have a cache hit here</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_path</span><span class="p">(</span><span class="n">cache</span><span class="p">,</span> <span class="n">proxy</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Cache miss: go all the way to source</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_request_path</span><span class="p">(</span><span class="n">cache</span><span class="p">,</span> <span class="n">source</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">get_content</span><span class="p">(</span><span class="n">source</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;The content is not found the expected source&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">routing</span> <span class="o">==</span> <span class="s2">&quot;SYMM&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_path</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">cache</span><span class="p">)</span>
+                <span class="c1"># Insert in cache</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">put_content</span><span class="p">(</span><span class="n">cache</span><span class="p">)</span>
+                <span class="c1"># Forward to receiver</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_path</span><span class="p">(</span><span class="n">cache</span><span class="p">,</span> <span class="n">proxy</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">routing</span> <span class="o">==</span> <span class="s2">&quot;ASYMM&quot;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">cache</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">proxy</span><span class="p">):</span>
+                    <span class="c1"># Forward to cache</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_path</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">cache</span><span class="p">)</span>
+                    <span class="c1"># Insert in cache</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">put_content</span><span class="p">(</span><span class="n">cache</span><span class="p">)</span>
+                    <span class="c1"># Forward to receiver</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_path</span><span class="p">(</span><span class="n">cache</span><span class="p">,</span> <span class="n">proxy</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># Forward to receiver straight away</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_path</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">proxy</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">routing</span> <span class="o">==</span> <span class="s2">&quot;MULTICAST&quot;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">cache</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">proxy</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_path</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">cache</span><span class="p">)</span>
+                    <span class="c1"># Insert in cache</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">put_content</span><span class="p">(</span><span class="n">cache</span><span class="p">)</span>
+                    <span class="c1"># Forward to receiver</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_path</span><span class="p">(</span><span class="n">cache</span><span class="p">,</span> <span class="n">receiver</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># Multicast</span>
+                    <span class="n">cache_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">cache</span><span class="p">)</span>
+                    <span class="n">recv_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">proxy</span><span class="p">)</span>
+
+                    <span class="c1"># find what is the node that has to fork the content flow</span>
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">min</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">cache_path</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">recv_path</span><span class="p">)])):</span>
+                        <span class="k">if</span> <span class="n">cache_path</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">!=</span> <span class="n">recv_path</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
+                            <span class="n">fork_node</span> <span class="o">=</span> <span class="n">cache_path</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+                            <span class="k">break</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">fork_node</span> <span class="o">=</span> <span class="n">cache</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_path</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">fork_node</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_path</span><span class="p">(</span><span class="n">fork_node</span><span class="p">,</span> <span class="n">proxy</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_path</span><span class="p">(</span>
+                        <span class="n">fork_node</span><span class="p">,</span> <span class="n">cache</span><span class="p">,</span> <span class="n">main_path</span><span class="o">=</span><span class="kc">False</span>
+                    <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">put_content</span><span class="p">(</span><span class="n">cache</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Routing </span><span class="si">%s</span><span class="s2"> not recognized&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">routing</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">proxy</span> <span class="o">!=</span> <span class="n">cache</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">put_content_local_cache</span><span class="p">(</span><span class="n">proxy</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_hop</span><span class="p">(</span><span class="n">proxy</span><span class="p">,</span> <span class="n">receiver</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">end_session</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="HashroutingOnPath"><a class="viewcode-back" href="../../../../apidoc/icarus.models.strategy.html#icarus.models.strategy.hashrouting.HashroutingOnPath">[docs]</a><span class="nd">@register_strategy</span><span class="p">(</span><span class="s2">&quot;HR_ON_PATH&quot;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">HashroutingOnPath</span><span class="p">(</span><span class="n">BaseHashrouting</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Hybrid hash-routing and on-path caching.</span>
+
+<span class="sd">    This strategy differs from HashroutingEdge for the fact that in</span>
+<span class="sd">    HashroutingEdge, the local fraction of the cache is queried only by traffic</span>
+<span class="sd">    of endpoints directly attached to the caching node. In HashroutingOnPath</span>
+<span class="sd">    the local cache is queried by all traffic being forwarded by the node.</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    .. [2] L. Saino, On the Design of Efficient Caching Systems, Ph.D. thesis</span>
+<span class="sd">           University College London, Dec. 2015. Available:</span>
+<span class="sd">           http://discovery.ucl.ac.uk/1473436/</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">view</span><span class="p">,</span> <span class="n">controller</span><span class="p">,</span> <span class="n">routing</span><span class="p">,</span> <span class="n">on_path_cache_ratio</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Constructor</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        view : NetworkView</span>
+<span class="sd">            An instance of the network view</span>
+<span class="sd">        controller : NetworkController</span>
+<span class="sd">            An instance of the network controller</span>
+<span class="sd">        routing : str</span>
+<span class="sd">            Content routing scheme: SYMM, ASYMM or MULTICAST</span>
+<span class="sd">        on_path_cache_ratio : float [0, 1]</span>
+<span class="sd">            Ratio of cache allocated to uncoordinated on-path cache</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">on_path_cache_ratio</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">on_path_cache_ratio</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;on_path_cache_ratio must be between 0 and 1&quot;</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">view</span><span class="p">,</span> <span class="n">controller</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">routing</span> <span class="o">=</span> <span class="n">routing</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">reserve_local_cache</span><span class="p">(</span><span class="n">on_path_cache_ratio</span><span class="p">)</span>
+
+<div class="viewcode-block" id="HashroutingOnPath.process_event"><a class="viewcode-back" href="../../../../apidoc/icarus.models.strategy.html#icarus.models.strategy.hashrouting.HashroutingOnPath.process_event">[docs]</a>    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">Strategy</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">process_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">log</span><span class="p">):</span>
+        <span class="c1"># get all required data</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">content_source</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+        <span class="n">cache</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">authoritative_cache</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+        <span class="c1"># handle (and log if required) actual request</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">start_session</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">log</span><span class="p">)</span>
+        <span class="c1"># Forward request to authoritative cache and check all local caches on path</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="n">receiver</span><span class="p">,</span> <span class="n">cache</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">path_links</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_request_hop</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">v</span> <span class="o">!=</span> <span class="n">cache</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">get_content_local_cache</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+                    <span class="n">serving_node</span> <span class="o">=</span> <span class="n">v</span>
+                    <span class="n">direct_return</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">break</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># No cache hits from local caches on path, query authoritative cache</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">get_content</span><span class="p">(</span><span class="n">cache</span><span class="p">):</span>
+                <span class="n">serving_node</span> <span class="o">=</span> <span class="n">v</span>
+                <span class="n">direct_return</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="n">cache</span><span class="p">,</span> <span class="n">source</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">path_links</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_request_hop</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">v</span> <span class="o">!=</span> <span class="n">source</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">get_content_local_cache</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+                            <span class="n">serving_node</span> <span class="o">=</span> <span class="n">v</span>
+                            <span class="n">direct_return</span> <span class="o">=</span> <span class="kc">False</span>
+                            <span class="k">break</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># No hits from local caches in cache -&gt; source path</span>
+                    <span class="c1"># Get content from the source</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">get_content</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+                    <span class="n">serving_node</span> <span class="o">=</span> <span class="n">source</span>
+                    <span class="n">direct_return</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="c1"># Now we have a serving node, let&#39;s return the content, while storing</span>
+        <span class="c1"># it on all opportunistic caches on the path</span>
+        <span class="k">if</span> <span class="n">direct_return</span><span class="p">:</span>
+            <span class="c1"># Here I just need to return the content directly to the user</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">reversed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="n">receiver</span><span class="p">,</span> <span class="n">serving_node</span><span class="p">)))</span>
+            <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">path_links</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_hop</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">v</span> <span class="o">!=</span> <span class="n">receiver</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">put_content_local_cache</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">end_session</span><span class="p">()</span>
+            <span class="k">return</span>
+        <span class="c1"># Here I need to see whether I need symm, asymm or multicast delivery</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">routing</span> <span class="o">==</span> <span class="s2">&quot;SYMM&quot;</span><span class="p">:</span>
+            <span class="n">links</span> <span class="o">=</span> <span class="n">path_links</span><span class="p">(</span>
+                <span class="nb">list</span><span class="p">(</span><span class="nb">reversed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="n">cache</span><span class="p">,</span> <span class="n">serving_node</span><span class="p">)))</span>
+            <span class="p">)</span> <span class="o">+</span> <span class="n">path_links</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">reversed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="n">receiver</span><span class="p">,</span> <span class="n">cache</span><span class="p">))))</span>
+            <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">links</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_hop</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">v</span> <span class="o">==</span> <span class="n">cache</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">put_content</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">put_content_local_cache</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">routing</span> <span class="o">==</span> <span class="s2">&quot;ASYMM&quot;</span><span class="p">:</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">reversed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="n">receiver</span><span class="p">,</span> <span class="n">serving_node</span><span class="p">)))</span>
+            <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">path_links</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_hop</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">v</span> <span class="o">==</span> <span class="n">cache</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">put_content</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">put_content_local_cache</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">routing</span> <span class="o">==</span> <span class="s2">&quot;MULTICAST&quot;</span><span class="p">:</span>
+            <span class="n">main_path</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">path_links</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="n">serving_node</span><span class="p">,</span> <span class="n">receiver</span><span class="p">)))</span>
+            <span class="n">mcast_tree</span> <span class="o">=</span> <span class="n">multicast_tree</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">all_pairs_shortest_paths</span><span class="p">(),</span> <span class="n">serving_node</span><span class="p">,</span> <span class="p">[</span><span class="n">receiver</span><span class="p">,</span> <span class="n">cache</span><span class="p">]</span>
+            <span class="p">)</span>
+            <span class="n">cache_branch</span> <span class="o">=</span> <span class="n">mcast_tree</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">main_path</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">cache_branch</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_hop</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">main_path</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">v</span> <span class="o">==</span> <span class="n">cache</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">put_content</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">put_content_local_cache</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">main_path</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_hop</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">main_path</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">v</span> <span class="o">==</span> <span class="n">cache</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">put_content</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">put_content_local_cache</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Routing </span><span class="si">%s</span><span class="s2"> not supported&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">routing</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">end_session</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="HashroutingClustered"><a class="viewcode-back" href="../../../../apidoc/icarus.models.strategy.html#icarus.models.strategy.hashrouting.HashroutingClustered">[docs]</a><span class="nd">@register_strategy</span><span class="p">(</span><span class="s2">&quot;HR_CLUSTER&quot;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">HashroutingClustered</span><span class="p">(</span><span class="n">BaseHashrouting</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Hash-routing with clustering of the network.</span>
+
+<span class="sd">    According to ths strategy, nodes of the network are divided in a number of</span>
+<span class="sd">    clusters and hash-routing is used withing each of this clusters. In case of</span>
+<span class="sd">    cache miss at a cluster, requests are forwarded to other clusters on the</span>
+<span class="sd">    path to the original source.</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    .. [2] L. Saino, On the Design of Efficient Caching Systems, Ph.D. thesis</span>
+<span class="sd">           University College London, Dec. 2015. Available:</span>
+<span class="sd">           http://discovery.ucl.ac.uk/1473436/</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">view</span><span class="p">,</span> <span class="n">controller</span><span class="p">,</span> <span class="n">intra_routing</span><span class="p">,</span> <span class="n">inter_routing</span><span class="o">=</span><span class="s2">&quot;LCE&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Constructor</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        view : NetworkView</span>
+<span class="sd">            An instance of the network view</span>
+<span class="sd">        controller : NetworkController</span>
+<span class="sd">            An instance of the network controller</span>
+<span class="sd">        intra_routing : str</span>
+<span class="sd">            Intra-cluster content routing scheme: SYMM, ASYMM or MULTICAST</span>
+<span class="sd">        inter_routing : str</span>
+<span class="sd">            Inter-cluster content routing scheme. Only supported LCE</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">view</span><span class="p">,</span> <span class="n">controller</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">intra_routing</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;SYMM&quot;</span><span class="p">,</span> <span class="s2">&quot;ASYMM&quot;</span><span class="p">,</span> <span class="s2">&quot;MULTICAST&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Intra-cluster routing policy </span><span class="si">%s</span><span class="s2"> not supported&quot;</span> <span class="o">%</span> <span class="n">intra_routing</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">intra_routing</span> <span class="o">=</span> <span class="n">intra_routing</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inter_routing</span> <span class="o">=</span> <span class="n">inter_routing</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cluster_topology</span> <span class="o">=</span> <span class="n">extract_cluster_level_topology</span><span class="p">(</span><span class="n">view</span><span class="o">.</span><span class="n">topology</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cluster_sp</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">nx</span><span class="o">.</span><span class="n">all_pairs_shortest_path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cluster_topology</span><span class="p">))</span>
+
+<div class="viewcode-block" id="HashroutingClustered.process_event"><a class="viewcode-back" href="../../../../apidoc/icarus.models.strategy.html#icarus.models.strategy.hashrouting.HashroutingClustered.process_event">[docs]</a>    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">Strategy</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">process_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">log</span><span class="p">):</span>
+        <span class="c1"># get all required data</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">content_source</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+        <span class="c1"># handle (and log if required) actual request</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">start_session</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">log</span><span class="p">)</span>
+
+        <span class="n">receiver_cluster</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">cluster</span><span class="p">(</span><span class="n">receiver</span><span class="p">)</span>
+        <span class="n">source_cluster</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">cluster</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+        <span class="n">cluster_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cluster_sp</span><span class="p">[</span><span class="n">receiver_cluster</span><span class="p">][</span><span class="n">source_cluster</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">inter_routing</span> <span class="o">==</span> <span class="s2">&quot;LCE&quot;</span><span class="p">:</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="n">receiver</span>
+            <span class="k">for</span> <span class="n">cluster</span> <span class="ow">in</span> <span class="n">cluster_path</span><span class="p">:</span>
+                <span class="n">cache</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">authoritative_cache</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">cluster</span><span class="p">)</span>
+                <span class="c1"># Forward request to authoritative cache</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_request_path</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">cache</span><span class="p">)</span>
+                <span class="n">start</span> <span class="o">=</span> <span class="n">cache</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">get_content</span><span class="p">(</span><span class="n">cache</span><span class="p">):</span>
+                    <span class="k">break</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Loop was never broken, cache miss</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_request_path</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">source</span><span class="p">)</span>
+                <span class="n">start</span> <span class="o">=</span> <span class="n">source</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">get_content</span><span class="p">(</span><span class="n">source</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;The content is not found the expected source&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">inter_routing</span> <span class="o">==</span> <span class="s2">&quot;EDGE&quot;</span><span class="p">:</span>
+            <span class="n">cache</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">authoritative_cache</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">receiver_cluster</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_request_path</span><span class="p">(</span><span class="n">receiver</span><span class="p">,</span> <span class="n">cache</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">get_content</span><span class="p">(</span><span class="n">cache</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_path</span><span class="p">(</span><span class="n">cache</span><span class="p">,</span> <span class="n">receiver</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">end_session</span><span class="p">()</span>
+                <span class="k">return</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_request_path</span><span class="p">(</span><span class="n">cache</span><span class="p">,</span> <span class="n">source</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">get_content</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+                <span class="n">cluster</span> <span class="o">=</span> <span class="n">source_cluster</span>
+                <span class="n">start</span> <span class="o">=</span> <span class="n">source</span>
+
+        <span class="c1"># Now &quot;start&quot; is the node that is serving the content</span>
+        <span class="n">cluster_path</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">reversed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cluster_sp</span><span class="p">[</span><span class="n">receiver_cluster</span><span class="p">][</span><span class="n">cluster</span><span class="p">]))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">inter_routing</span> <span class="o">==</span> <span class="s2">&quot;LCE&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">intra_routing</span> <span class="o">==</span> <span class="s2">&quot;SYMM&quot;</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">cluster</span> <span class="ow">in</span> <span class="n">cluster_path</span><span class="p">:</span>
+                    <span class="n">cache</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">authoritative_cache</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">cluster</span><span class="p">)</span>
+                    <span class="c1"># Forward request to authoritative cache</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_path</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">cache</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">put_content</span><span class="p">(</span><span class="n">cache</span><span class="p">)</span>
+                    <span class="n">start</span> <span class="o">=</span> <span class="n">cache</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_path</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">receiver</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">intra_routing</span> <span class="o">==</span> <span class="s2">&quot;ASYMM&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_path</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">receiver</span><span class="p">)</span>
+                <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">receiver</span><span class="p">)</span>
+                <span class="n">traversed_clusters</span> <span class="o">=</span> <span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">cluster</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">path</span><span class="p">}</span>
+                <span class="n">authoritative_caches</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">authoritative_cache</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">cluster</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">cluster</span> <span class="ow">in</span> <span class="n">traversed_clusters</span>
+                <span class="p">}</span>
+                <span class="n">traversed_caches</span> <span class="o">=</span> <span class="n">authoritative_caches</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">path</span><span class="p">))</span>
+                <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">traversed_caches</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">put_content</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">intra_routing</span> <span class="o">==</span> <span class="s2">&quot;MULTICAST&quot;</span><span class="p">:</span>
+                <span class="n">destinations</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">authoritative_cache</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">cluster</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">cluster</span> <span class="ow">in</span> <span class="n">cluster_path</span>
+                <span class="p">]</span>
+                <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">destinations</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">put_content</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+                <span class="n">main_path</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">path_links</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">receiver</span><span class="p">)))</span>
+                <span class="n">mcast_tree</span> <span class="o">=</span> <span class="n">multicast_tree</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">all_pairs_shortest_paths</span><span class="p">(),</span> <span class="n">start</span><span class="p">,</span> <span class="n">destinations</span>
+                <span class="p">)</span>
+                <span class="n">mcast_tree</span> <span class="o">=</span> <span class="n">mcast_tree</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">main_path</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">mcast_tree</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_hop</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">main_path</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">main_path</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_hop</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">main_path</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Intra-cluster routing </span><span class="si">%s</span><span class="s2"> not supported&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">intra_routing</span>
+                <span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">inter_routing</span> <span class="o">==</span> <span class="s2">&quot;EDGE&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">intra_routing</span> <span class="o">==</span> <span class="s2">&quot;SYMM&quot;</span><span class="p">:</span>
+                <span class="n">cache</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">authoritative_cache</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">cluster_path</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_path</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">cache</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_path</span><span class="p">(</span><span class="n">cache</span><span class="p">,</span> <span class="n">receiver</span><span class="p">)</span>
+                <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">receiver</span><span class="p">)</span>
+                <span class="n">traversed_clusters</span> <span class="o">=</span> <span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">cluster</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">path</span><span class="p">}</span>
+                <span class="n">authoritative_caches</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">authoritative_cache</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">cluster</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">cluster</span> <span class="ow">in</span> <span class="n">traversed_clusters</span>
+                <span class="p">}</span>
+                <span class="n">traversed_caches</span> <span class="o">=</span> <span class="n">authoritative_caches</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">path</span><span class="p">))</span>
+                <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">traversed_caches</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">put_content</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">cache</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">traversed_caches</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">put_content</span><span class="p">(</span><span class="n">cache</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">intra_routing</span> <span class="o">==</span> <span class="s2">&quot;ASYMM&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_path</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">receiver</span><span class="p">)</span>
+                <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">receiver</span><span class="p">)</span>
+                <span class="n">traversed_clusters</span> <span class="o">=</span> <span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">cluster</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">path</span><span class="p">}</span>
+                <span class="n">authoritative_caches</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">authoritative_cache</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">cluster</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">cluster</span> <span class="ow">in</span> <span class="n">traversed_clusters</span>
+                <span class="p">}</span>
+                <span class="n">traversed_caches</span> <span class="o">=</span> <span class="n">authoritative_caches</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">path</span><span class="p">))</span>
+                <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">traversed_caches</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">put_content</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">intra_routing</span> <span class="o">==</span> <span class="s2">&quot;MULTICAST&quot;</span><span class="p">:</span>
+                <span class="n">cache</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">authoritative_cache</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">cluster_path</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">put_content</span><span class="p">(</span><span class="n">cache</span><span class="p">)</span>
+                <span class="n">main_path</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">path_links</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">receiver</span><span class="p">)))</span>
+                <span class="n">mcast_tree</span> <span class="o">=</span> <span class="n">multicast_tree</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">all_pairs_shortest_paths</span><span class="p">(),</span> <span class="n">start</span><span class="p">,</span> <span class="p">[</span><span class="n">cache</span><span class="p">]</span>
+                <span class="p">)</span>
+                <span class="n">mcast_tree</span> <span class="o">=</span> <span class="n">mcast_tree</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">main_path</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">mcast_tree</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_hop</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">main_path</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">main_path</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_hop</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">main_path</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Inter-cluster routing </span><span class="si">%s</span><span class="s2"> not supported&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">inter_routing</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">end_session</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="HashroutingSymmetric"><a class="viewcode-back" href="../../../../apidoc/icarus.models.strategy.html#icarus.models.strategy.hashrouting.HashroutingSymmetric">[docs]</a><span class="nd">@register_strategy</span><span class="p">(</span><span class="s2">&quot;HR_SYMM&quot;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">HashroutingSymmetric</span><span class="p">(</span><span class="n">Hashrouting</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Hash-routing with symmetric routing (HR SYMM)</span>
+
+<span class="sd">    According to this strategy, each content is routed following the same path</span>
+<span class="sd">    of the request.</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    .. [1] L. Saino, I. Psaras and G. Pavlou, Hash-routing Schemes for</span>
+<span class="sd">           Information-Centric Networking, in Proceedings of ACM SIGCOMM ICN&#39;13</span>
+<span class="sd">           workshop. Available:</span>
+<span class="sd">           https://lorenzosaino.github.io/publications/hashrouting-icn13.pdf</span>
+<span class="sd">    .. [2] L. Saino, On the Design of Efficient Caching Systems, Ph.D. thesis</span>
+<span class="sd">           University College London, Dec. 2015. Available:</span>
+<span class="sd">           http://discovery.ucl.ac.uk/1473436/</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">Strategy</span><span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">view</span><span class="p">,</span> <span class="n">controller</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">view</span><span class="p">,</span> <span class="n">controller</span><span class="p">,</span> <span class="s2">&quot;SYMM&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="HashroutingAsymmetric"><a class="viewcode-back" href="../../../../apidoc/icarus.models.strategy.html#icarus.models.strategy.hashrouting.HashroutingAsymmetric">[docs]</a><span class="nd">@register_strategy</span><span class="p">(</span><span class="s2">&quot;HR_ASYMM&quot;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">HashroutingAsymmetric</span><span class="p">(</span><span class="n">Hashrouting</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Hash-routing with asymmetric routing (HR ASYMM)</span>
+
+<span class="sd">    According to this strategy, each content fetched from an original source,</span>
+<span class="sd">    as a result of a cache miss, is routed towards the receiver following the</span>
+<span class="sd">    shortest path. If the authoritative cache is on the path, then it caches</span>
+<span class="sd">    the content, otherwise not.</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    .. [1] L. Saino, I. Psaras and G. Pavlou, Hash-routing Schemes for</span>
+<span class="sd">           Information-Centric Networking, in Proceedings of ACM SIGCOMM ICN&#39;13</span>
+<span class="sd">           workshop. Available:</span>
+<span class="sd">           https://lorenzosaino.github.io/publications/hashrouting-icn13.pdf</span>
+<span class="sd">    .. [2] L. Saino, On the Design of Efficient Caching Systems, Ph.D. thesis</span>
+<span class="sd">           University College London, Dec. 2015. Available:</span>
+<span class="sd">           http://discovery.ucl.ac.uk/1473436/</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">Strategy</span><span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">view</span><span class="p">,</span> <span class="n">controller</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">view</span><span class="p">,</span> <span class="n">controller</span><span class="p">,</span> <span class="s2">&quot;ASYMM&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="HashroutingMulticast"><a class="viewcode-back" href="../../../../apidoc/icarus.models.strategy.html#icarus.models.strategy.hashrouting.HashroutingMulticast">[docs]</a><span class="nd">@register_strategy</span><span class="p">(</span><span class="s2">&quot;HR_MULTICAST&quot;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">HashroutingMulticast</span><span class="p">(</span><span class="n">Hashrouting</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Hash-routing implementation with multicast delivery of content packets.</span>
+
+<span class="sd">    In this strategy, if there is a cache miss, when contents return in</span>
+<span class="sd">    the domain, they are multicast. One copy is sent to the authoritative cache</span>
+<span class="sd">    and the other to the receiver. If the cache is on the path from source to</span>
+<span class="sd">    receiver, this strategy behaves as a normal symmetric hash-routing</span>
+<span class="sd">    strategy.</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    .. [1] L. Saino, I. Psaras and G. Pavlou, Hash-routing Schemes for</span>
+<span class="sd">           Information-Centric Networking, in Proceedings of ACM SIGCOMM ICN&#39;13</span>
+<span class="sd">           workshop. Available:</span>
+<span class="sd">           https://lorenzosaino.github.io/publications/hashrouting-icn13.pdf</span>
+<span class="sd">    .. [2] L. Saino, On the Design of Efficient Caching Systems, Ph.D. thesis</span>
+<span class="sd">           University College London, Dec. 2015. Available:</span>
+<span class="sd">           http://discovery.ucl.ac.uk/1473436/</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">Strategy</span><span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">view</span><span class="p">,</span> <span class="n">controller</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">view</span><span class="p">,</span> <span class="n">controller</span><span class="p">,</span> <span class="s2">&quot;MULTICAST&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="HashroutingHybridAM"><a class="viewcode-back" href="../../../../apidoc/icarus.models.strategy.html#icarus.models.strategy.hashrouting.HashroutingHybridAM">[docs]</a><span class="nd">@register_strategy</span><span class="p">(</span><span class="s2">&quot;HR_HYBRID_AM&quot;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">HashroutingHybridAM</span><span class="p">(</span><span class="n">BaseHashrouting</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Hash-routing implementation with hybrid asymmetric-multicast delivery of</span>
+<span class="sd">    content packets.</span>
+
+<span class="sd">    In this strategy, if there is a cache miss, when content packets return in</span>
+<span class="sd">    the domain, the packet is delivered to the receiver following the shortest</span>
+<span class="sd">    path. If the additional number of hops required to send a copy to the</span>
+<span class="sd">    authoritative cache is below a specific fraction of the network diameter,</span>
+<span class="sd">    then one copy is sent to the authoritative cache as well. If the cache is</span>
+<span class="sd">    on the path from source to receiver, this strategy behaves as a normal</span>
+<span class="sd">    symmetric hash-routing strategy.</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    .. [1] L. Saino, I. Psaras and G. Pavlou, Hash-routing Schemes for</span>
+<span class="sd">           Information-Centric Networking, in Proceedings of ACM SIGCOMM ICN&#39;13</span>
+<span class="sd">           workshop. Available:</span>
+<span class="sd">           https://lorenzosaino.github.io/publications/hashrouting-icn13.pdf</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">view</span><span class="p">,</span> <span class="n">controller</span><span class="p">,</span> <span class="n">max_stretch</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Constructor</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        view : NetworkView</span>
+<span class="sd">            An instance of the network view</span>
+<span class="sd">        controller : NetworkController</span>
+<span class="sd">            An instance of the network controller</span>
+<span class="sd">        max_stretch : float, optional</span>
+<span class="sd">            The threshold path stretch (normalized by network diameter) set</span>
+<span class="sd">            to decide whether using asymmetric or multicast routing. If the</span>
+<span class="sd">            path stretch required to deliver a content is above max_stretch</span>
+<span class="sd">            asymmetric delivery is used, otherwise multicast delivery is used.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">view</span><span class="p">,</span> <span class="n">controller</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_stretch</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">diameter</span><span class="p">(</span><span class="n">view</span><span class="o">.</span><span class="n">topology</span><span class="p">())</span> <span class="o">*</span> <span class="n">max_stretch</span>
+
+<div class="viewcode-block" id="HashroutingHybridAM.process_event"><a class="viewcode-back" href="../../../../apidoc/icarus.models.strategy.html#icarus.models.strategy.hashrouting.HashroutingHybridAM.process_event">[docs]</a>    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">Strategy</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">process_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">log</span><span class="p">):</span>
+        <span class="c1"># get all required data</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">content_source</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+        <span class="n">cache</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">authoritative_cache</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+        <span class="c1"># handle (and log if required) actual request</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">start_session</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">log</span><span class="p">)</span>
+        <span class="c1"># Forward request to authoritative cache</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_request_path</span><span class="p">(</span><span class="n">receiver</span><span class="p">,</span> <span class="n">cache</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">get_content</span><span class="p">(</span><span class="n">cache</span><span class="p">):</span>
+            <span class="c1"># We have a cache hit here</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_path</span><span class="p">(</span><span class="n">cache</span><span class="p">,</span> <span class="n">receiver</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Cache miss: go all the way to source</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_request_path</span><span class="p">(</span><span class="n">cache</span><span class="p">,</span> <span class="n">source</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">get_content</span><span class="p">(</span><span class="n">source</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;The content was not found at the expected source&quot;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">cache</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">receiver</span><span class="p">):</span>
+                <span class="c1"># Forward to cache</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_path</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">cache</span><span class="p">)</span>
+                <span class="c1"># Insert in cache</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">put_content</span><span class="p">(</span><span class="n">cache</span><span class="p">)</span>
+                <span class="c1"># Forward to receiver</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_path</span><span class="p">(</span><span class="n">cache</span><span class="p">,</span> <span class="n">receiver</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Multicast</span>
+                <span class="n">cache_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">cache</span><span class="p">)</span>
+                <span class="n">recv_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">receiver</span><span class="p">)</span>
+
+                <span class="c1"># find what is the node that has to fork the content flow</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">min</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">cache_path</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">recv_path</span><span class="p">)])):</span>
+                    <span class="k">if</span> <span class="n">cache_path</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">!=</span> <span class="n">recv_path</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
+                        <span class="n">fork_node</span> <span class="o">=</span> <span class="n">cache_path</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+                        <span class="k">break</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">fork_node</span> <span class="o">=</span> <span class="n">cache</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_path</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">main_path</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="c1"># multicast to cache only if stretch is under threshold</span>
+                <span class="k">if</span> <span class="p">(</span>
+                    <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="n">fork_node</span><span class="p">,</span> <span class="n">cache</span><span class="p">))</span> <span class="o">-</span> <span class="mi">1</span>
+                    <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_stretch</span>
+                <span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_path</span><span class="p">(</span>
+                        <span class="n">fork_node</span><span class="p">,</span> <span class="n">cache</span><span class="p">,</span> <span class="n">main_path</span><span class="o">=</span><span class="kc">False</span>
+                    <span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">put_content</span><span class="p">(</span><span class="n">cache</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">end_session</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="HashroutingHybridSM"><a class="viewcode-back" href="../../../../apidoc/icarus.models.strategy.html#icarus.models.strategy.hashrouting.HashroutingHybridSM">[docs]</a><span class="nd">@register_strategy</span><span class="p">(</span><span class="s2">&quot;HR_HYBRID_SM&quot;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">HashroutingHybridSM</span><span class="p">(</span><span class="n">BaseHashrouting</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Hash-routing implementation with hybrid symmetric-multicast delivery of</span>
+<span class="sd">    content packets.</span>
+
+<span class="sd">    In this implementation, the edge router receiving a content packet decides</span>
+<span class="sd">    whether to deliver the packet using multicast or symmetric hash-routing</span>
+<span class="sd">    based on the total cost for delivering the Data to both cache and receiver</span>
+<span class="sd">    in terms of hops.</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    .. [1] L. Saino, I. Psaras and G. Pavlou, Hash-routing Schemes for</span>
+<span class="sd">           Information-Centric Networking, in Proceedings of ACM SIGCOMM ICN&#39;13</span>
+<span class="sd">           workshop. Available:</span>
+<span class="sd">           https://lorenzosaino.github.io/publications/hashrouting-icn13.pdf</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">Strategy</span><span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">view</span><span class="p">,</span> <span class="n">controller</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">view</span><span class="p">,</span> <span class="n">controller</span><span class="p">)</span>
+
+<div class="viewcode-block" id="HashroutingHybridSM.process_event"><a class="viewcode-back" href="../../../../apidoc/icarus.models.strategy.html#icarus.models.strategy.hashrouting.HashroutingHybridSM.process_event">[docs]</a>    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">Strategy</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">process_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">log</span><span class="p">):</span>
+        <span class="c1"># get all required data</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">content_source</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+        <span class="n">cache</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">authoritative_cache</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+        <span class="c1"># handle (and log if required) actual request</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">start_session</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">log</span><span class="p">)</span>
+        <span class="c1"># Forward request to authoritative cache</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_request_path</span><span class="p">(</span><span class="n">receiver</span><span class="p">,</span> <span class="n">cache</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">get_content</span><span class="p">(</span><span class="n">cache</span><span class="p">):</span>
+            <span class="c1"># We have a cache hit here</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_path</span><span class="p">(</span><span class="n">cache</span><span class="p">,</span> <span class="n">receiver</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Cache miss: go all the way to source</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_request_path</span><span class="p">(</span><span class="n">cache</span><span class="p">,</span> <span class="n">source</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">get_content</span><span class="p">(</span><span class="n">source</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;The content is not found the expected source&quot;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">cache</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">receiver</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_path</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">cache</span><span class="p">)</span>
+                <span class="c1"># Insert in cache</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">put_content</span><span class="p">(</span><span class="n">cache</span><span class="p">)</span>
+                <span class="c1"># Forward to receiver</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_path</span><span class="p">(</span><span class="n">cache</span><span class="p">,</span> <span class="n">receiver</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Multicast</span>
+                <span class="n">cache_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">cache</span><span class="p">)</span>
+                <span class="n">recv_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">receiver</span><span class="p">)</span>
+
+                <span class="c1"># find what is the node that has to fork the content flow</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">min</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">cache_path</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">recv_path</span><span class="p">)])):</span>
+                    <span class="k">if</span> <span class="n">cache_path</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">!=</span> <span class="n">recv_path</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
+                        <span class="n">fork_node</span> <span class="o">=</span> <span class="n">cache_path</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+                        <span class="k">break</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">fork_node</span> <span class="o">=</span> <span class="n">cache</span>
+
+                <span class="n">symmetric_path_len</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">cache</span><span class="p">))</span>
+                    <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="n">cache</span><span class="p">,</span> <span class="n">receiver</span><span class="p">))</span>
+                    <span class="o">-</span> <span class="mi">2</span>
+                <span class="p">)</span>
+                <span class="n">multicast_path_len</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">fork_node</span><span class="p">))</span>
+                    <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="n">fork_node</span><span class="p">,</span> <span class="n">cache</span><span class="p">))</span>
+                    <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="n">fork_node</span><span class="p">,</span> <span class="n">receiver</span><span class="p">))</span>
+                    <span class="o">-</span> <span class="mi">3</span>
+                <span class="p">)</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">put_content</span><span class="p">(</span><span class="n">cache</span><span class="p">)</span>
+                <span class="c1"># If symmetric and multicast have equal cost, choose symmetric</span>
+                <span class="c1"># because of easier packet processing</span>
+                <span class="k">if</span> <span class="n">symmetric_path_len</span> <span class="o">&lt;=</span> <span class="n">multicast_path_len</span><span class="p">:</span>  <span class="c1"># use symmetric delivery</span>
+                    <span class="c1"># Symmetric delivery</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_path</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">cache</span><span class="p">,</span> <span class="n">main_path</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_path</span><span class="p">(</span>
+                        <span class="n">cache</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">main_path</span><span class="o">=</span><span class="kc">True</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># Multicast delivery</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_path</span><span class="p">(</span>
+                        <span class="n">source</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">main_path</span><span class="o">=</span><span class="kc">True</span>
+                    <span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_path</span><span class="p">(</span>
+                        <span class="n">fork_node</span><span class="p">,</span> <span class="n">cache</span><span class="p">,</span> <span class="n">main_path</span><span class="o">=</span><span class="kc">False</span>
+                    <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">end_session</span><span class="p">()</span></div></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">Icarus 0.8.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">icarus.models.strategy.hashrouting</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2016, Lorenzo Saino, Ioannis Psaras.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.1.1.
+    </div>
+  </body>
+</html>

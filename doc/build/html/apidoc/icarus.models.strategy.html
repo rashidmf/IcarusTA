@@ -1,0 +1,1201 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>icarus.models.strategy package &#8212; Icarus 0.8.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="icarus.results package" href="icarus.results.html" />
+    <link rel="prev" title="icarus.models.cache package" href="icarus.models.cache.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="icarus.results.html" title="icarus.results package"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="icarus.models.cache.html" title="icarus.models.cache package"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Icarus 0.8.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="icarus.html" >icarus package</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="icarus.models.html" accesskey="U">icarus.models package</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">icarus.models.strategy package</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="icarus-models-strategy-package">
+<h1>icarus.models.strategy package<a class="headerlink" href="#icarus-models-strategy-package" title="Permalink to this heading">¶</a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this heading">¶</a></h2>
+</section>
+<section id="module-icarus.models.strategy.base">
+<span id="icarus-models-strategy-base-module"></span><h2>icarus.models.strategy.base module<a class="headerlink" href="#module-icarus.models.strategy.base" title="Permalink to this heading">¶</a></h2>
+<p>Implementations of base strategies</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="icarus.models.strategy.base.NoCache">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">NoCache</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">view</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">controller</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/models/strategy/base.html#NoCache"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.models.strategy.base.NoCache" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#icarus.models.strategy.base.Strategy" title="icarus.models.strategy.base.Strategy"><code class="xref py py-class docutils literal notranslate"><span class="pre">Strategy</span></code></a></p>
+<p>Strategy without any caching</p>
+<p>This corresponds to the traffic in a normal TCP/IP network without any
+CDNs or overlay caching, where all content requests are served by the
+original source.</p>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.models.strategy.base.NoCache.process_event" title="icarus.models.strategy.base.NoCache.process_event"><code class="xref py py-obj docutils literal notranslate"><span class="pre">process_event</span></code></a>(time, receiver, content, log)</p></td>
+<td><p>Process an event received from the simulation engine.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="icarus.models.strategy.base.NoCache.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'NO_CACHE'</span></em><a class="headerlink" href="#icarus.models.strategy.base.NoCache.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.models.strategy.base.NoCache.process_event">
+<span class="sig-name descname"><span class="pre">process_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">receiver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/models/strategy/base.html#NoCache.process_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.models.strategy.base.NoCache.process_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Process an event received from the simulation engine.</p>
+<p>This event is processed by executing relevant actions of the network
+controller, potentially based on the current status of the network
+retrieved from the network view.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>time</strong><span class="classifier">int</span></dt><dd><p>The timestamp of the event</p>
+</dd>
+<dt><strong>receiver</strong><span class="classifier">any hashable type</span></dt><dd><p>The receiver node requesting a content</p>
+</dd>
+<dt><strong>content</strong><span class="classifier">any hashable type</span></dt><dd><p>The content identifier requested by the receiver</p>
+</dd>
+<dt><strong>log</strong><span class="classifier">bool</span></dt><dd><p>Indicates whether the event must be registered by the data
+collectors attached to the network.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="icarus.models.strategy.base.Strategy">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Strategy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">view</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">controller</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/models/strategy/base.html#Strategy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.models.strategy.base.Strategy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Base strategy imported by all other strategy classes</p>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.models.strategy.base.Strategy.process_event" title="icarus.models.strategy.base.Strategy.process_event"><code class="xref py py-obj docutils literal notranslate"><span class="pre">process_event</span></code></a>(time, receiver, content, log)</p></td>
+<td><p>Process an event received from the simulation engine.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.models.strategy.base.Strategy.process_event">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">process_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">receiver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/models/strategy/base.html#Strategy.process_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.models.strategy.base.Strategy.process_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Process an event received from the simulation engine.</p>
+<p>This event is processed by executing relevant actions of the network
+controller, potentially based on the current status of the network
+retrieved from the network view.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>time</strong><span class="classifier">int</span></dt><dd><p>The timestamp of the event</p>
+</dd>
+<dt><strong>receiver</strong><span class="classifier">any hashable type</span></dt><dd><p>The receiver node requesting a content</p>
+</dd>
+<dt><strong>content</strong><span class="classifier">any hashable type</span></dt><dd><p>The content identifier requested by the receiver</p>
+</dd>
+<dt><strong>log</strong><span class="classifier">bool</span></dt><dd><p>Indicates whether the event must be registered by the data
+collectors attached to the network.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-icarus.models.strategy.hashrouting">
+<span id="icarus-models-strategy-hashrouting-module"></span><h2>icarus.models.strategy.hashrouting module<a class="headerlink" href="#module-icarus.models.strategy.hashrouting" title="Permalink to this heading">¶</a></h2>
+<p>Implementations of all hash-routing strategies</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="icarus.models.strategy.hashrouting.Hashrouting">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Hashrouting</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">view</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">controller</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">routing</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/models/strategy/hashrouting.html#Hashrouting"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.models.strategy.hashrouting.Hashrouting" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseHashrouting</span></code></p>
+<p>Unified implementation of the three basic hash-routing schemes:
+symmetric, asymmetric and multicast.</p>
+<p>Hash-routing implementations are described in <a class="reference internal" href="#rc3773729033d-1" id="id1">[1]</a>.</p>
+<p>According to these strategies, edge nodes receiving a content request
+compute a hash function mapping the content identifier to a specific caching
+node and forward the request to that specific node. If the cache holds the
+requested content, it is returned to the user, otherwise it is forwarded to
+the original source. Similarly, when a content is delivered to the
+requesting user, it can be cached only by the caching node associated to the
+content identifier by the hash function.</p>
+<p class="rubric">References</p>
+<div role="list" class="citation-list">
+<div class="citation" id="rc3773729033d-1" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">1</a><span class="fn-bracket">]</span></span>
+<p>L. Saino, I. Psaras and G. Pavlou, Hash-routing Schemes for
+Information-Centric Networking, in Proceedings of ACM SIGCOMM ICN’13
+workshop. Available:
+<a class="reference external" href="https://lorenzosaino.github.io/publications/hashrouting-icn13.pdf">https://lorenzosaino.github.io/publications/hashrouting-icn13.pdf</a></p>
+</div>
+<div class="citation" id="rc3773729033d-2" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span>2<span class="fn-bracket">]</span></span>
+<p>L. Saino, On the Design of Efficient Caching Systems, Ph.D. thesis
+University College London, Dec. 2015. Available:
+<a class="reference external" href="http://discovery.ucl.ac.uk/1473436/">http://discovery.ucl.ac.uk/1473436/</a></p>
+</div>
+</div>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">authoritative_cache</span></code>(content[, cluster])</p></td>
+<td><p>Return the authoritative cache node for the given content</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#icarus.models.strategy.hashrouting.Hashrouting.process_event" title="icarus.models.strategy.hashrouting.Hashrouting.process_event"><code class="xref py py-obj docutils literal notranslate"><span class="pre">process_event</span></code></a>(time, receiver, content, log)</p></td>
+<td><p>Process an event received from the simulation engine.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="icarus.models.strategy.hashrouting.Hashrouting.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'HASHROUTING'</span></em><a class="headerlink" href="#icarus.models.strategy.hashrouting.Hashrouting.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.models.strategy.hashrouting.Hashrouting.process_event">
+<span class="sig-name descname"><span class="pre">process_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">receiver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/models/strategy/hashrouting.html#Hashrouting.process_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.models.strategy.hashrouting.Hashrouting.process_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Process an event received from the simulation engine.</p>
+<p>This event is processed by executing relevant actions of the network
+controller, potentially based on the current status of the network
+retrieved from the network view.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>time</strong><span class="classifier">int</span></dt><dd><p>The timestamp of the event</p>
+</dd>
+<dt><strong>receiver</strong><span class="classifier">any hashable type</span></dt><dd><p>The receiver node requesting a content</p>
+</dd>
+<dt><strong>content</strong><span class="classifier">any hashable type</span></dt><dd><p>The content identifier requested by the receiver</p>
+</dd>
+<dt><strong>log</strong><span class="classifier">bool</span></dt><dd><p>Indicates whether the event must be registered by the data
+collectors attached to the network.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="icarus.models.strategy.hashrouting.HashroutingAsymmetric">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HashroutingAsymmetric</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">view</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">controller</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/models/strategy/hashrouting.html#HashroutingAsymmetric"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.models.strategy.hashrouting.HashroutingAsymmetric" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#icarus.models.strategy.hashrouting.Hashrouting" title="icarus.models.strategy.hashrouting.Hashrouting"><code class="xref py py-class docutils literal notranslate"><span class="pre">Hashrouting</span></code></a></p>
+<p>Hash-routing with asymmetric routing (HR ASYMM)</p>
+<p>According to this strategy, each content fetched from an original source,
+as a result of a cache miss, is routed towards the receiver following the
+shortest path. If the authoritative cache is on the path, then it caches
+the content, otherwise not.</p>
+<p class="rubric">References</p>
+<div role="list" class="citation-list">
+<div class="citation" id="r96f9c2949935-1" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></span>
+<p>L. Saino, I. Psaras and G. Pavlou, Hash-routing Schemes for
+Information-Centric Networking, in Proceedings of ACM SIGCOMM ICN’13
+workshop. Available:
+<a class="reference external" href="https://lorenzosaino.github.io/publications/hashrouting-icn13.pdf">https://lorenzosaino.github.io/publications/hashrouting-icn13.pdf</a></p>
+</div>
+<div class="citation" id="r96f9c2949935-2" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span>2<span class="fn-bracket">]</span></span>
+<p>L. Saino, On the Design of Efficient Caching Systems, Ph.D. thesis
+University College London, Dec. 2015. Available:
+<a class="reference external" href="http://discovery.ucl.ac.uk/1473436/">http://discovery.ucl.ac.uk/1473436/</a></p>
+</div>
+</div>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">authoritative_cache</span></code>(content[, cluster])</p></td>
+<td><p>Return the authoritative cache node for the given content</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">process_event</span></code>(time, receiver, content, log)</p></td>
+<td><p>Process an event received from the simulation engine.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="icarus.models.strategy.hashrouting.HashroutingAsymmetric.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'HR_ASYMM'</span></em><a class="headerlink" href="#icarus.models.strategy.hashrouting.HashroutingAsymmetric.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="icarus.models.strategy.hashrouting.HashroutingClustered">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HashroutingClustered</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">view</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">controller</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">intra_routing</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inter_routing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'LCE'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/models/strategy/hashrouting.html#HashroutingClustered"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.models.strategy.hashrouting.HashroutingClustered" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseHashrouting</span></code></p>
+<p>Hash-routing with clustering of the network.</p>
+<p>According to ths strategy, nodes of the network are divided in a number of
+clusters and hash-routing is used withing each of this clusters. In case of
+cache miss at a cluster, requests are forwarded to other clusters on the
+path to the original source.</p>
+<p class="rubric">References</p>
+<div role="list" class="citation-list">
+<div class="citation" id="r7775534bec31-2" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span>2<span class="fn-bracket">]</span></span>
+<p>L. Saino, On the Design of Efficient Caching Systems, Ph.D. thesis
+University College London, Dec. 2015. Available:
+<a class="reference external" href="http://discovery.ucl.ac.uk/1473436/">http://discovery.ucl.ac.uk/1473436/</a></p>
+</div>
+</div>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">authoritative_cache</span></code>(content[, cluster])</p></td>
+<td><p>Return the authoritative cache node for the given content</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#icarus.models.strategy.hashrouting.HashroutingClustered.process_event" title="icarus.models.strategy.hashrouting.HashroutingClustered.process_event"><code class="xref py py-obj docutils literal notranslate"><span class="pre">process_event</span></code></a>(time, receiver, content, log)</p></td>
+<td><p>Process an event received from the simulation engine.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="icarus.models.strategy.hashrouting.HashroutingClustered.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'HR_CLUSTER'</span></em><a class="headerlink" href="#icarus.models.strategy.hashrouting.HashroutingClustered.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.models.strategy.hashrouting.HashroutingClustered.process_event">
+<span class="sig-name descname"><span class="pre">process_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">receiver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/models/strategy/hashrouting.html#HashroutingClustered.process_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.models.strategy.hashrouting.HashroutingClustered.process_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Process an event received from the simulation engine.</p>
+<p>This event is processed by executing relevant actions of the network
+controller, potentially based on the current status of the network
+retrieved from the network view.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>time</strong><span class="classifier">int</span></dt><dd><p>The timestamp of the event</p>
+</dd>
+<dt><strong>receiver</strong><span class="classifier">any hashable type</span></dt><dd><p>The receiver node requesting a content</p>
+</dd>
+<dt><strong>content</strong><span class="classifier">any hashable type</span></dt><dd><p>The content identifier requested by the receiver</p>
+</dd>
+<dt><strong>log</strong><span class="classifier">bool</span></dt><dd><p>Indicates whether the event must be registered by the data
+collectors attached to the network.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="icarus.models.strategy.hashrouting.HashroutingEdge">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HashroutingEdge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">view</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">controller</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">routing</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_cache_ratio</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/models/strategy/hashrouting.html#HashroutingEdge"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.models.strategy.hashrouting.HashroutingEdge" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseHashrouting</span></code></p>
+<p>Hybrid hash-routing and edge caching.</p>
+<p>According to this strategy a fraction of the caching space in each cache is
+reserved for local caching. When a request is issued by a user, it is
+routed to the closes caching node and this caching node holds a copy of
+requested content in its local cache even if not authoritative for the
+requested content.</p>
+<p>Here we assume that each receiver is directly connected to one gateway,
+which is on the path to all other caches.</p>
+<p class="rubric">References</p>
+<div role="list" class="citation-list">
+<div class="citation" id="rb7a5c3c5fbfb-2" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span>2<span class="fn-bracket">]</span></span>
+<p>L. Saino, On the Design of Efficient Caching Systems, Ph.D. thesis
+University College London, Dec. 2015. Available:
+<a class="reference external" href="http://discovery.ucl.ac.uk/1473436/">http://discovery.ucl.ac.uk/1473436/</a></p>
+</div>
+</div>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">authoritative_cache</span></code>(content[, cluster])</p></td>
+<td><p>Return the authoritative cache node for the given content</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#icarus.models.strategy.hashrouting.HashroutingEdge.process_event" title="icarus.models.strategy.hashrouting.HashroutingEdge.process_event"><code class="xref py py-obj docutils literal notranslate"><span class="pre">process_event</span></code></a>(time, receiver, content, log)</p></td>
+<td><p>Process an event received from the simulation engine.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="icarus.models.strategy.hashrouting.HashroutingEdge.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'HR_EDGE_CACHE'</span></em><a class="headerlink" href="#icarus.models.strategy.hashrouting.HashroutingEdge.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.models.strategy.hashrouting.HashroutingEdge.process_event">
+<span class="sig-name descname"><span class="pre">process_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">receiver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/models/strategy/hashrouting.html#HashroutingEdge.process_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.models.strategy.hashrouting.HashroutingEdge.process_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Process an event received from the simulation engine.</p>
+<p>This event is processed by executing relevant actions of the network
+controller, potentially based on the current status of the network
+retrieved from the network view.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>time</strong><span class="classifier">int</span></dt><dd><p>The timestamp of the event</p>
+</dd>
+<dt><strong>receiver</strong><span class="classifier">any hashable type</span></dt><dd><p>The receiver node requesting a content</p>
+</dd>
+<dt><strong>content</strong><span class="classifier">any hashable type</span></dt><dd><p>The content identifier requested by the receiver</p>
+</dd>
+<dt><strong>log</strong><span class="classifier">bool</span></dt><dd><p>Indicates whether the event must be registered by the data
+collectors attached to the network.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="icarus.models.strategy.hashrouting.HashroutingHybridAM">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HashroutingHybridAM</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">view</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">controller</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_stretch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.2</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/models/strategy/hashrouting.html#HashroutingHybridAM"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.models.strategy.hashrouting.HashroutingHybridAM" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseHashrouting</span></code></p>
+<p>Hash-routing implementation with hybrid asymmetric-multicast delivery of
+content packets.</p>
+<p>In this strategy, if there is a cache miss, when content packets return in
+the domain, the packet is delivered to the receiver following the shortest
+path. If the additional number of hops required to send a copy to the
+authoritative cache is below a specific fraction of the network diameter,
+then one copy is sent to the authoritative cache as well. If the cache is
+on the path from source to receiver, this strategy behaves as a normal
+symmetric hash-routing strategy.</p>
+<p class="rubric">References</p>
+<div role="list" class="citation-list">
+<div class="citation" id="rdb5fdde39aff-1" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></span>
+<p>L. Saino, I. Psaras and G. Pavlou, Hash-routing Schemes for
+Information-Centric Networking, in Proceedings of ACM SIGCOMM ICN’13
+workshop. Available:
+<a class="reference external" href="https://lorenzosaino.github.io/publications/hashrouting-icn13.pdf">https://lorenzosaino.github.io/publications/hashrouting-icn13.pdf</a></p>
+</div>
+</div>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">authoritative_cache</span></code>(content[, cluster])</p></td>
+<td><p>Return the authoritative cache node for the given content</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#icarus.models.strategy.hashrouting.HashroutingHybridAM.process_event" title="icarus.models.strategy.hashrouting.HashroutingHybridAM.process_event"><code class="xref py py-obj docutils literal notranslate"><span class="pre">process_event</span></code></a>(time, receiver, content, log)</p></td>
+<td><p>Process an event received from the simulation engine.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="icarus.models.strategy.hashrouting.HashroutingHybridAM.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'HR_HYBRID_AM'</span></em><a class="headerlink" href="#icarus.models.strategy.hashrouting.HashroutingHybridAM.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.models.strategy.hashrouting.HashroutingHybridAM.process_event">
+<span class="sig-name descname"><span class="pre">process_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">receiver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/models/strategy/hashrouting.html#HashroutingHybridAM.process_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.models.strategy.hashrouting.HashroutingHybridAM.process_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Process an event received from the simulation engine.</p>
+<p>This event is processed by executing relevant actions of the network
+controller, potentially based on the current status of the network
+retrieved from the network view.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>time</strong><span class="classifier">int</span></dt><dd><p>The timestamp of the event</p>
+</dd>
+<dt><strong>receiver</strong><span class="classifier">any hashable type</span></dt><dd><p>The receiver node requesting a content</p>
+</dd>
+<dt><strong>content</strong><span class="classifier">any hashable type</span></dt><dd><p>The content identifier requested by the receiver</p>
+</dd>
+<dt><strong>log</strong><span class="classifier">bool</span></dt><dd><p>Indicates whether the event must be registered by the data
+collectors attached to the network.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="icarus.models.strategy.hashrouting.HashroutingHybridSM">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HashroutingHybridSM</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">view</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">controller</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/models/strategy/hashrouting.html#HashroutingHybridSM"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.models.strategy.hashrouting.HashroutingHybridSM" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseHashrouting</span></code></p>
+<p>Hash-routing implementation with hybrid symmetric-multicast delivery of
+content packets.</p>
+<p>In this implementation, the edge router receiving a content packet decides
+whether to deliver the packet using multicast or symmetric hash-routing
+based on the total cost for delivering the Data to both cache and receiver
+in terms of hops.</p>
+<p class="rubric">References</p>
+<div role="list" class="citation-list">
+<div class="citation" id="r44fce0cfca90-1" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></span>
+<p>L. Saino, I. Psaras and G. Pavlou, Hash-routing Schemes for
+Information-Centric Networking, in Proceedings of ACM SIGCOMM ICN’13
+workshop. Available:
+<a class="reference external" href="https://lorenzosaino.github.io/publications/hashrouting-icn13.pdf">https://lorenzosaino.github.io/publications/hashrouting-icn13.pdf</a></p>
+</div>
+</div>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">authoritative_cache</span></code>(content[, cluster])</p></td>
+<td><p>Return the authoritative cache node for the given content</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#icarus.models.strategy.hashrouting.HashroutingHybridSM.process_event" title="icarus.models.strategy.hashrouting.HashroutingHybridSM.process_event"><code class="xref py py-obj docutils literal notranslate"><span class="pre">process_event</span></code></a>(time, receiver, content, log)</p></td>
+<td><p>Process an event received from the simulation engine.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="icarus.models.strategy.hashrouting.HashroutingHybridSM.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'HR_HYBRID_SM'</span></em><a class="headerlink" href="#icarus.models.strategy.hashrouting.HashroutingHybridSM.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.models.strategy.hashrouting.HashroutingHybridSM.process_event">
+<span class="sig-name descname"><span class="pre">process_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">receiver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/models/strategy/hashrouting.html#HashroutingHybridSM.process_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.models.strategy.hashrouting.HashroutingHybridSM.process_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Process an event received from the simulation engine.</p>
+<p>This event is processed by executing relevant actions of the network
+controller, potentially based on the current status of the network
+retrieved from the network view.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>time</strong><span class="classifier">int</span></dt><dd><p>The timestamp of the event</p>
+</dd>
+<dt><strong>receiver</strong><span class="classifier">any hashable type</span></dt><dd><p>The receiver node requesting a content</p>
+</dd>
+<dt><strong>content</strong><span class="classifier">any hashable type</span></dt><dd><p>The content identifier requested by the receiver</p>
+</dd>
+<dt><strong>log</strong><span class="classifier">bool</span></dt><dd><p>Indicates whether the event must be registered by the data
+collectors attached to the network.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="icarus.models.strategy.hashrouting.HashroutingMulticast">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HashroutingMulticast</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">view</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">controller</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/models/strategy/hashrouting.html#HashroutingMulticast"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.models.strategy.hashrouting.HashroutingMulticast" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#icarus.models.strategy.hashrouting.Hashrouting" title="icarus.models.strategy.hashrouting.Hashrouting"><code class="xref py py-class docutils literal notranslate"><span class="pre">Hashrouting</span></code></a></p>
+<p>Hash-routing implementation with multicast delivery of content packets.</p>
+<p>In this strategy, if there is a cache miss, when contents return in
+the domain, they are multicast. One copy is sent to the authoritative cache
+and the other to the receiver. If the cache is on the path from source to
+receiver, this strategy behaves as a normal symmetric hash-routing
+strategy.</p>
+<p class="rubric">References</p>
+<div role="list" class="citation-list">
+<div class="citation" id="re79b90cb26f5-1" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></span>
+<p>L. Saino, I. Psaras and G. Pavlou, Hash-routing Schemes for
+Information-Centric Networking, in Proceedings of ACM SIGCOMM ICN’13
+workshop. Available:
+<a class="reference external" href="https://lorenzosaino.github.io/publications/hashrouting-icn13.pdf">https://lorenzosaino.github.io/publications/hashrouting-icn13.pdf</a></p>
+</div>
+<div class="citation" id="re79b90cb26f5-2" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span>2<span class="fn-bracket">]</span></span>
+<p>L. Saino, On the Design of Efficient Caching Systems, Ph.D. thesis
+University College London, Dec. 2015. Available:
+<a class="reference external" href="http://discovery.ucl.ac.uk/1473436/">http://discovery.ucl.ac.uk/1473436/</a></p>
+</div>
+</div>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">authoritative_cache</span></code>(content[, cluster])</p></td>
+<td><p>Return the authoritative cache node for the given content</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">process_event</span></code>(time, receiver, content, log)</p></td>
+<td><p>Process an event received from the simulation engine.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="icarus.models.strategy.hashrouting.HashroutingMulticast.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'HR_MULTICAST'</span></em><a class="headerlink" href="#icarus.models.strategy.hashrouting.HashroutingMulticast.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="icarus.models.strategy.hashrouting.HashroutingOnPath">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HashroutingOnPath</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">view</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">controller</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">routing</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">on_path_cache_ratio</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/models/strategy/hashrouting.html#HashroutingOnPath"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.models.strategy.hashrouting.HashroutingOnPath" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseHashrouting</span></code></p>
+<p>Hybrid hash-routing and on-path caching.</p>
+<p>This strategy differs from HashroutingEdge for the fact that in
+HashroutingEdge, the local fraction of the cache is queried only by traffic
+of endpoints directly attached to the caching node. In HashroutingOnPath
+the local cache is queried by all traffic being forwarded by the node.</p>
+<p class="rubric">References</p>
+<div role="list" class="citation-list">
+<div class="citation" id="r816d2f23968e-2" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span>2<span class="fn-bracket">]</span></span>
+<p>L. Saino, On the Design of Efficient Caching Systems, Ph.D. thesis
+University College London, Dec. 2015. Available:
+<a class="reference external" href="http://discovery.ucl.ac.uk/1473436/">http://discovery.ucl.ac.uk/1473436/</a></p>
+</div>
+</div>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">authoritative_cache</span></code>(content[, cluster])</p></td>
+<td><p>Return the authoritative cache node for the given content</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#icarus.models.strategy.hashrouting.HashroutingOnPath.process_event" title="icarus.models.strategy.hashrouting.HashroutingOnPath.process_event"><code class="xref py py-obj docutils literal notranslate"><span class="pre">process_event</span></code></a>(time, receiver, content, log)</p></td>
+<td><p>Process an event received from the simulation engine.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="icarus.models.strategy.hashrouting.HashroutingOnPath.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'HR_ON_PATH'</span></em><a class="headerlink" href="#icarus.models.strategy.hashrouting.HashroutingOnPath.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.models.strategy.hashrouting.HashroutingOnPath.process_event">
+<span class="sig-name descname"><span class="pre">process_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">receiver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/models/strategy/hashrouting.html#HashroutingOnPath.process_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.models.strategy.hashrouting.HashroutingOnPath.process_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Process an event received from the simulation engine.</p>
+<p>This event is processed by executing relevant actions of the network
+controller, potentially based on the current status of the network
+retrieved from the network view.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>time</strong><span class="classifier">int</span></dt><dd><p>The timestamp of the event</p>
+</dd>
+<dt><strong>receiver</strong><span class="classifier">any hashable type</span></dt><dd><p>The receiver node requesting a content</p>
+</dd>
+<dt><strong>content</strong><span class="classifier">any hashable type</span></dt><dd><p>The content identifier requested by the receiver</p>
+</dd>
+<dt><strong>log</strong><span class="classifier">bool</span></dt><dd><p>Indicates whether the event must be registered by the data
+collectors attached to the network.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="icarus.models.strategy.hashrouting.HashroutingSymmetric">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HashroutingSymmetric</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">view</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">controller</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/models/strategy/hashrouting.html#HashroutingSymmetric"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.models.strategy.hashrouting.HashroutingSymmetric" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#icarus.models.strategy.hashrouting.Hashrouting" title="icarus.models.strategy.hashrouting.Hashrouting"><code class="xref py py-class docutils literal notranslate"><span class="pre">Hashrouting</span></code></a></p>
+<p>Hash-routing with symmetric routing (HR SYMM)</p>
+<p>According to this strategy, each content is routed following the same path
+of the request.</p>
+<p class="rubric">References</p>
+<div role="list" class="citation-list">
+<div class="citation" id="rfe2a8b76c01d-1" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></span>
+<p>L. Saino, I. Psaras and G. Pavlou, Hash-routing Schemes for
+Information-Centric Networking, in Proceedings of ACM SIGCOMM ICN’13
+workshop. Available:
+<a class="reference external" href="https://lorenzosaino.github.io/publications/hashrouting-icn13.pdf">https://lorenzosaino.github.io/publications/hashrouting-icn13.pdf</a></p>
+</div>
+<div class="citation" id="rfe2a8b76c01d-2" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span>2<span class="fn-bracket">]</span></span>
+<p>L. Saino, On the Design of Efficient Caching Systems, Ph.D. thesis
+University College London, Dec. 2015. Available:
+<a class="reference external" href="http://discovery.ucl.ac.uk/1473436/">http://discovery.ucl.ac.uk/1473436/</a></p>
+</div>
+</div>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">authoritative_cache</span></code>(content[, cluster])</p></td>
+<td><p>Return the authoritative cache node for the given content</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">process_event</span></code>(time, receiver, content, log)</p></td>
+<td><p>Process an event received from the simulation engine.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="icarus.models.strategy.hashrouting.HashroutingSymmetric.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'HR_SYMM'</span></em><a class="headerlink" href="#icarus.models.strategy.hashrouting.HashroutingSymmetric.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-icarus.models.strategy.offpath">
+<span id="icarus-models-strategy-offpath-module"></span><h2>icarus.models.strategy.offpath module<a class="headerlink" href="#module-icarus.models.strategy.offpath" title="Permalink to this heading">¶</a></h2>
+<p>Implementations of all off-path strategies</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="icarus.models.strategy.offpath.NearestReplicaRouting">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">NearestReplicaRouting</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">view</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">controller</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metacaching</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">implementation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ideal'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/models/strategy/offpath.html#NearestReplicaRouting"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.models.strategy.offpath.NearestReplicaRouting" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#icarus.models.strategy.base.Strategy" title="icarus.models.strategy.base.Strategy"><code class="xref py py-class docutils literal notranslate"><span class="pre">Strategy</span></code></a></p>
+<p>Ideal Nearest Replica Routing (NRR) strategy.</p>
+<p>In this strategy, a request is forwarded to the topologically closest node
+holding a copy of the requested item. This strategy is ideal, as it is
+implemented assuming that each node knows the nearest replica of a content
+without any signaling</p>
+<p>On the return path, content can be caching according to a variety of
+metacaching policies. LCE and LCD are currently supported.</p>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.models.strategy.offpath.NearestReplicaRouting.process_event" title="icarus.models.strategy.offpath.NearestReplicaRouting.process_event"><code class="xref py py-obj docutils literal notranslate"><span class="pre">process_event</span></code></a>(time, receiver, content, log)</p></td>
+<td><p>Process an event received from the simulation engine.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="icarus.models.strategy.offpath.NearestReplicaRouting.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'NRR'</span></em><a class="headerlink" href="#icarus.models.strategy.offpath.NearestReplicaRouting.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.models.strategy.offpath.NearestReplicaRouting.process_event">
+<span class="sig-name descname"><span class="pre">process_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">receiver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/models/strategy/offpath.html#NearestReplicaRouting.process_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.models.strategy.offpath.NearestReplicaRouting.process_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Process an event received from the simulation engine.</p>
+<p>This event is processed by executing relevant actions of the network
+controller, potentially based on the current status of the network
+retrieved from the network view.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>time</strong><span class="classifier">int</span></dt><dd><p>The timestamp of the event</p>
+</dd>
+<dt><strong>receiver</strong><span class="classifier">any hashable type</span></dt><dd><p>The receiver node requesting a content</p>
+</dd>
+<dt><strong>content</strong><span class="classifier">any hashable type</span></dt><dd><p>The content identifier requested by the receiver</p>
+</dd>
+<dt><strong>log</strong><span class="classifier">bool</span></dt><dd><p>Indicates whether the event must be registered by the data
+collectors attached to the network.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-icarus.models.strategy.onpath">
+<span id="icarus-models-strategy-onpath-module"></span><h2>icarus.models.strategy.onpath module<a class="headerlink" href="#module-icarus.models.strategy.onpath" title="Permalink to this heading">¶</a></h2>
+<p>Implementations of all on-path strategies</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="icarus.models.strategy.onpath.CacheLessForMore">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CacheLessForMore</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">view</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">controller</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_ego_betw</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/models/strategy/onpath.html#CacheLessForMore"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.models.strategy.onpath.CacheLessForMore" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#icarus.models.strategy.base.Strategy" title="icarus.models.strategy.base.Strategy"><code class="xref py py-class docutils literal notranslate"><span class="pre">Strategy</span></code></a></p>
+<p>Cache less for more strategy <a href="#id21"><span class="problematic" id="id15">[4]_</span></a>.</p>
+<p>This strategy caches items only once in the delivery path, precisely in the
+node with the greatest betweenness centrality (i.e., that is traversed by
+the greatest number of shortest paths). If the argument <em>use_ego_betw</em> is
+set to <em>True</em> then the betweenness centrality of the ego-network is used
+instead.</p>
+<p class="rubric">References</p>
+<dl class="simple">
+<dt>..[4] W. Chai, D. He, I. Psaras, G. Pavlou, Cache Less for More in</dt><dd><p>Information-centric Networks, in IFIP NETWORKING ‘12
+Available: <a class="reference external" href="http://www.ee.ucl.ac.uk/~uceeips/centrality-networking12.pdf">http://www.ee.ucl.ac.uk/~uceeips/centrality-networking12.pdf</a></p>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.models.strategy.onpath.CacheLessForMore.process_event" title="icarus.models.strategy.onpath.CacheLessForMore.process_event"><code class="xref py py-obj docutils literal notranslate"><span class="pre">process_event</span></code></a>(time, receiver, content, log)</p></td>
+<td><p>Process an event received from the simulation engine.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="icarus.models.strategy.onpath.CacheLessForMore.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'CL4M'</span></em><a class="headerlink" href="#icarus.models.strategy.onpath.CacheLessForMore.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.models.strategy.onpath.CacheLessForMore.process_event">
+<span class="sig-name descname"><span class="pre">process_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">receiver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/models/strategy/onpath.html#CacheLessForMore.process_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.models.strategy.onpath.CacheLessForMore.process_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Process an event received from the simulation engine.</p>
+<p>This event is processed by executing relevant actions of the network
+controller, potentially based on the current status of the network
+retrieved from the network view.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>time</strong><span class="classifier">int</span></dt><dd><p>The timestamp of the event</p>
+</dd>
+<dt><strong>receiver</strong><span class="classifier">any hashable type</span></dt><dd><p>The receiver node requesting a content</p>
+</dd>
+<dt><strong>content</strong><span class="classifier">any hashable type</span></dt><dd><p>The content identifier requested by the receiver</p>
+</dd>
+<dt><strong>log</strong><span class="classifier">bool</span></dt><dd><p>Indicates whether the event must be registered by the data
+collectors attached to the network.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="icarus.models.strategy.onpath.Edge">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Edge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">view</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">controller</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/models/strategy/onpath.html#Edge"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.models.strategy.onpath.Edge" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#icarus.models.strategy.base.Strategy" title="icarus.models.strategy.base.Strategy"><code class="xref py py-class docutils literal notranslate"><span class="pre">Strategy</span></code></a></p>
+<p>Edge caching strategy.</p>
+<p>In this strategy only a cache at the edge is looked up before forwarding
+a content request to the original source.</p>
+<p>In practice, this is like an LCE but it only queries the first cache it
+finds in the path. It is assumed to be used with a topology where each
+PoP has a cache but it simulates a case where the cache is actually further
+down the access network and it is not looked up for transit traffic passing
+through the PoP but only for PoP-originated requests.</p>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.models.strategy.onpath.Edge.process_event" title="icarus.models.strategy.onpath.Edge.process_event"><code class="xref py py-obj docutils literal notranslate"><span class="pre">process_event</span></code></a>(time, receiver, content, log)</p></td>
+<td><p>Process an event received from the simulation engine.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="icarus.models.strategy.onpath.Edge.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'EDGE'</span></em><a class="headerlink" href="#icarus.models.strategy.onpath.Edge.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.models.strategy.onpath.Edge.process_event">
+<span class="sig-name descname"><span class="pre">process_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">receiver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/models/strategy/onpath.html#Edge.process_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.models.strategy.onpath.Edge.process_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Process an event received from the simulation engine.</p>
+<p>This event is processed by executing relevant actions of the network
+controller, potentially based on the current status of the network
+retrieved from the network view.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>time</strong><span class="classifier">int</span></dt><dd><p>The timestamp of the event</p>
+</dd>
+<dt><strong>receiver</strong><span class="classifier">any hashable type</span></dt><dd><p>The receiver node requesting a content</p>
+</dd>
+<dt><strong>content</strong><span class="classifier">any hashable type</span></dt><dd><p>The content identifier requested by the receiver</p>
+</dd>
+<dt><strong>log</strong><span class="classifier">bool</span></dt><dd><p>Indicates whether the event must be registered by the data
+collectors attached to the network.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="icarus.models.strategy.onpath.LeaveCopyDown">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">LeaveCopyDown</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">view</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">controller</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/models/strategy/onpath.html#LeaveCopyDown"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.models.strategy.onpath.LeaveCopyDown" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#icarus.models.strategy.base.Strategy" title="icarus.models.strategy.base.Strategy"><code class="xref py py-class docutils literal notranslate"><span class="pre">Strategy</span></code></a></p>
+<p>Leave Copy Down (LCD) strategy.</p>
+<p>According to this strategy, one copy of a content is replicated only in
+the caching node you hop away from the serving node in the direction of
+the receiver. This strategy is described in <a href="#id22"><span class="problematic" id="id16">[2]_</span></a>.</p>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.models.strategy.onpath.LeaveCopyDown.process_event" title="icarus.models.strategy.onpath.LeaveCopyDown.process_event"><code class="xref py py-obj docutils literal notranslate"><span class="pre">process_event</span></code></a>(time, receiver, content, log)</p></td>
+<td><p>Process an event received from the simulation engine.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="icarus.models.strategy.onpath.LeaveCopyDown.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'LCD'</span></em><a class="headerlink" href="#icarus.models.strategy.onpath.LeaveCopyDown.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.models.strategy.onpath.LeaveCopyDown.process_event">
+<span class="sig-name descname"><span class="pre">process_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">receiver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/models/strategy/onpath.html#LeaveCopyDown.process_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.models.strategy.onpath.LeaveCopyDown.process_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Process an event received from the simulation engine.</p>
+<p>This event is processed by executing relevant actions of the network
+controller, potentially based on the current status of the network
+retrieved from the network view.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>time</strong><span class="classifier">int</span></dt><dd><p>The timestamp of the event</p>
+</dd>
+<dt><strong>receiver</strong><span class="classifier">any hashable type</span></dt><dd><p>The receiver node requesting a content</p>
+</dd>
+<dt><strong>content</strong><span class="classifier">any hashable type</span></dt><dd><p>The content identifier requested by the receiver</p>
+</dd>
+<dt><strong>log</strong><span class="classifier">bool</span></dt><dd><p>Indicates whether the event must be registered by the data
+collectors attached to the network.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="icarus.models.strategy.onpath.LeaveCopyEverywhere">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">LeaveCopyEverywhere</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">view</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">controller</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/models/strategy/onpath.html#LeaveCopyEverywhere"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.models.strategy.onpath.LeaveCopyEverywhere" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#icarus.models.strategy.base.Strategy" title="icarus.models.strategy.base.Strategy"><code class="xref py py-class docutils literal notranslate"><span class="pre">Strategy</span></code></a></p>
+<p>Leave Copy Everywhere (LCE) strategy.</p>
+<p>In this strategy a copy of a content is replicated at any cache on the
+path between serving node and receiver.</p>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.models.strategy.onpath.LeaveCopyEverywhere.process_event" title="icarus.models.strategy.onpath.LeaveCopyEverywhere.process_event"><code class="xref py py-obj docutils literal notranslate"><span class="pre">process_event</span></code></a>(time, receiver, content, log)</p></td>
+<td><p>Process an event received from the simulation engine.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="icarus.models.strategy.onpath.LeaveCopyEverywhere.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'LCE'</span></em><a class="headerlink" href="#icarus.models.strategy.onpath.LeaveCopyEverywhere.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.models.strategy.onpath.LeaveCopyEverywhere.process_event">
+<span class="sig-name descname"><span class="pre">process_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">receiver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/models/strategy/onpath.html#LeaveCopyEverywhere.process_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.models.strategy.onpath.LeaveCopyEverywhere.process_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Process an event received from the simulation engine.</p>
+<p>This event is processed by executing relevant actions of the network
+controller, potentially based on the current status of the network
+retrieved from the network view.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>time</strong><span class="classifier">int</span></dt><dd><p>The timestamp of the event</p>
+</dd>
+<dt><strong>receiver</strong><span class="classifier">any hashable type</span></dt><dd><p>The receiver node requesting a content</p>
+</dd>
+<dt><strong>content</strong><span class="classifier">any hashable type</span></dt><dd><p>The content identifier requested by the receiver</p>
+</dd>
+<dt><strong>log</strong><span class="classifier">bool</span></dt><dd><p>Indicates whether the event must be registered by the data
+collectors attached to the network.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="icarus.models.strategy.onpath.Partition">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Partition</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">view</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">controller</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/models/strategy/onpath.html#Partition"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.models.strategy.onpath.Partition" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#icarus.models.strategy.base.Strategy" title="icarus.models.strategy.base.Strategy"><code class="xref py py-class docutils literal notranslate"><span class="pre">Strategy</span></code></a></p>
+<p>Partition caching strategy.</p>
+<p>In this strategy the network is divided into as many partitions as the number
+of caching nodes and each receiver is statically mapped to one and only one
+caching node. When a request is issued it is forwarded to the cache mapped
+to the receiver. In case of a miss the request is routed to the source and
+then returned to cache, which will store it and forward it back to the
+receiver.</p>
+<p>This requires median cache placement, which optimizes the placement of
+caches for this strategy.</p>
+<p>This strategy is normally used with a small number of caching nodes. This
+is the the behaviour normally adopted by Network CDN (NCDN). Google Global
+Cache (GGC) operates this way.</p>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.models.strategy.onpath.Partition.process_event" title="icarus.models.strategy.onpath.Partition.process_event"><code class="xref py py-obj docutils literal notranslate"><span class="pre">process_event</span></code></a>(time, receiver, content, log)</p></td>
+<td><p>Process an event received from the simulation engine.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="icarus.models.strategy.onpath.Partition.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'PARTITION'</span></em><a class="headerlink" href="#icarus.models.strategy.onpath.Partition.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.models.strategy.onpath.Partition.process_event">
+<span class="sig-name descname"><span class="pre">process_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">receiver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/models/strategy/onpath.html#Partition.process_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.models.strategy.onpath.Partition.process_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Process an event received from the simulation engine.</p>
+<p>This event is processed by executing relevant actions of the network
+controller, potentially based on the current status of the network
+retrieved from the network view.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>time</strong><span class="classifier">int</span></dt><dd><p>The timestamp of the event</p>
+</dd>
+<dt><strong>receiver</strong><span class="classifier">any hashable type</span></dt><dd><p>The receiver node requesting a content</p>
+</dd>
+<dt><strong>content</strong><span class="classifier">any hashable type</span></dt><dd><p>The content identifier requested by the receiver</p>
+</dd>
+<dt><strong>log</strong><span class="classifier">bool</span></dt><dd><p>Indicates whether the event must be registered by the data
+collectors attached to the network.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="icarus.models.strategy.onpath.ProbCache">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ProbCache</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">view</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">controller</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_tw</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/models/strategy/onpath.html#ProbCache"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.models.strategy.onpath.ProbCache" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#icarus.models.strategy.base.Strategy" title="icarus.models.strategy.base.Strategy"><code class="xref py py-class docutils literal notranslate"><span class="pre">Strategy</span></code></a></p>
+<p>ProbCache strategy <a href="#id23"><span class="problematic" id="id17">[3]_</span></a></p>
+<p>This strategy caches content objects probabilistically on a path with a
+probability depending on various factors, including distance from source
+and destination and caching space available on the path.</p>
+<p>This strategy was originally proposed in <a href="#id24"><span class="problematic" id="id18">[2]_</span></a> and extended in <a href="#id25"><span class="problematic" id="id19">[3]_</span></a>. This
+class implements the extended version described in <a href="#id26"><span class="problematic" id="id20">[3]_</span></a>. In the extended
+version of ProbCache the :math`x/c` factor of the ProbCache equation is
+raised to the power of :math`c`.</p>
+<p class="rubric">References</p>
+<dl class="simple">
+<dt>..[2] I. Psaras, W. Chai, G. Pavlou, Probabilistic In-Network Caching for</dt><dd><p>Information-Centric Networks, in Proc. of ACM SIGCOMM ICN ‘12
+Available: <a class="reference external" href="http://www.ee.ucl.ac.uk/~uceeips/prob-cache-icn-sigcomm12.pdf">http://www.ee.ucl.ac.uk/~uceeips/prob-cache-icn-sigcomm12.pdf</a></p>
+</dd>
+<dt>..[3] I. Psaras, W. Chai, G. Pavlou, In-Network Cache Management and</dt><dd><p>Resource Allocation for Information-Centric Networks, IEEE
+Transactions on Parallel and Distributed Systems, 22 May 2014
+Available: <a class="reference external" href="http://doi.ieeecomputersociety.org/10.1109/TPDS.2013.304">http://doi.ieeecomputersociety.org/10.1109/TPDS.2013.304</a></p>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.models.strategy.onpath.ProbCache.process_event" title="icarus.models.strategy.onpath.ProbCache.process_event"><code class="xref py py-obj docutils literal notranslate"><span class="pre">process_event</span></code></a>(time, receiver, content, log)</p></td>
+<td><p>Process an event received from the simulation engine.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="icarus.models.strategy.onpath.ProbCache.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'PROB_CACHE'</span></em><a class="headerlink" href="#icarus.models.strategy.onpath.ProbCache.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.models.strategy.onpath.ProbCache.process_event">
+<span class="sig-name descname"><span class="pre">process_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">receiver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/models/strategy/onpath.html#ProbCache.process_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.models.strategy.onpath.ProbCache.process_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Process an event received from the simulation engine.</p>
+<p>This event is processed by executing relevant actions of the network
+controller, potentially based on the current status of the network
+retrieved from the network view.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>time</strong><span class="classifier">int</span></dt><dd><p>The timestamp of the event</p>
+</dd>
+<dt><strong>receiver</strong><span class="classifier">any hashable type</span></dt><dd><p>The receiver node requesting a content</p>
+</dd>
+<dt><strong>content</strong><span class="classifier">any hashable type</span></dt><dd><p>The content identifier requested by the receiver</p>
+</dd>
+<dt><strong>log</strong><span class="classifier">bool</span></dt><dd><p>Indicates whether the event must be registered by the data
+collectors attached to the network.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="icarus.models.strategy.onpath.RandomBernoulli">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RandomBernoulli</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">view</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">controller</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.2</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/models/strategy/onpath.html#RandomBernoulli"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.models.strategy.onpath.RandomBernoulli" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#icarus.models.strategy.base.Strategy" title="icarus.models.strategy.base.Strategy"><code class="xref py py-class docutils literal notranslate"><span class="pre">Strategy</span></code></a></p>
+<p>Bernoulli random cache insertion.</p>
+<p>In this strategy, a content is randomly inserted in a cache on the path
+from serving node to receiver with probability <em>p</em>.</p>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.models.strategy.onpath.RandomBernoulli.process_event" title="icarus.models.strategy.onpath.RandomBernoulli.process_event"><code class="xref py py-obj docutils literal notranslate"><span class="pre">process_event</span></code></a>(time, receiver, content, log)</p></td>
+<td><p>Process an event received from the simulation engine.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="icarus.models.strategy.onpath.RandomBernoulli.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'RAND_BERNOULLI'</span></em><a class="headerlink" href="#icarus.models.strategy.onpath.RandomBernoulli.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.models.strategy.onpath.RandomBernoulli.process_event">
+<span class="sig-name descname"><span class="pre">process_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">receiver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/models/strategy/onpath.html#RandomBernoulli.process_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.models.strategy.onpath.RandomBernoulli.process_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Process an event received from the simulation engine.</p>
+<p>This event is processed by executing relevant actions of the network
+controller, potentially based on the current status of the network
+retrieved from the network view.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>time</strong><span class="classifier">int</span></dt><dd><p>The timestamp of the event</p>
+</dd>
+<dt><strong>receiver</strong><span class="classifier">any hashable type</span></dt><dd><p>The receiver node requesting a content</p>
+</dd>
+<dt><strong>content</strong><span class="classifier">any hashable type</span></dt><dd><p>The content identifier requested by the receiver</p>
+</dd>
+<dt><strong>log</strong><span class="classifier">bool</span></dt><dd><p>Indicates whether the event must be registered by the data
+collectors attached to the network.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="icarus.models.strategy.onpath.RandomChoice">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RandomChoice</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">view</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">controller</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/models/strategy/onpath.html#RandomChoice"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.models.strategy.onpath.RandomChoice" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#icarus.models.strategy.base.Strategy" title="icarus.models.strategy.base.Strategy"><code class="xref py py-class docutils literal notranslate"><span class="pre">Strategy</span></code></a></p>
+<p>Random choice strategy</p>
+<p>This strategy stores the served content exactly in one single cache on the
+path from serving node to receiver selected randomly.</p>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.models.strategy.onpath.RandomChoice.process_event" title="icarus.models.strategy.onpath.RandomChoice.process_event"><code class="xref py py-obj docutils literal notranslate"><span class="pre">process_event</span></code></a>(time, receiver, content, log)</p></td>
+<td><p>Process an event received from the simulation engine.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="icarus.models.strategy.onpath.RandomChoice.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'RAND_CHOICE'</span></em><a class="headerlink" href="#icarus.models.strategy.onpath.RandomChoice.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.models.strategy.onpath.RandomChoice.process_event">
+<span class="sig-name descname"><span class="pre">process_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">receiver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/models/strategy/onpath.html#RandomChoice.process_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.models.strategy.onpath.RandomChoice.process_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Process an event received from the simulation engine.</p>
+<p>This event is processed by executing relevant actions of the network
+controller, potentially based on the current status of the network
+retrieved from the network view.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>time</strong><span class="classifier">int</span></dt><dd><p>The timestamp of the event</p>
+</dd>
+<dt><strong>receiver</strong><span class="classifier">any hashable type</span></dt><dd><p>The receiver node requesting a content</p>
+</dd>
+<dt><strong>content</strong><span class="classifier">any hashable type</span></dt><dd><p>The content identifier requested by the receiver</p>
+</dd>
+<dt><strong>log</strong><span class="classifier">bool</span></dt><dd><p>Indicates whether the event must be registered by the data
+collectors attached to the network.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-icarus.models.strategy">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-icarus.models.strategy" title="Permalink to this heading">¶</a></h2>
+<p>Implementations of all caching and routing strategies</p>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">icarus.models.strategy package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-icarus.models.strategy.base">icarus.models.strategy.base module</a></li>
+<li><a class="reference internal" href="#module-icarus.models.strategy.hashrouting">icarus.models.strategy.hashrouting module</a></li>
+<li><a class="reference internal" href="#module-icarus.models.strategy.offpath">icarus.models.strategy.offpath module</a></li>
+<li><a class="reference internal" href="#module-icarus.models.strategy.onpath">icarus.models.strategy.onpath module</a></li>
+<li><a class="reference internal" href="#module-icarus.models.strategy">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="icarus.models.cache.html"
+                          title="previous chapter">icarus.models.cache package</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="icarus.results.html"
+                          title="next chapter">icarus.results package</a></p>
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="icarus.results.html" title="icarus.results package"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="icarus.models.cache.html" title="icarus.models.cache package"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Icarus 0.8.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="icarus.html" >icarus package</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="icarus.models.html" >icarus.models package</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">icarus.models.strategy package</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2016, Lorenzo Saino, Ioannis Psaras.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.1.1.
+    </div>
+  </body>
+</html>

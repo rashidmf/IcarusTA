@@ -1,0 +1,933 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>icarus.execution.network &#8212; Icarus 0.8.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinxdoc.css" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Icarus 0.8.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">icarus.execution.network</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for icarus.execution.network</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Network Model-View-Controller (MVC)</span>
+
+<span class="sd">This module contains classes providing an abstraction of the network shown to</span>
+<span class="sd">the strategy implementation. The network is modelled using an MVC design</span>
+<span class="sd">pattern.</span>
+
+<span class="sd">A strategy performs actions on the network by calling methods of the</span>
+<span class="sd">`NetworkController`, that in turns updates  the `NetworkModel` instance that</span>
+<span class="sd">updates the `NetworkView` instance. The strategy can get updated information</span>
+<span class="sd">about the network status by calling methods of the `NetworkView` instance.</span>
+
+<span class="sd">The `NetworkController` is also responsible to notify a `DataCollectorProxy`</span>
+<span class="sd">of all relevant events.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
+<span class="kn">import</span> <span class="nn">fnss</span>
+
+<span class="kn">from</span> <span class="nn">icarus.registry</span> <span class="kn">import</span> <span class="n">CACHE_POLICY</span>
+<span class="kn">from</span> <span class="nn">icarus.util</span> <span class="kn">import</span> <span class="n">iround</span><span class="p">,</span> <span class="n">path_links</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;NetworkModel&quot;</span><span class="p">,</span> <span class="s2">&quot;NetworkView&quot;</span><span class="p">,</span> <span class="s2">&quot;NetworkController&quot;</span><span class="p">]</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;orchestration&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">symmetrify_paths</span><span class="p">(</span><span class="n">shortest_paths</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Make paths symmetric</span>
+
+<span class="sd">    Given a dictionary of all-pair shortest paths, it edits shortest paths to</span>
+<span class="sd">    ensure that all path are symmetric, e.g., path(u,v) = path(v,u)</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    shortest_paths : dict of dict</span>
+<span class="sd">        All pairs shortest paths</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    shortest_paths : dict of dict</span>
+<span class="sd">        All pairs shortest paths, with all paths symmetric</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    This function modifies the shortest paths dictionary provided</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">shortest_paths</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">shortest_paths</span><span class="p">[</span><span class="n">u</span><span class="p">]:</span>
+            <span class="n">shortest_paths</span><span class="p">[</span><span class="n">u</span><span class="p">][</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">reversed</span><span class="p">(</span><span class="n">shortest_paths</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="n">u</span><span class="p">]))</span>
+    <span class="k">return</span> <span class="n">shortest_paths</span>
+
+
+<div class="viewcode-block" id="NetworkView"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.network.NetworkView">[docs]</a><span class="k">class</span> <span class="nc">NetworkView</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Network view</span>
+
+<span class="sd">    This class provides an interface that strategies and data collectors can</span>
+<span class="sd">    use to know updated information about the status of the network.</span>
+<span class="sd">    For example the network view provides information about shortest paths,</span>
+<span class="sd">    characteristics of links and currently cached objects in nodes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Constructor</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        model : NetworkModel</span>
+<span class="sd">            The network model instance</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">NetworkModel</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;The model argument must be an instance of &quot;</span> <span class="s2">&quot;NetworkModel&quot;</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+
+<div class="viewcode-block" id="NetworkView.content_locations"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.network.NetworkView.content_locations">[docs]</a>    <span class="k">def</span> <span class="nf">content_locations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return a set of all current locations of a specific content.</span>
+
+<span class="sd">        This include both persistent content sources and temporary caches.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        k : any hashable type</span>
+<span class="sd">            The content identifier</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        nodes : set</span>
+<span class="sd">            A set of all nodes currently storing the given content</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">loc</span> <span class="o">=</span> <span class="p">{</span><span class="n">v</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">cache</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">v</span><span class="p">]</span><span class="o">.</span><span class="n">has</span><span class="p">(</span><span class="n">k</span><span class="p">)}</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">content_source</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">source</span><span class="p">:</span>
+            <span class="n">loc</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">loc</span></div>
+
+<div class="viewcode-block" id="NetworkView.content_source"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.network.NetworkView.content_source">[docs]</a>    <span class="k">def</span> <span class="nf">content_source</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the node identifier where the content is persistently stored.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        k : any hashable type</span>
+<span class="sd">            The content identifier</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        node : any hashable type</span>
+<span class="sd">            The node persistently storing the given content or None if the</span>
+<span class="sd">            source is unavailable</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">content_source</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="NetworkView.shortest_path"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.network.NetworkView.shortest_path">[docs]</a>    <span class="k">def</span> <span class="nf">shortest_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the shortest path from *s* to *t*</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        s : any hashable type</span>
+<span class="sd">            Origin node</span>
+<span class="sd">        t : any hashable type</span>
+<span class="sd">            Destination node</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        shortest_path : list</span>
+<span class="sd">            List of nodes of the shortest path (origin and destination</span>
+<span class="sd">            included)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">[</span><span class="n">s</span><span class="p">][</span><span class="n">t</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="NetworkView.all_pairs_shortest_paths"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.network.NetworkView.all_pairs_shortest_paths">[docs]</a>    <span class="k">def</span> <span class="nf">all_pairs_shortest_paths</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return all pairs shortest paths</span>
+
+<span class="sd">        Return</span>
+<span class="sd">        ------</span>
+<span class="sd">        all_pairs_shortest_paths : dict of lists</span>
+<span class="sd">            Shortest paths between all pairs</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">shortest_path</span></div>
+
+<div class="viewcode-block" id="NetworkView.cluster"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.network.NetworkView.cluster">[docs]</a>    <span class="k">def</span> <span class="nf">cluster</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return cluster to which a node belongs, if any</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        v : any hashable type</span>
+<span class="sd">            Node</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        cluster : int</span>
+<span class="sd">            Cluster to which the node belongs, None if the topology is not</span>
+<span class="sd">            clustered or the node does not belong to any cluster</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s2">&quot;cluster&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">topology</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="n">v</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">topology</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="s2">&quot;cluster&quot;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="NetworkView.link_type"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.network.NetworkView.link_type">[docs]</a>    <span class="k">def</span> <span class="nf">link_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the type of link *(u, v)*.</span>
+
+<span class="sd">        Type can be either *internal* or *external*</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        u : any hashable type</span>
+<span class="sd">            Origin node</span>
+<span class="sd">        v : any hashable type</span>
+<span class="sd">            Destination node</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        link_type : str</span>
+<span class="sd">            The link type</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">link_type</span><span class="p">[(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)]</span></div>
+
+<div class="viewcode-block" id="NetworkView.link_delay"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.network.NetworkView.link_delay">[docs]</a>    <span class="k">def</span> <span class="nf">link_delay</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the delay of link *(u, v)*.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        u : any hashable type</span>
+<span class="sd">            Origin node</span>
+<span class="sd">        v : any hashable type</span>
+<span class="sd">            Destination node</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        delay : float</span>
+<span class="sd">            The link delay</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">link_delay</span><span class="p">[(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)]</span></div>
+
+<div class="viewcode-block" id="NetworkView.topology"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.network.NetworkView.topology">[docs]</a>    <span class="k">def</span> <span class="nf">topology</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the network topology</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        topology : fnss.Topology</span>
+<span class="sd">            The topology object</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        The topology object returned by this method must not be modified by the</span>
+<span class="sd">        caller. This object can only be modified through the NetworkController.</span>
+<span class="sd">        Changes to this object will lead to inconsistent network state.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">topology</span></div>
+
+<div class="viewcode-block" id="NetworkView.cache_nodes"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.network.NetworkView.cache_nodes">[docs]</a>    <span class="k">def</span> <span class="nf">cache_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a list of nodes with caching capability</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        size: bool, opt</span>
+<span class="sd">            If *True* return dict mapping nodes with size</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        cache_nodes : list or dict</span>
+<span class="sd">            If size parameter is False or not specified, it is a list of nodes</span>
+<span class="sd">            with caches. Otherwise it is a dict mapping nodes with a cache</span>
+<span class="sd">            and their size.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="p">{</span><span class="n">v</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">maxlen</span> <span class="k">for</span> <span class="n">v</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+            <span class="k">if</span> <span class="n">size</span>
+            <span class="k">else</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="NetworkView.has_cache"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.network.NetworkView.has_cache">[docs]</a>    <span class="k">def</span> <span class="nf">has_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Check if a node has a content cache.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        node : any hashable type</span>
+<span class="sd">            The node identifier</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        has_cache : bool,</span>
+<span class="sd">            *True* if the node has a cache, *False* otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">cache</span></div>
+
+<div class="viewcode-block" id="NetworkView.cache_lookup"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.network.NetworkView.cache_lookup">[docs]</a>    <span class="k">def</span> <span class="nf">cache_lookup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">content</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Check if the cache of a node has a content object, without changing</span>
+<span class="sd">        the internal state of the cache.</span>
+
+<span class="sd">        This method is meant to be used by data collectors to calculate</span>
+<span class="sd">        metrics. It should not be used by strategies to look up for contents</span>
+<span class="sd">        during the simulation. Instead they should use</span>
+<span class="sd">        `NetworkController.get_content`</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        node : any hashable type</span>
+<span class="sd">            The node identifier</span>
+<span class="sd">        content : any hashable type</span>
+<span class="sd">            The content identifier</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        has_content : bool</span>
+<span class="sd">            *True* if the cache of the node has the content, *False* otherwise.</span>
+<span class="sd">            If the node does not have a cache, return *None*</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">cache</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">node</span><span class="p">]</span><span class="o">.</span><span class="n">has</span><span class="p">(</span><span class="n">content</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="NetworkView.local_cache_lookup"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.network.NetworkView.local_cache_lookup">[docs]</a>    <span class="k">def</span> <span class="nf">local_cache_lookup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">content</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Check if the local cache of a node has a content object, without</span>
+<span class="sd">        changing the internal state of the cache.</span>
+
+<span class="sd">        The local cache is an area of the cache of a node reserved for</span>
+<span class="sd">        uncoordinated caching. This is currently used only by hybrid</span>
+<span class="sd">        hash-routing strategies.</span>
+
+<span class="sd">        This method is meant to be used by data collectors to calculate</span>
+<span class="sd">        metrics. It should not be used by strategies to look up for contents</span>
+<span class="sd">        during the simulation. Instead they should use</span>
+<span class="sd">        `NetworkController.get_content_local_cache`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        node : any hashable type</span>
+<span class="sd">            The node identifier</span>
+<span class="sd">        content : any hashable type</span>
+<span class="sd">            The content identifier</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        has_content : bool</span>
+<span class="sd">            *True* if the cache of the node has the content, *False* otherwise.</span>
+<span class="sd">            If the node does not have a cache, return *None*</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">local_cache</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">local_cache</span><span class="p">[</span><span class="n">node</span><span class="p">]</span><span class="o">.</span><span class="n">has</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span></div>
+
+<div class="viewcode-block" id="NetworkView.cache_dump"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.network.NetworkView.cache_dump">[docs]</a>    <span class="k">def</span> <span class="nf">cache_dump</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the dump of the content of a cache in a specific node</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        node : any hashable type</span>
+<span class="sd">            The node identifier</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dump : list</span>
+<span class="sd">            List of contents currently in the cache</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">cache</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">node</span><span class="p">]</span><span class="o">.</span><span class="n">dump</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="NetworkModel"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.network.NetworkModel">[docs]</a><span class="k">class</span> <span class="nc">NetworkModel</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Models the internal state of the network.</span>
+
+<span class="sd">    This object should never be edited by strategies directly, but only through</span>
+<span class="sd">    calls to the network controller.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">topology</span><span class="p">,</span> <span class="n">cache_policy</span><span class="p">,</span> <span class="n">shortest_path</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Constructor</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        topology : fnss.Topology</span>
+<span class="sd">            The topology object</span>
+<span class="sd">        cache_policy : dict or Tree</span>
+<span class="sd">            cache policy descriptor. It has the name attribute which identify</span>
+<span class="sd">            the cache policy name and keyworded arguments specific to the</span>
+<span class="sd">            policy</span>
+<span class="sd">        shortest_path : dict of dict, optional</span>
+<span class="sd">            The all-pair shortest paths of the network</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Filter inputs</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">topology</span><span class="p">,</span> <span class="n">fnss</span><span class="o">.</span><span class="n">Topology</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;The topology argument must be an instance of &quot;</span>
+                <span class="s2">&quot;fnss.Topology or any of its subclasses.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Shortest paths of the network</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shortest_path</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="nb">dict</span><span class="p">(</span><span class="n">shortest_path</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">shortest_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="k">else</span> <span class="n">symmetrify_paths</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">nx</span><span class="o">.</span><span class="n">all_pairs_dijkstra_path</span><span class="p">(</span><span class="n">topology</span><span class="p">)))</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Network topology</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">topology</span> <span class="o">=</span> <span class="n">topology</span>
+
+        <span class="c1"># Dictionary mapping each content object to its source</span>
+        <span class="c1"># dict of location of contents keyed by content ID</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">content_source</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># Dictionary mapping the reverse, i.e. nodes to set of contents stored</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">source_node</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># Dictionary of link types (internal/external)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">link_type</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">get_edge_attributes</span><span class="p">(</span><span class="n">topology</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">link_delay</span> <span class="o">=</span> <span class="n">fnss</span><span class="o">.</span><span class="n">get_delays</span><span class="p">(</span><span class="n">topology</span><span class="p">)</span>
+        <span class="c1"># Instead of this manual assignment, I could have converted the</span>
+        <span class="c1"># topology to directed before extracting type and link delay but that</span>
+        <span class="c1"># requires a deep copy of the topology that can take long time if</span>
+        <span class="c1"># many content source mappings are included in the topology</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">topology</span><span class="o">.</span><span class="n">is_directed</span><span class="p">():</span>
+            <span class="k">for</span> <span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">),</span> <span class="n">link_type</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">link_type</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">link_type</span><span class="p">[(</span><span class="n">v</span><span class="p">,</span> <span class="n">u</span><span class="p">)]</span> <span class="o">=</span> <span class="n">link_type</span>
+            <span class="k">for</span> <span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">),</span> <span class="n">delay</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">link_delay</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">link_delay</span><span class="p">[(</span><span class="n">v</span><span class="p">,</span> <span class="n">u</span><span class="p">)]</span> <span class="o">=</span> <span class="n">delay</span>
+
+        <span class="n">cache_size</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">topology</span><span class="o">.</span><span class="n">nodes</span><span class="p">():</span>
+            <span class="n">stack_name</span><span class="p">,</span> <span class="n">stack_props</span> <span class="o">=</span> <span class="n">fnss</span><span class="o">.</span><span class="n">get_stack</span><span class="p">(</span><span class="n">topology</span><span class="p">,</span> <span class="n">node</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">stack_name</span> <span class="o">==</span> <span class="s2">&quot;router&quot;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s2">&quot;cache_size&quot;</span> <span class="ow">in</span> <span class="n">stack_props</span><span class="p">:</span>
+                    <span class="n">cache_size</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="n">stack_props</span><span class="p">[</span><span class="s2">&quot;cache_size&quot;</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="n">stack_name</span> <span class="o">==</span> <span class="s2">&quot;source&quot;</span><span class="p">:</span>
+                <span class="n">contents</span> <span class="o">=</span> <span class="n">stack_props</span><span class="p">[</span><span class="s2">&quot;contents&quot;</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">source_node</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="n">contents</span>
+                <span class="k">for</span> <span class="n">content</span> <span class="ow">in</span> <span class="n">contents</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">content_source</span><span class="p">[</span><span class="n">content</span><span class="p">]</span> <span class="o">=</span> <span class="n">node</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">c</span> <span class="o">&lt;</span> <span class="mi">1</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">cache_size</span><span class="o">.</span><span class="n">values</span><span class="p">()):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s2">&quot;Some content caches have size equal to 0. &quot;</span>
+                <span class="s2">&quot;I am setting them to 1 and run the experiment anyway&quot;</span>
+            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">cache_size</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">cache_size</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">cache_size</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="n">policy_name</span> <span class="o">=</span> <span class="n">cache_policy</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span>
+        <span class="n">policy_args</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">cache_policy</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="s2">&quot;name&quot;</span><span class="p">}</span>
+        <span class="c1"># The actual cache objects storing the content</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">node</span><span class="p">:</span> <span class="n">CACHE_POLICY</span><span class="p">[</span><span class="n">policy_name</span><span class="p">](</span><span class="n">cache_size</span><span class="p">[</span><span class="n">node</span><span class="p">],</span> <span class="o">**</span><span class="n">policy_args</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">cache_size</span>
+        <span class="p">}</span>
+
+        <span class="c1"># This is for a local un-coordinated cache (currently used only by</span>
+        <span class="c1"># Hashrouting with edge cache)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">local_cache</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># Keep track of nodes and links removed to simulate failures</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">removed_nodes</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># This keeps track of neighbors of a removed node at the time of removal.</span>
+        <span class="c1"># It is needed to ensure that when the node is restored only links that</span>
+        <span class="c1"># were removed as part of the node removal are restored and to prevent</span>
+        <span class="c1"># restoring nodes that were removed manually before removing the node.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">disconnected_neighbors</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">removed_links</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">removed_sources</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">removed_caches</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">removed_local_caches</span> <span class="o">=</span> <span class="p">{}</span></div>
+
+
+<div class="viewcode-block" id="NetworkController"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.network.NetworkController">[docs]</a><span class="k">class</span> <span class="nc">NetworkController</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Network controller</span>
+
+<span class="sd">    This class is in charge of executing operations on the network model on</span>
+<span class="sd">    behalf of a strategy implementation. It is also in charge of notifying</span>
+<span class="sd">    data collectors of relevant events.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Constructor</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        model : NetworkModel</span>
+<span class="sd">            Instance of the network model</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">collector</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="NetworkController.attach_collector"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.network.NetworkController.attach_collector">[docs]</a>    <span class="k">def</span> <span class="nf">attach_collector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">collector</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Attach a data collector to which all events will be reported.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        collector : DataCollector</span>
+<span class="sd">            The data collector</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">collector</span> <span class="o">=</span> <span class="n">collector</span></div>
+
+<div class="viewcode-block" id="NetworkController.detach_collector"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.network.NetworkController.detach_collector">[docs]</a>    <span class="k">def</span> <span class="nf">detach_collector</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Detach the data collector.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">collector</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="NetworkController.start_session"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.network.NetworkController.start_session">[docs]</a>    <span class="k">def</span> <span class="nf">start_session</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timestamp</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">log</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Instruct the controller to start a new session (i.e. the retrieval</span>
+<span class="sd">        of a content).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        timestamp : int</span>
+<span class="sd">            The timestamp of the event</span>
+<span class="sd">        receiver : any hashable type</span>
+<span class="sd">            The receiver node requesting a content</span>
+<span class="sd">        content : any hashable type</span>
+<span class="sd">            The content identifier requested by the receiver</span>
+<span class="sd">        log : bool</span>
+<span class="sd">            *True* if this session needs to be reported to the collector,</span>
+<span class="sd">            *False* otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="n">timestamp</span><span class="o">=</span><span class="n">timestamp</span><span class="p">,</span> <span class="n">receiver</span><span class="o">=</span><span class="n">receiver</span><span class="p">,</span> <span class="n">content</span><span class="o">=</span><span class="n">content</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="n">log</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">collector</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">[</span><span class="s2">&quot;log&quot;</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">collector</span><span class="o">.</span><span class="n">start_session</span><span class="p">(</span><span class="n">timestamp</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">content</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="NetworkController.forward_request_path"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.network.NetworkController.forward_request_path">[docs]</a>    <span class="k">def</span> <span class="nf">forward_request_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">main_path</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Forward a request from node *s* to node *t* over the provided path.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        s : any hashable type</span>
+<span class="sd">            Origin node</span>
+<span class="sd">        t : any hashable type</span>
+<span class="sd">            Destination node</span>
+<span class="sd">        path : list, optional</span>
+<span class="sd">            The path to use. If not provided, shortest path is used</span>
+<span class="sd">        main_path : bool, optional</span>
+<span class="sd">            If *True*, indicates that link path is on the main path that will</span>
+<span class="sd">            lead to hit a content. It is normally used to calculate latency</span>
+<span class="sd">            correctly in multicast cases. Default value is *True*</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">[</span><span class="n">s</span><span class="p">][</span><span class="n">t</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">path_links</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">forward_request_hop</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">main_path</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="NetworkController.forward_content_path"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.network.NetworkController.forward_content_path">[docs]</a>    <span class="k">def</span> <span class="nf">forward_content_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">main_path</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Forward a content from node *s* to node *t* over the provided path.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        s : any hashable type</span>
+<span class="sd">            Origin node</span>
+<span class="sd">        t : any hashable type</span>
+<span class="sd">            Destination node</span>
+<span class="sd">        path : list, optional</span>
+<span class="sd">            The path to use. If not provided, shortest path is used</span>
+<span class="sd">        main_path : bool, optional</span>
+<span class="sd">            If *True*, indicates that this path is being traversed by content</span>
+<span class="sd">            that will be delivered to the receiver. This is needed to</span>
+<span class="sd">            calculate latency correctly in multicast cases. Default value is</span>
+<span class="sd">            *True*</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">[</span><span class="n">u</span><span class="p">][</span><span class="n">v</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">path_links</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">forward_content_hop</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">main_path</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="NetworkController.forward_request_hop"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.network.NetworkController.forward_request_hop">[docs]</a>    <span class="k">def</span> <span class="nf">forward_request_hop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">main_path</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Forward a request over link  u -&gt; v.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        u : any hashable type</span>
+<span class="sd">            Origin node</span>
+<span class="sd">        v : any hashable type</span>
+<span class="sd">            Destination node</span>
+<span class="sd">        main_path : bool, optional</span>
+<span class="sd">            If *True*, indicates that link link is on the main path that will</span>
+<span class="sd">            lead to hit a content. It is normally used to calculate latency</span>
+<span class="sd">            correctly in multicast cases. Default value is *True*</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">collector</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">[</span><span class="s2">&quot;log&quot;</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">collector</span><span class="o">.</span><span class="n">request_hop</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">main_path</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="NetworkController.forward_content_hop"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.network.NetworkController.forward_content_hop">[docs]</a>    <span class="k">def</span> <span class="nf">forward_content_hop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">main_path</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Forward a content over link  u -&gt; v.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        u : any hashable type</span>
+<span class="sd">            Origin node</span>
+<span class="sd">        v : any hashable type</span>
+<span class="sd">            Destination node</span>
+<span class="sd">        main_path : bool, optional</span>
+<span class="sd">            If *True*, indicates that this link is being traversed by content</span>
+<span class="sd">            that will be delivered to the receiver. This is needed to</span>
+<span class="sd">            calculate latency correctly in multicast cases. Default value is</span>
+<span class="sd">            *True*</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">collector</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">[</span><span class="s2">&quot;log&quot;</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">collector</span><span class="o">.</span><span class="n">content_hop</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">main_path</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="NetworkController.put_content"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.network.NetworkController.put_content">[docs]</a>    <span class="k">def</span> <span class="nf">put_content</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Store content in the specified node.</span>
+
+<span class="sd">        The node must have a cache stack and the actual insertion of the</span>
+<span class="sd">        content is executed according to the caching policy. If the caching</span>
+<span class="sd">        policy has a selective insertion policy, then content may not be</span>
+<span class="sd">        inserted.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        node : any hashable type</span>
+<span class="sd">            The node where the content is inserted</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        evicted : any hashable type</span>
+<span class="sd">            The evicted object or *None* if no contents were evicted.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">cache</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">node</span><span class="p">]</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">[</span><span class="s2">&quot;content&quot;</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="NetworkController.get_content"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.network.NetworkController.get_content">[docs]</a>    <span class="k">def</span> <span class="nf">get_content</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get a content from a server or a cache.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        node : any hashable type</span>
+<span class="sd">            The node where the content is retrieved</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        content : bool</span>
+<span class="sd">            True if the content is available, False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">cache</span><span class="p">:</span>
+            <span class="n">cache_hit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">node</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">[</span><span class="s2">&quot;content&quot;</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">cache_hit</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">[</span><span class="s2">&quot;log&quot;</span><span class="p">]:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">collector</span><span class="o">.</span><span class="n">cache_hit</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">[</span><span class="s2">&quot;log&quot;</span><span class="p">]:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">collector</span><span class="o">.</span><span class="n">cache_miss</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">cache_hit</span>
+        <span class="n">name</span><span class="p">,</span> <span class="n">props</span> <span class="o">=</span> <span class="n">fnss</span><span class="o">.</span><span class="n">get_stack</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">topology</span><span class="p">,</span> <span class="n">node</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;source&quot;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">[</span><span class="s2">&quot;content&quot;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">props</span><span class="p">[</span><span class="s2">&quot;contents&quot;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">collector</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">[</span><span class="s2">&quot;log&quot;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">collector</span><span class="o">.</span><span class="n">server_hit</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span></div>
+
+<div class="viewcode-block" id="NetworkController.remove_content"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.network.NetworkController.remove_content">[docs]</a>    <span class="k">def</span> <span class="nf">remove_content</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Remove the content being handled from the cache</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        node : any hashable type</span>
+<span class="sd">            The node where the cached content is removed</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        removed : bool</span>
+<span class="sd">            *True* if the entry was in the cache, *False* if it was not.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">cache</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">node</span><span class="p">]</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">[</span><span class="s2">&quot;content&quot;</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="NetworkController.end_session"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.network.NetworkController.end_session">[docs]</a>    <span class="k">def</span> <span class="nf">end_session</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">success</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Close a session</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        success : bool, optional</span>
+<span class="sd">            *True* if the session was completed successfully, *False* otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">collector</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">[</span><span class="s2">&quot;log&quot;</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">collector</span><span class="o">.</span><span class="n">end_session</span><span class="p">(</span><span class="n">success</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="NetworkController.rewire_link"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.network.NetworkController.rewire_link">[docs]</a>    <span class="k">def</span> <span class="nf">rewire_link</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">up</span><span class="p">,</span> <span class="n">vp</span><span class="p">,</span> <span class="n">recompute_paths</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Rewire an existing link to new endpoints</span>
+
+<span class="sd">        This method can be used to model mobility patters, e.g., changing</span>
+<span class="sd">        attachment points of sources and/or receivers.</span>
+
+<span class="sd">        Note well. With great power comes great responsibility. Be careful when</span>
+<span class="sd">        using this method. In fact as a result of link rewiring, network</span>
+<span class="sd">        partitions and other corner cases might occur. Ensure that the</span>
+<span class="sd">        implementation of strategies using this method deal with all potential</span>
+<span class="sd">        corner cases appropriately.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        u, v : any hashable type</span>
+<span class="sd">            Endpoints of link before rewiring</span>
+<span class="sd">        up, vp : any hashable type</span>
+<span class="sd">            Endpoints of link after rewiring</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">link</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">topology</span><span class="o">.</span><span class="n">adj</span><span class="p">[</span><span class="n">u</span><span class="p">][</span><span class="n">v</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">topology</span><span class="o">.</span><span class="n">remove_edge</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">topology</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">up</span><span class="p">,</span> <span class="n">vp</span><span class="p">,</span> <span class="o">**</span><span class="n">link</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">recompute_paths</span><span class="p">:</span>
+            <span class="n">shortest_path</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">nx</span><span class="o">.</span><span class="n">all_pairs_dijkstra_path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">topology</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">shortest_path</span> <span class="o">=</span> <span class="n">symmetrify_paths</span><span class="p">(</span><span class="n">shortest_path</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="NetworkController.remove_link"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.network.NetworkController.remove_link">[docs]</a>    <span class="k">def</span> <span class="nf">remove_link</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">recompute_paths</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Remove a link from the topology and update the network model.</span>
+
+<span class="sd">        Note well. With great power comes great responsibility. Be careful when</span>
+<span class="sd">        using this method. In fact as a result of link removal, network</span>
+<span class="sd">        partitions and other corner cases might occur. Ensure that the</span>
+<span class="sd">        implementation of strategies using this method deal with all potential</span>
+<span class="sd">        corner cases appropriately.</span>
+
+<span class="sd">        Also, note that, for these changes to be effective, the strategy must</span>
+<span class="sd">        use fresh data provided by the network view and not storing local copies</span>
+<span class="sd">        of network state because they won&#39;t be updated by this method.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        u : any hashable type</span>
+<span class="sd">            Origin node</span>
+<span class="sd">        v : any hashable type</span>
+<span class="sd">            Destination node</span>
+<span class="sd">        recompute_paths: bool, optional</span>
+<span class="sd">            If True, recompute all shortest paths</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">removed_links</span><span class="p">[(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">topology</span><span class="o">.</span><span class="n">adj</span><span class="p">[</span><span class="n">u</span><span class="p">][</span><span class="n">v</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">topology</span><span class="o">.</span><span class="n">remove_edge</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">recompute_paths</span><span class="p">:</span>
+            <span class="n">shortest_path</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">nx</span><span class="o">.</span><span class="n">all_pairs_dijkstra_path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">topology</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">shortest_path</span> <span class="o">=</span> <span class="n">symmetrify_paths</span><span class="p">(</span><span class="n">shortest_path</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="NetworkController.restore_link"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.network.NetworkController.restore_link">[docs]</a>    <span class="k">def</span> <span class="nf">restore_link</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">recompute_paths</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Restore a previously-removed link and update the network model</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        u : any hashable type</span>
+<span class="sd">            Origin node</span>
+<span class="sd">        v : any hashable type</span>
+<span class="sd">            Destination node</span>
+<span class="sd">        recompute_paths: bool, optional</span>
+<span class="sd">            If True, recompute all shortest paths</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">topology</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">removed_links</span><span class="o">.</span><span class="n">pop</span><span class="p">((</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)))</span>
+        <span class="k">if</span> <span class="n">recompute_paths</span><span class="p">:</span>
+            <span class="n">shortest_path</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">nx</span><span class="o">.</span><span class="n">all_pairs_dijkstra_path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">topology</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">shortest_path</span> <span class="o">=</span> <span class="n">symmetrify_paths</span><span class="p">(</span><span class="n">shortest_path</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="NetworkController.remove_node"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.network.NetworkController.remove_node">[docs]</a>    <span class="k">def</span> <span class="nf">remove_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">recompute_paths</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Remove a node from the topology and update the network model.</span>
+
+<span class="sd">        Note well. With great power comes great responsibility. Be careful when</span>
+<span class="sd">        using this method. In fact, as a result of node removal, network</span>
+<span class="sd">        partitions and other corner cases might occur. Ensure that the</span>
+<span class="sd">        implementation of strategies using this method deal with all potential</span>
+<span class="sd">        corner cases appropriately.</span>
+
+<span class="sd">        It should be noted that when this method is called, all links connected</span>
+<span class="sd">        to the node to be removed are removed as well. These links are however</span>
+<span class="sd">        restored when the node is restored. However, if a link attached to this</span>
+<span class="sd">        node was previously removed using the remove_link method, restoring the</span>
+<span class="sd">        node won&#39;t restore that link as well. It will need to be restored with a</span>
+<span class="sd">        call to restore_link.</span>
+
+<span class="sd">        This method is normally quite safe when applied to remove cache nodes or</span>
+<span class="sd">        routers if this does not cause partitions. If used to remove content</span>
+<span class="sd">        sources or receiver, special attention is required. In particular, if</span>
+<span class="sd">        a source is removed, the content items stored by that source will no</span>
+<span class="sd">        longer be available if not cached elsewhere.</span>
+
+<span class="sd">        Also, note that, for these changes to be effective, the strategy must</span>
+<span class="sd">        use fresh data provided by the network view and not storing local copies</span>
+<span class="sd">        of network state because they won&#39;t be updated by this method.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        v : any hashable type</span>
+<span class="sd">            Node to remove</span>
+<span class="sd">        recompute_paths: bool, optional</span>
+<span class="sd">            If True, recompute all shortest paths</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">removed_nodes</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">topology</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="n">v</span><span class="p">]</span>
+        <span class="c1"># First need to remove all links the removed node as endpoint</span>
+        <span class="n">neighbors</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">topology</span><span class="o">.</span><span class="n">adj</span><span class="p">[</span><span class="n">v</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">disconnected_neighbors</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">neighbors</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">disconnected_neighbors</span><span class="p">[</span><span class="n">v</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">remove_link</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">recompute_paths</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">topology</span><span class="o">.</span><span class="n">remove_node</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">cache</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">removed_caches</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">local_cache</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">removed_local_caches</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">local_cache</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">source_node</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">removed_sources</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">source_node</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">content</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">removed_sources</span><span class="p">[</span><span class="n">v</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">countent_source</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">recompute_paths</span><span class="p">:</span>
+            <span class="n">shortest_path</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">nx</span><span class="o">.</span><span class="n">all_pairs_dijkstra_path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">topology</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">shortest_path</span> <span class="o">=</span> <span class="n">symmetrify_paths</span><span class="p">(</span><span class="n">shortest_path</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="NetworkController.restore_node"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.network.NetworkController.restore_node">[docs]</a>    <span class="k">def</span> <span class="nf">restore_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">recompute_paths</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Restore a previously-removed node and update the network model.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        v : any hashable type</span>
+<span class="sd">            Node to restore</span>
+<span class="sd">        recompute_paths: bool, optional</span>
+<span class="sd">            If True, recompute all shortest paths</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">topology</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">removed_nodes</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">v</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">disconnected_neighbors</span><span class="p">[</span><span class="n">v</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">u</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">removed_links</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">restore_link</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">recompute_paths</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">disconnected_neighbors</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">removed_caches</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">removed_caches</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">removed_local_caches</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">local_cache</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">removed_local_caches</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">removed_sources</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">source_node</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">removed_sources</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">content</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">source_node</span><span class="p">[</span><span class="n">v</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">countent_source</span><span class="p">[</span><span class="n">content</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+        <span class="k">if</span> <span class="n">recompute_paths</span><span class="p">:</span>
+            <span class="n">shortest_path</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">nx</span><span class="o">.</span><span class="n">all_pairs_dijkstra_path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">topology</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">shortest_path</span> <span class="o">=</span> <span class="n">symmetrify_paths</span><span class="p">(</span><span class="n">shortest_path</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="NetworkController.reserve_local_cache"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.network.NetworkController.reserve_local_cache">[docs]</a>    <span class="k">def</span> <span class="nf">reserve_local_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ratio</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reserve a fraction of cache as local.</span>
+
+<span class="sd">        This method reserves a fixed fraction of the cache of each caching node</span>
+<span class="sd">        to act as local uncoodinated cache. Methods `get_content` and</span>
+<span class="sd">        `put_content` will only operated to the coordinated cache. The reserved</span>
+<span class="sd">        local cache can be accessed with methods `get_content_local_cache` and</span>
+<span class="sd">        `put_content_local_cache`.</span>
+
+<span class="sd">        This function is currently used only by hybrid hash-routing strategies.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        ratio : float</span>
+<span class="sd">            The ratio of cache space to be reserved as local cache.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">ratio</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">ratio</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;ratio must be between 0 and 1&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">v</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+            <span class="n">maxlen</span> <span class="o">=</span> <span class="n">iround</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">maxlen</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">ratio</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">maxlen</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">c</span><span class="p">)(</span><span class="n">maxlen</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># If the coordinated cache size is zero, then remove cache</span>
+                <span class="c1"># from that location</span>
+                <span class="k">if</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">cache</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+            <span class="n">local_maxlen</span> <span class="o">=</span> <span class="n">iround</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">maxlen</span> <span class="o">*</span> <span class="p">(</span><span class="n">ratio</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">local_maxlen</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">local_cache</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">c</span><span class="p">)(</span><span class="n">local_maxlen</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="NetworkController.get_content_local_cache"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.network.NetworkController.get_content_local_cache">[docs]</a>    <span class="k">def</span> <span class="nf">get_content_local_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get content from local cache of node (if any)</span>
+
+<span class="sd">        Get content from a local cache of a node. Local cache must be</span>
+<span class="sd">        initialized with the `reserve_local_cache` method.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        node : any hashable type</span>
+<span class="sd">            The node to query</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">node</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">local_cache</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="n">cache_hit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">local_cache</span><span class="p">[</span><span class="n">node</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">[</span><span class="s2">&quot;content&quot;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">cache_hit</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">[</span><span class="s2">&quot;log&quot;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">collector</span><span class="o">.</span><span class="n">cache_hit</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">[</span><span class="s2">&quot;log&quot;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">collector</span><span class="o">.</span><span class="n">cache_miss</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">cache_hit</span></div>
+
+<div class="viewcode-block" id="NetworkController.put_content_local_cache"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.network.NetworkController.put_content_local_cache">[docs]</a>    <span class="k">def</span> <span class="nf">put_content_local_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Put content into local cache of node (if any)</span>
+
+<span class="sd">        Put content into a local cache of a node. Local cache must be</span>
+<span class="sd">        initialized with the `reserve_local_cache` method.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        node : any hashable type</span>
+<span class="sd">            The node to query</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">local_cache</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">local_cache</span><span class="p">[</span><span class="n">node</span><span class="p">]</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">[</span><span class="s2">&quot;content&quot;</span><span class="p">])</span></div></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Icarus 0.8.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">icarus.execution.network</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2016, Lorenzo Saino, Ioannis Psaras.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.1.1.
+    </div>
+  </body>
+</html>

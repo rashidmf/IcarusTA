@@ -1,0 +1,681 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>icarus.execution.collectors &#8212; Icarus 0.8.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinxdoc.css" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Icarus 0.8.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">icarus.execution.collectors</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for icarus.execution.collectors</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Performance metrics loggers</span>
+
+<span class="sd">This module contains all data collectors that record events while simulations</span>
+<span class="sd">are being executed and compute performance metrics.</span>
+
+<span class="sd">Currently implemented data collectors allow users to measure cache hit ratio,</span>
+<span class="sd">latency, path stretch and link load.</span>
+
+<span class="sd">To create a new data collector, it is sufficient to create a new class</span>
+<span class="sd">inheriting from the `DataCollector` class and override all required methods.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">collections</span>
+
+<span class="kn">from</span> <span class="nn">icarus.registry</span> <span class="kn">import</span> <span class="n">register_data_collector</span>
+<span class="kn">from</span> <span class="nn">icarus.tools</span> <span class="kn">import</span> <span class="n">cdf</span>
+<span class="kn">from</span> <span class="nn">icarus.util</span> <span class="kn">import</span> <span class="n">Tree</span><span class="p">,</span> <span class="n">inheritdoc</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;DataCollector&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;CollectorProxy&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;CacheHitRatioCollector&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;LinkLoadCollector&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;LatencyCollector&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;PathStretchCollector&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;DummyCollector&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+
+
+<div class="viewcode-block" id="DataCollector"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.collectors.DataCollector">[docs]</a><span class="k">class</span> <span class="nc">DataCollector</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Object collecting notifications about simulation events and measuring</span>
+<span class="sd">    relevant metrics.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">view</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Constructor</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        view : NetworkView</span>
+<span class="sd">            An instance of the network view</span>
+<span class="sd">        params : keyworded parameters</span>
+<span class="sd">            Collector parameters</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">view</span> <span class="o">=</span> <span class="n">view</span>
+
+<div class="viewcode-block" id="DataCollector.start_session"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.collectors.DataCollector.start_session">[docs]</a>    <span class="k">def</span> <span class="nf">start_session</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timestamp</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">content</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Notifies the collector that a new network session started.</span>
+
+<span class="sd">        A session refers to the retrieval of a content from a receiver, from</span>
+<span class="sd">        the issuing of a content request to the delivery of the content.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        timestamp : int</span>
+<span class="sd">            The timestamp of the event</span>
+<span class="sd">        receiver : any hashable type</span>
+<span class="sd">            The receiver node requesting a content</span>
+<span class="sd">        content : any hashable type</span>
+<span class="sd">            The content identifier requested by the receiver</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="DataCollector.cache_hit"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.collectors.DataCollector.cache_hit">[docs]</a>    <span class="k">def</span> <span class="nf">cache_hit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reports that the requested content has been served by the cache at</span>
+<span class="sd">        node *node*.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        node : any hashable type</span>
+<span class="sd">            The node whose cache served the content</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="DataCollector.cache_miss"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.collectors.DataCollector.cache_miss">[docs]</a>    <span class="k">def</span> <span class="nf">cache_miss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reports that the cache at node *node* has been looked up for</span>
+<span class="sd">        requested content but there was a cache miss.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        node : any hashable type</span>
+<span class="sd">            The node whose cache served the content</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="DataCollector.server_hit"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.collectors.DataCollector.server_hit">[docs]</a>    <span class="k">def</span> <span class="nf">server_hit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reports that the requested content has been served by the server at</span>
+<span class="sd">        node *node*.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        node : any hashable type</span>
+<span class="sd">            The server node which served the content</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="DataCollector.request_hop"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.collectors.DataCollector.request_hop">[docs]</a>    <span class="k">def</span> <span class="nf">request_hop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">main_path</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reports that a request has traversed the link *(u, v)*</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        u : any hashable type</span>
+<span class="sd">            Origin node</span>
+<span class="sd">        v : any hashable type</span>
+<span class="sd">            Destination node</span>
+<span class="sd">        main_path : bool, optional</span>
+<span class="sd">            If *True*, indicates that link link is on the main path that will</span>
+<span class="sd">            lead to hit a content. It is normally used to calculate latency</span>
+<span class="sd">            correctly in multicast cases. Default value is *True*</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="DataCollector.content_hop"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.collectors.DataCollector.content_hop">[docs]</a>    <span class="k">def</span> <span class="nf">content_hop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">main_path</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reports that a content has traversed the link *(u, v)*</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        u : any hashable type</span>
+<span class="sd">            Origin node</span>
+<span class="sd">        v : any hashable type</span>
+<span class="sd">            Destination node</span>
+<span class="sd">        main_path : bool, optional</span>
+<span class="sd">            If *True*, indicates that this link is being traversed by content</span>
+<span class="sd">            that will be delivered to the receiver. This is needed to</span>
+<span class="sd">            calculate latency correctly in multicast cases. Default value is</span>
+<span class="sd">            *True*</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="DataCollector.end_session"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.collectors.DataCollector.end_session">[docs]</a>    <span class="k">def</span> <span class="nf">end_session</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">success</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reports that the session is closed, i.e. the content has been</span>
+<span class="sd">        successfully delivered to the receiver or a failure blocked the</span>
+<span class="sd">        execution of the request</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        success : bool, optional</span>
+<span class="sd">            *True* if the session was completed successfully, *False* otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="DataCollector.results"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.collectors.DataCollector.results">[docs]</a>    <span class="k">def</span> <span class="nf">results</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the aggregated results measured by the collector.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        results : dict</span>
+<span class="sd">            Dictionary mapping metric with results.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div></div>
+
+
+<span class="c1"># Note: The implementation of CollectorProxy could be improved to avoid having</span>
+<span class="c1"># to rewrite almost identical methods, for example by playing with __dict__</span>
+<span class="c1"># attribute. However, it was implemented this way to make it more readable and</span>
+<span class="c1"># easier to understand.</span>
+<div class="viewcode-block" id="CollectorProxy"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.collectors.CollectorProxy">[docs]</a><span class="k">class</span> <span class="nc">CollectorProxy</span><span class="p">(</span><span class="n">DataCollector</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;This class acts as a proxy for all concrete collectors towards the</span>
+<span class="sd">    network controller.</span>
+
+<span class="sd">    An instance of this class registers itself with the network controller and</span>
+<span class="sd">    it receives notifications for all events. This class is responsible for</span>
+<span class="sd">    dispatching events of interests to concrete collectors.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">EVENTS</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">&quot;start_session&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;end_session&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;cache_hit&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;cache_miss&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;server_hit&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;request_hop&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;content_hop&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;results&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">view</span><span class="p">,</span> <span class="n">collectors</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Constructor</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        view : NetworkView</span>
+<span class="sd">            An instance of the network view</span>
+<span class="sd">        collector : list of DataCollector</span>
+<span class="sd">            List of instances of DataCollector that will be notified of events</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">view</span> <span class="o">=</span> <span class="n">view</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">collectors</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">e</span><span class="p">:</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">collectors</span> <span class="k">if</span> <span class="n">e</span> <span class="ow">in</span> <span class="nb">type</span><span class="p">(</span><span class="n">c</span><span class="p">)</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">]</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">EVENTS</span>
+        <span class="p">}</span>
+
+<div class="viewcode-block" id="CollectorProxy.start_session"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.collectors.CollectorProxy.start_session">[docs]</a>    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">DataCollector</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">start_session</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timestamp</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">content</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">collectors</span><span class="p">[</span><span class="s2">&quot;start_session&quot;</span><span class="p">]:</span>
+            <span class="n">c</span><span class="o">.</span><span class="n">start_session</span><span class="p">(</span><span class="n">timestamp</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">content</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="CollectorProxy.cache_hit"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.collectors.CollectorProxy.cache_hit">[docs]</a>    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">DataCollector</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">cache_hit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">collectors</span><span class="p">[</span><span class="s2">&quot;cache_hit&quot;</span><span class="p">]:</span>
+            <span class="n">c</span><span class="o">.</span><span class="n">cache_hit</span><span class="p">(</span><span class="n">node</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="CollectorProxy.cache_miss"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.collectors.CollectorProxy.cache_miss">[docs]</a>    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">DataCollector</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">cache_miss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">collectors</span><span class="p">[</span><span class="s2">&quot;cache_miss&quot;</span><span class="p">]:</span>
+            <span class="n">c</span><span class="o">.</span><span class="n">cache_miss</span><span class="p">(</span><span class="n">node</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="CollectorProxy.server_hit"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.collectors.CollectorProxy.server_hit">[docs]</a>    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">DataCollector</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">server_hit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">collectors</span><span class="p">[</span><span class="s2">&quot;server_hit&quot;</span><span class="p">]:</span>
+            <span class="n">c</span><span class="o">.</span><span class="n">server_hit</span><span class="p">(</span><span class="n">node</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="CollectorProxy.request_hop"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.collectors.CollectorProxy.request_hop">[docs]</a>    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">DataCollector</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">request_hop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">main_path</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">collectors</span><span class="p">[</span><span class="s2">&quot;request_hop&quot;</span><span class="p">]:</span>
+            <span class="n">c</span><span class="o">.</span><span class="n">request_hop</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">main_path</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="CollectorProxy.content_hop"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.collectors.CollectorProxy.content_hop">[docs]</a>    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">DataCollector</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">content_hop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">main_path</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">collectors</span><span class="p">[</span><span class="s2">&quot;content_hop&quot;</span><span class="p">]:</span>
+            <span class="n">c</span><span class="o">.</span><span class="n">content_hop</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">main_path</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="CollectorProxy.end_session"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.collectors.CollectorProxy.end_session">[docs]</a>    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">DataCollector</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">end_session</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">success</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">collectors</span><span class="p">[</span><span class="s2">&quot;end_session&quot;</span><span class="p">]:</span>
+            <span class="n">c</span><span class="o">.</span><span class="n">end_session</span><span class="p">(</span><span class="n">success</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="CollectorProxy.results"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.collectors.CollectorProxy.results">[docs]</a>    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">DataCollector</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">results</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Tree</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="n">c</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">results</span><span class="p">()</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">collectors</span><span class="p">[</span><span class="s2">&quot;results&quot;</span><span class="p">]})</span></div></div>
+
+
+<div class="viewcode-block" id="LinkLoadCollector"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.collectors.LinkLoadCollector">[docs]</a><span class="nd">@register_data_collector</span><span class="p">(</span><span class="s2">&quot;LINK_LOAD&quot;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">LinkLoadCollector</span><span class="p">(</span><span class="n">DataCollector</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Data collector measuring the link load&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">view</span><span class="p">,</span> <span class="n">req_size</span><span class="o">=</span><span class="mi">150</span><span class="p">,</span> <span class="n">content_size</span><span class="o">=</span><span class="mi">1500</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Constructor</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        view : NetworkView</span>
+<span class="sd">            The network view instance</span>
+<span class="sd">        req_size : int</span>
+<span class="sd">            Average size (in bytes) of a request</span>
+<span class="sd">        content_size : int</span>
+<span class="sd">            Average size (in byte) of a content</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">view</span> <span class="o">=</span> <span class="n">view</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">req_count</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cont_count</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">req_size</span> <span class="o">&lt;=</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">content_size</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;req_size and content_size must be positive&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">req_size</span> <span class="o">=</span> <span class="n">req_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">content_size</span> <span class="o">=</span> <span class="n">content_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_start</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_end</span> <span class="o">=</span> <span class="mi">1</span>
+
+<div class="viewcode-block" id="LinkLoadCollector.start_session"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.collectors.LinkLoadCollector.start_session">[docs]</a>    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">DataCollector</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">start_session</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timestamp</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">content</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">t_start</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">t_start</span> <span class="o">=</span> <span class="n">timestamp</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_end</span> <span class="o">=</span> <span class="n">timestamp</span></div>
+
+<div class="viewcode-block" id="LinkLoadCollector.request_hop"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.collectors.LinkLoadCollector.request_hop">[docs]</a>    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">DataCollector</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">request_hop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">main_path</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">req_count</span><span class="p">[(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)]</span> <span class="o">+=</span> <span class="mi">1</span></div>
+
+<div class="viewcode-block" id="LinkLoadCollector.content_hop"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.collectors.LinkLoadCollector.content_hop">[docs]</a>    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">DataCollector</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">content_hop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">main_path</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cont_count</span><span class="p">[(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)]</span> <span class="o">+=</span> <span class="mi">1</span></div>
+
+<div class="viewcode-block" id="LinkLoadCollector.results"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.collectors.LinkLoadCollector.results">[docs]</a>    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">DataCollector</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">results</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">duration</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">t_end</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">t_start</span>
+        <span class="n">used_links</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">req_count</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cont_count</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+        <span class="n">link_loads</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">link</span><span class="p">:</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">req_size</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">req_count</span><span class="p">[</span><span class="n">link</span><span class="p">]</span>
+                <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">content_size</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">cont_count</span><span class="p">[</span><span class="n">link</span><span class="p">]</span>
+            <span class="p">)</span>
+            <span class="o">/</span> <span class="n">duration</span>
+            <span class="k">for</span> <span class="n">link</span> <span class="ow">in</span> <span class="n">used_links</span>
+        <span class="p">}</span>
+        <span class="n">link_loads_int</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">link</span><span class="p">:</span> <span class="n">load</span>
+            <span class="k">for</span> <span class="n">link</span><span class="p">,</span> <span class="n">load</span> <span class="ow">in</span> <span class="n">link_loads</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">link_type</span><span class="p">(</span><span class="o">*</span><span class="n">link</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;internal&quot;</span>
+        <span class="p">}</span>
+        <span class="n">link_loads_ext</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">link</span><span class="p">:</span> <span class="n">load</span>
+            <span class="k">for</span> <span class="n">link</span><span class="p">,</span> <span class="n">load</span> <span class="ow">in</span> <span class="n">link_loads</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">link_type</span><span class="p">(</span><span class="o">*</span><span class="n">link</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;external&quot;</span>
+        <span class="p">}</span>
+        <span class="n">mean_load_int</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="nb">sum</span><span class="p">(</span><span class="n">link_loads_int</span><span class="o">.</span><span class="n">values</span><span class="p">())</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">link_loads_int</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">link_loads_int</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+            <span class="k">else</span> <span class="mi">0</span>
+        <span class="p">)</span>
+        <span class="n">mean_load_ext</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="nb">sum</span><span class="p">(</span><span class="n">link_loads_ext</span><span class="o">.</span><span class="n">values</span><span class="p">())</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">link_loads_ext</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">link_loads_ext</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+            <span class="k">else</span> <span class="mi">0</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">Tree</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;MEAN_INTERNAL&quot;</span><span class="p">:</span> <span class="n">mean_load_int</span><span class="p">,</span>
+                <span class="s2">&quot;MEAN_EXTERNAL&quot;</span><span class="p">:</span> <span class="n">mean_load_ext</span><span class="p">,</span>
+                <span class="s2">&quot;PER_LINK_INTERNAL&quot;</span><span class="p">:</span> <span class="n">link_loads_int</span><span class="p">,</span>
+                <span class="s2">&quot;PER_LINK_EXTERNAL&quot;</span><span class="p">:</span> <span class="n">link_loads_ext</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="LatencyCollector"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.collectors.LatencyCollector">[docs]</a><span class="nd">@register_data_collector</span><span class="p">(</span><span class="s2">&quot;LATENCY&quot;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">LatencyCollector</span><span class="p">(</span><span class="n">DataCollector</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Data collector measuring latency, i.e. the delay taken to delivery a</span>
+<span class="sd">    content.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">view</span><span class="p">,</span> <span class="n">cdf</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Constructor</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        view : NetworkView</span>
+<span class="sd">            The network view instance</span>
+<span class="sd">        cdf : bool, optional</span>
+<span class="sd">            If *True*, also collects a cdf of the latency</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cdf</span> <span class="o">=</span> <span class="n">cdf</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">view</span> <span class="o">=</span> <span class="n">view</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">req_latency</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sess_count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">latency</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="k">if</span> <span class="n">cdf</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">latency_data</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">deque</span><span class="p">()</span>
+
+<div class="viewcode-block" id="LatencyCollector.start_session"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.collectors.LatencyCollector.start_session">[docs]</a>    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">DataCollector</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">start_session</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timestamp</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">content</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sess_count</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sess_latency</span> <span class="o">=</span> <span class="mf">0.0</span></div>
+
+<div class="viewcode-block" id="LatencyCollector.request_hop"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.collectors.LatencyCollector.request_hop">[docs]</a>    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">DataCollector</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">request_hop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">main_path</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">main_path</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sess_latency</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">link_delay</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="LatencyCollector.content_hop"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.collectors.LatencyCollector.content_hop">[docs]</a>    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">DataCollector</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">content_hop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">main_path</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">main_path</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sess_latency</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">link_delay</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="LatencyCollector.end_session"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.collectors.LatencyCollector.end_session">[docs]</a>    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">DataCollector</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">end_session</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">success</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">success</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cdf</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">latency_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sess_latency</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">latency</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sess_latency</span></div>
+
+<div class="viewcode-block" id="LatencyCollector.results"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.collectors.LatencyCollector.results">[docs]</a>    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">DataCollector</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">results</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="n">Tree</span><span class="p">({</span><span class="s2">&quot;MEAN&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">latency</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">sess_count</span><span class="p">})</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cdf</span><span class="p">:</span>
+            <span class="n">results</span><span class="p">[</span><span class="s2">&quot;CDF&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cdf</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">latency_data</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">results</span></div></div>
+
+
+<div class="viewcode-block" id="CacheHitRatioCollector"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.collectors.CacheHitRatioCollector">[docs]</a><span class="nd">@register_data_collector</span><span class="p">(</span><span class="s2">&quot;CACHE_HIT_RATIO&quot;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">CacheHitRatioCollector</span><span class="p">(</span><span class="n">DataCollector</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Collector measuring the cache hit ratio, i.e. the portion of content</span>
+<span class="sd">    requests served by a cache.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">view</span><span class="p">,</span> <span class="n">off_path_hits</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">per_node</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">content_hits</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Constructor</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        view : NetworkView</span>
+<span class="sd">            The NetworkView instance</span>
+<span class="sd">        off_path_hits : bool, optional</span>
+<span class="sd">            If *True* also records cache hits from caches not on located on the</span>
+<span class="sd">            shortest path. This metric may be relevant only for some strategies</span>
+<span class="sd">        content_hits : bool, optional</span>
+<span class="sd">            If *True* also records cache hits per content instead of just</span>
+<span class="sd">            globally</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">view</span> <span class="o">=</span> <span class="n">view</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">off_path_hits</span> <span class="o">=</span> <span class="n">off_path_hits</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">per_node</span> <span class="o">=</span> <span class="n">per_node</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cont_hits</span> <span class="o">=</span> <span class="n">content_hits</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sess_count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cache_hits</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">serv_hits</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="n">off_path_hits</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">off_path_hit_count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="n">per_node</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">per_node_cache_hits</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">per_node_server_hits</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">content_hits</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">curr_cont</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cont_cache_hits</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cont_serv_hits</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+
+<div class="viewcode-block" id="CacheHitRatioCollector.start_session"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.collectors.CacheHitRatioCollector.start_session">[docs]</a>    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">DataCollector</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">start_session</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timestamp</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">content</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sess_count</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">off_path_hits</span><span class="p">:</span>
+            <span class="n">source</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">content_source</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">curr_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="n">receiver</span><span class="p">,</span> <span class="n">source</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cont_hits</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">curr_cont</span> <span class="o">=</span> <span class="n">content</span></div>
+
+<div class="viewcode-block" id="CacheHitRatioCollector.cache_hit"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.collectors.CacheHitRatioCollector.cache_hit">[docs]</a>    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">DataCollector</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">cache_hit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cache_hits</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">off_path_hits</span> <span class="ow">and</span> <span class="n">node</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">curr_path</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">off_path_hit_count</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cont_hits</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cont_cache_hits</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">curr_cont</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">per_node</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">per_node_cache_hits</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span></div>
+
+<div class="viewcode-block" id="CacheHitRatioCollector.server_hit"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.collectors.CacheHitRatioCollector.server_hit">[docs]</a>    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">DataCollector</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">server_hit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">serv_hits</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cont_hits</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cont_serv_hits</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">curr_cont</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">per_node</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">per_node_server_hits</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span></div>
+
+<div class="viewcode-block" id="CacheHitRatioCollector.results"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.collectors.CacheHitRatioCollector.results">[docs]</a>    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">DataCollector</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">results</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">n_sess</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache_hits</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">serv_hits</span>
+        <span class="n">hit_ratio</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache_hits</span> <span class="o">/</span> <span class="n">n_sess</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="n">Tree</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="s2">&quot;MEAN&quot;</span><span class="p">:</span> <span class="n">hit_ratio</span><span class="p">})</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">off_path_hits</span><span class="p">:</span>
+            <span class="n">results</span><span class="p">[</span><span class="s2">&quot;MEAN_OFF_PATH&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">off_path_hit_count</span> <span class="o">/</span> <span class="n">n_sess</span>
+            <span class="n">results</span><span class="p">[</span><span class="s2">&quot;MEAN_ON_PATH&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;MEAN&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;MEAN_OFF_PATH&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cont_hits</span><span class="p">:</span>
+            <span class="n">cont_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span>
+                <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cont_cache_hits</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cont_serv_hits</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+            <span class="p">)</span>
+            <span class="n">cont_hits</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="n">i</span><span class="p">:</span> <span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">cont_cache_hits</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                    <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cont_cache_hits</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">cont_serv_hits</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                <span class="p">)</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">cont_set</span>
+            <span class="p">}</span>
+            <span class="n">results</span><span class="p">[</span><span class="s2">&quot;PER_CONTENT&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cont_hits</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">per_node</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">per_node_cache_hits</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">per_node_cache_hits</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">/=</span> <span class="n">n_sess</span>
+            <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">per_node_server_hits</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">per_node_server_hits</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">/=</span> <span class="n">n_sess</span>
+            <span class="n">results</span><span class="p">[</span><span class="s2">&quot;PER_NODE_CACHE_HIT_RATIO&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">per_node_cache_hits</span>
+            <span class="n">results</span><span class="p">[</span><span class="s2">&quot;PER_NODE_SERVER_HIT_RATIO&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">per_node_server_hits</span>
+        <span class="k">return</span> <span class="n">results</span></div></div>
+
+
+<div class="viewcode-block" id="PathStretchCollector"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.collectors.PathStretchCollector">[docs]</a><span class="nd">@register_data_collector</span><span class="p">(</span><span class="s2">&quot;PATH_STRETCH&quot;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">PathStretchCollector</span><span class="p">(</span><span class="n">DataCollector</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Collector measuring the path stretch, i.e. the ratio between the actual</span>
+<span class="sd">    path length and the shortest path length.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">view</span><span class="p">,</span> <span class="n">cdf</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Constructor</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        view : NetworkView</span>
+<span class="sd">            The network view instance</span>
+<span class="sd">        cdf : bool, optional</span>
+<span class="sd">            If *True*, also collects a cdf of the path stretch</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">view</span> <span class="o">=</span> <span class="n">view</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cdf</span> <span class="o">=</span> <span class="n">cdf</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">req_path_len</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cont_path_len</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sess_count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mean_req_stretch</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mean_cont_stretch</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mean_stretch</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cdf</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">req_stretch_data</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">deque</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cont_stretch_data</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">deque</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stretch_data</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">deque</span><span class="p">()</span>
+
+<div class="viewcode-block" id="PathStretchCollector.start_session"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.collectors.PathStretchCollector.start_session">[docs]</a>    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">DataCollector</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">start_session</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timestamp</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">content</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">receiver</span> <span class="o">=</span> <span class="n">receiver</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">source</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">content_source</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">req_path_len</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cont_path_len</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sess_count</span> <span class="o">+=</span> <span class="mi">1</span></div>
+
+<div class="viewcode-block" id="PathStretchCollector.request_hop"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.collectors.PathStretchCollector.request_hop">[docs]</a>    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">DataCollector</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">request_hop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">main_path</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">req_path_len</span> <span class="o">+=</span> <span class="mi">1</span></div>
+
+<div class="viewcode-block" id="PathStretchCollector.content_hop"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.collectors.PathStretchCollector.content_hop">[docs]</a>    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">DataCollector</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">content_hop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">main_path</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cont_path_len</span> <span class="o">+=</span> <span class="mi">1</span></div>
+
+<div class="viewcode-block" id="PathStretchCollector.end_session"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.collectors.PathStretchCollector.end_session">[docs]</a>    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">DataCollector</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">end_session</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">success</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">success</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">req_sp_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">receiver</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">))</span>
+        <span class="n">cont_sp_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">receiver</span><span class="p">))</span>
+        <span class="n">req_stretch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">req_path_len</span> <span class="o">/</span> <span class="n">req_sp_len</span>
+        <span class="n">cont_stretch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cont_path_len</span> <span class="o">/</span> <span class="n">cont_sp_len</span>
+        <span class="n">stretch</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">req_path_len</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">cont_path_len</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">req_sp_len</span> <span class="o">+</span> <span class="n">cont_sp_len</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mean_req_stretch</span> <span class="o">+=</span> <span class="n">req_stretch</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mean_cont_stretch</span> <span class="o">+=</span> <span class="n">cont_stretch</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mean_stretch</span> <span class="o">+=</span> <span class="n">stretch</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cdf</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">req_stretch_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">req_stretch</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cont_stretch_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cont_stretch</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stretch_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">stretch</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="PathStretchCollector.results"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.collectors.PathStretchCollector.results">[docs]</a>    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">DataCollector</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">results</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="n">Tree</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;MEAN&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean_stretch</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">sess_count</span><span class="p">,</span>
+                <span class="s2">&quot;MEAN_REQUEST&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean_req_stretch</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">sess_count</span><span class="p">,</span>
+                <span class="s2">&quot;MEAN_CONTENT&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean_cont_stretch</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">sess_count</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cdf</span><span class="p">:</span>
+            <span class="n">results</span><span class="p">[</span><span class="s2">&quot;CDF&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cdf</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stretch_data</span><span class="p">)</span>
+            <span class="n">results</span><span class="p">[</span><span class="s2">&quot;CDF_REQUEST&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cdf</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">req_stretch_data</span><span class="p">)</span>
+            <span class="n">results</span><span class="p">[</span><span class="s2">&quot;CDF_CONTENT&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cdf</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cont_stretch_data</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">results</span></div></div>
+
+
+<div class="viewcode-block" id="DummyCollector"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.collectors.DummyCollector">[docs]</a><span class="nd">@register_data_collector</span><span class="p">(</span><span class="s2">&quot;DUMMY&quot;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">DummyCollector</span><span class="p">(</span><span class="n">DataCollector</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Dummy collector to be used for test cases only.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">view</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Constructor</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        view : NetworkView</span>
+<span class="sd">            The network view instance</span>
+<span class="sd">        output : stream</span>
+<span class="sd">            Stream on which debug collector writes</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">view</span> <span class="o">=</span> <span class="n">view</span>
+
+<div class="viewcode-block" id="DummyCollector.start_session"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.collectors.DummyCollector.start_session">[docs]</a>    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">DataCollector</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">start_session</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timestamp</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">content</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="n">timestamp</span><span class="o">=</span><span class="n">timestamp</span><span class="p">,</span>
+            <span class="n">receiver</span><span class="o">=</span><span class="n">receiver</span><span class="p">,</span>
+            <span class="n">content</span><span class="o">=</span><span class="n">content</span><span class="p">,</span>
+            <span class="n">cache_misses</span><span class="o">=</span><span class="p">[],</span>
+            <span class="n">request_hops</span><span class="o">=</span><span class="p">[],</span>
+            <span class="n">content_hops</span><span class="o">=</span><span class="p">[],</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="DummyCollector.cache_hit"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.collectors.DummyCollector.cache_hit">[docs]</a>    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">DataCollector</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">cache_hit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">[</span><span class="s2">&quot;serving_node&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">node</span></div>
+
+<div class="viewcode-block" id="DummyCollector.cache_miss"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.collectors.DummyCollector.cache_miss">[docs]</a>    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">DataCollector</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">cache_miss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">[</span><span class="s2">&quot;cache_misses&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">node</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DummyCollector.server_hit"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.collectors.DummyCollector.server_hit">[docs]</a>    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">DataCollector</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">server_hit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">[</span><span class="s2">&quot;serving_node&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">node</span></div>
+
+<div class="viewcode-block" id="DummyCollector.request_hop"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.collectors.DummyCollector.request_hop">[docs]</a>    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">DataCollector</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">request_hop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">main_path</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">[</span><span class="s2">&quot;request_hops&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="DummyCollector.content_hop"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.collectors.DummyCollector.content_hop">[docs]</a>    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">DataCollector</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">content_hop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">main_path</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">[</span><span class="s2">&quot;content_hops&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="DummyCollector.end_session"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.collectors.DummyCollector.end_session">[docs]</a>    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">DataCollector</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">end_session</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">success</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">[</span><span class="s2">&quot;success&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">success</span></div>
+
+<div class="viewcode-block" id="DummyCollector.session_summary"><a class="viewcode-back" href="../../../apidoc/icarus.execution.html#icarus.execution.collectors.DummyCollector.session_summary">[docs]</a>    <span class="k">def</span> <span class="nf">session_summary</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return a summary of latest session</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        session : dict</span>
+<span class="sd">            Summary of session</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span></div></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Icarus 0.8.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">icarus.execution.collectors</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2016, Lorenzo Saino, Ioannis Psaras.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.1.1.
+    </div>
+  </body>
+</html>

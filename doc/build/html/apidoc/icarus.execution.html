@@ -1,0 +1,2008 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>icarus.execution package &#8212; Icarus 0.8.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="icarus.models package" href="icarus.models.html" />
+    <link rel="prev" title="icarus package" href="icarus.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="icarus.models.html" title="icarus.models package"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="icarus.html" title="icarus package"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Icarus 0.8.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="icarus.html" accesskey="U">icarus package</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">icarus.execution package</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="icarus-execution-package">
+<h1>icarus.execution package<a class="headerlink" href="#icarus-execution-package" title="Permalink to this heading">¶</a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this heading">¶</a></h2>
+</section>
+<section id="module-icarus.execution.collectors">
+<span id="icarus-execution-collectors-module"></span><h2>icarus.execution.collectors module<a class="headerlink" href="#module-icarus.execution.collectors" title="Permalink to this heading">¶</a></h2>
+<p>Performance metrics loggers</p>
+<p>This module contains all data collectors that record events while simulations
+are being executed and compute performance metrics.</p>
+<p>Currently implemented data collectors allow users to measure cache hit ratio,
+latency, path stretch and link load.</p>
+<p>To create a new data collector, it is sufficient to create a new class
+inheriting from the <cite>DataCollector</cite> class and override all required methods.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="icarus.execution.collectors.CacheHitRatioCollector">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CacheHitRatioCollector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">view</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">off_path_hits</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">per_node</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content_hits</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/collectors.html#CacheHitRatioCollector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.collectors.CacheHitRatioCollector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#icarus.execution.collectors.DataCollector" title="icarus.execution.collectors.DataCollector"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataCollector</span></code></a></p>
+<p>Collector measuring the cache hit ratio, i.e. the portion of content
+requests served by a cache.</p>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.execution.collectors.CacheHitRatioCollector.cache_hit" title="icarus.execution.collectors.CacheHitRatioCollector.cache_hit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cache_hit</span></code></a>(node)</p></td>
+<td><p>Reports that the requested content has been served by the cache at node <em>node</em>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">cache_miss</span></code>(node)</p></td>
+<td><p>Reports that the cache at node <em>node</em> has been looked up for requested content but there was a cache miss.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">content_hop</span></code>(u, v[, main_path])</p></td>
+<td><p>Reports that a content has traversed the link <em>(u, v)</em></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">end_session</span></code>([success])</p></td>
+<td><p>Reports that the session is closed, i.e. the content has been successfully delivered to the receiver or a failure blocked the execution of the request.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">request_hop</span></code>(u, v[, main_path])</p></td>
+<td><p>Reports that a request has traversed the link <em>(u, v)</em></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#icarus.execution.collectors.CacheHitRatioCollector.results" title="icarus.execution.collectors.CacheHitRatioCollector.results"><code class="xref py py-obj docutils literal notranslate"><span class="pre">results</span></code></a>()</p></td>
+<td><p>Returns the aggregated results measured by the collector.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.execution.collectors.CacheHitRatioCollector.server_hit" title="icarus.execution.collectors.CacheHitRatioCollector.server_hit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">server_hit</span></code></a>(node)</p></td>
+<td><p>Reports that the requested content has been served by the server at node <em>node</em>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#icarus.execution.collectors.CacheHitRatioCollector.start_session" title="icarus.execution.collectors.CacheHitRatioCollector.start_session"><code class="xref py py-obj docutils literal notranslate"><span class="pre">start_session</span></code></a>(timestamp, receiver, content)</p></td>
+<td><p>Notifies the collector that a new network session started.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.collectors.CacheHitRatioCollector.cache_hit">
+<span class="sig-name descname"><span class="pre">cache_hit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/collectors.html#CacheHitRatioCollector.cache_hit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.collectors.CacheHitRatioCollector.cache_hit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reports that the requested content has been served by the cache at
+node <em>node</em>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>node</strong><span class="classifier">any hashable type</span></dt><dd><p>The node whose cache served the content</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="icarus.execution.collectors.CacheHitRatioCollector.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'CACHE_HIT_RATIO'</span></em><a class="headerlink" href="#icarus.execution.collectors.CacheHitRatioCollector.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.collectors.CacheHitRatioCollector.results">
+<span class="sig-name descname"><span class="pre">results</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/collectors.html#CacheHitRatioCollector.results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.collectors.CacheHitRatioCollector.results" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the aggregated results measured by the collector.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>results</strong><span class="classifier">dict</span></dt><dd><p>Dictionary mapping metric with results.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.collectors.CacheHitRatioCollector.server_hit">
+<span class="sig-name descname"><span class="pre">server_hit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/collectors.html#CacheHitRatioCollector.server_hit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.collectors.CacheHitRatioCollector.server_hit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reports that the requested content has been served by the server at
+node <em>node</em>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>node</strong><span class="classifier">any hashable type</span></dt><dd><p>The server node which served the content</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.collectors.CacheHitRatioCollector.start_session">
+<span class="sig-name descname"><span class="pre">start_session</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timestamp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">receiver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/collectors.html#CacheHitRatioCollector.start_session"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.collectors.CacheHitRatioCollector.start_session" title="Permalink to this definition">¶</a></dt>
+<dd><p>Notifies the collector that a new network session started.</p>
+<p>A session refers to the retrieval of a content from a receiver, from
+the issuing of a content request to the delivery of the content.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>timestamp</strong><span class="classifier">int</span></dt><dd><p>The timestamp of the event</p>
+</dd>
+<dt><strong>receiver</strong><span class="classifier">any hashable type</span></dt><dd><p>The receiver node requesting a content</p>
+</dd>
+<dt><strong>content</strong><span class="classifier">any hashable type</span></dt><dd><p>The content identifier requested by the receiver</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="icarus.execution.collectors.CollectorProxy">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CollectorProxy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">view</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">collectors</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/collectors.html#CollectorProxy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.collectors.CollectorProxy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#icarus.execution.collectors.DataCollector" title="icarus.execution.collectors.DataCollector"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataCollector</span></code></a></p>
+<p>This class acts as a proxy for all concrete collectors towards the
+network controller.</p>
+<p>An instance of this class registers itself with the network controller and
+it receives notifications for all events. This class is responsible for
+dispatching events of interests to concrete collectors.</p>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.execution.collectors.CollectorProxy.cache_hit" title="icarus.execution.collectors.CollectorProxy.cache_hit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cache_hit</span></code></a>(node)</p></td>
+<td><p>Reports that the requested content has been served by the cache at node <em>node</em>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#icarus.execution.collectors.CollectorProxy.cache_miss" title="icarus.execution.collectors.CollectorProxy.cache_miss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cache_miss</span></code></a>(node)</p></td>
+<td><p>Reports that the cache at node <em>node</em> has been looked up for requested content but there was a cache miss.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.execution.collectors.CollectorProxy.content_hop" title="icarus.execution.collectors.CollectorProxy.content_hop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">content_hop</span></code></a>(u, v[, main_path])</p></td>
+<td><p>Reports that a content has traversed the link <em>(u, v)</em></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#icarus.execution.collectors.CollectorProxy.end_session" title="icarus.execution.collectors.CollectorProxy.end_session"><code class="xref py py-obj docutils literal notranslate"><span class="pre">end_session</span></code></a>([success])</p></td>
+<td><p>Reports that the session is closed, i.e. the content has been successfully delivered to the receiver or a failure blocked the execution of the request.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.execution.collectors.CollectorProxy.request_hop" title="icarus.execution.collectors.CollectorProxy.request_hop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">request_hop</span></code></a>(u, v[, main_path])</p></td>
+<td><p>Reports that a request has traversed the link <em>(u, v)</em></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#icarus.execution.collectors.CollectorProxy.results" title="icarus.execution.collectors.CollectorProxy.results"><code class="xref py py-obj docutils literal notranslate"><span class="pre">results</span></code></a>()</p></td>
+<td><p>Returns the aggregated results measured by the collector.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.execution.collectors.CollectorProxy.server_hit" title="icarus.execution.collectors.CollectorProxy.server_hit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">server_hit</span></code></a>(node)</p></td>
+<td><p>Reports that the requested content has been served by the server at node <em>node</em>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#icarus.execution.collectors.CollectorProxy.start_session" title="icarus.execution.collectors.CollectorProxy.start_session"><code class="xref py py-obj docutils literal notranslate"><span class="pre">start_session</span></code></a>(timestamp, receiver, content)</p></td>
+<td><p>Notifies the collector that a new network session started.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="icarus.execution.collectors.CollectorProxy.EVENTS">
+<span class="sig-name descname"><span class="pre">EVENTS</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('start_session',</span> <span class="pre">'end_session',</span> <span class="pre">'cache_hit',</span> <span class="pre">'cache_miss',</span> <span class="pre">'server_hit',</span> <span class="pre">'request_hop',</span> <span class="pre">'content_hop',</span> <span class="pre">'results')</span></em><a class="headerlink" href="#icarus.execution.collectors.CollectorProxy.EVENTS" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.collectors.CollectorProxy.cache_hit">
+<span class="sig-name descname"><span class="pre">cache_hit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/collectors.html#CollectorProxy.cache_hit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.collectors.CollectorProxy.cache_hit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reports that the requested content has been served by the cache at
+node <em>node</em>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>node</strong><span class="classifier">any hashable type</span></dt><dd><p>The node whose cache served the content</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.collectors.CollectorProxy.cache_miss">
+<span class="sig-name descname"><span class="pre">cache_miss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/collectors.html#CollectorProxy.cache_miss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.collectors.CollectorProxy.cache_miss" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reports that the cache at node <em>node</em> has been looked up for
+requested content but there was a cache miss.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>node</strong><span class="classifier">any hashable type</span></dt><dd><p>The node whose cache served the content</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.collectors.CollectorProxy.content_hop">
+<span class="sig-name descname"><span class="pre">content_hop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">main_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/collectors.html#CollectorProxy.content_hop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.collectors.CollectorProxy.content_hop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reports that a content has traversed the link <em>(u, v)</em></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>u</strong><span class="classifier">any hashable type</span></dt><dd><p>Origin node</p>
+</dd>
+<dt><strong>v</strong><span class="classifier">any hashable type</span></dt><dd><p>Destination node</p>
+</dd>
+<dt><strong>main_path</strong><span class="classifier">bool, optional</span></dt><dd><p>If <em>True</em>, indicates that this link is being traversed by content
+that will be delivered to the receiver. This is needed to
+calculate latency correctly in multicast cases. Default value is
+<em>True</em></p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.collectors.CollectorProxy.end_session">
+<span class="sig-name descname"><span class="pre">end_session</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">success</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/collectors.html#CollectorProxy.end_session"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.collectors.CollectorProxy.end_session" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reports that the session is closed, i.e. the content has been
+successfully delivered to the receiver or a failure blocked the
+execution of the request</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>success</strong><span class="classifier">bool, optional</span></dt><dd><p><em>True</em> if the session was completed successfully, <em>False</em> otherwise</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.collectors.CollectorProxy.request_hop">
+<span class="sig-name descname"><span class="pre">request_hop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">main_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/collectors.html#CollectorProxy.request_hop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.collectors.CollectorProxy.request_hop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reports that a request has traversed the link <em>(u, v)</em></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>u</strong><span class="classifier">any hashable type</span></dt><dd><p>Origin node</p>
+</dd>
+<dt><strong>v</strong><span class="classifier">any hashable type</span></dt><dd><p>Destination node</p>
+</dd>
+<dt><strong>main_path</strong><span class="classifier">bool, optional</span></dt><dd><p>If <em>True</em>, indicates that link link is on the main path that will
+lead to hit a content. It is normally used to calculate latency
+correctly in multicast cases. Default value is <em>True</em></p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.collectors.CollectorProxy.results">
+<span class="sig-name descname"><span class="pre">results</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/collectors.html#CollectorProxy.results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.collectors.CollectorProxy.results" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the aggregated results measured by the collector.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>results</strong><span class="classifier">dict</span></dt><dd><p>Dictionary mapping metric with results.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.collectors.CollectorProxy.server_hit">
+<span class="sig-name descname"><span class="pre">server_hit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/collectors.html#CollectorProxy.server_hit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.collectors.CollectorProxy.server_hit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reports that the requested content has been served by the server at
+node <em>node</em>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>node</strong><span class="classifier">any hashable type</span></dt><dd><p>The server node which served the content</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.collectors.CollectorProxy.start_session">
+<span class="sig-name descname"><span class="pre">start_session</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timestamp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">receiver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/collectors.html#CollectorProxy.start_session"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.collectors.CollectorProxy.start_session" title="Permalink to this definition">¶</a></dt>
+<dd><p>Notifies the collector that a new network session started.</p>
+<p>A session refers to the retrieval of a content from a receiver, from
+the issuing of a content request to the delivery of the content.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>timestamp</strong><span class="classifier">int</span></dt><dd><p>The timestamp of the event</p>
+</dd>
+<dt><strong>receiver</strong><span class="classifier">any hashable type</span></dt><dd><p>The receiver node requesting a content</p>
+</dd>
+<dt><strong>content</strong><span class="classifier">any hashable type</span></dt><dd><p>The content identifier requested by the receiver</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="icarus.execution.collectors.DataCollector">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DataCollector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">view</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/collectors.html#DataCollector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.collectors.DataCollector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Object collecting notifications about simulation events and measuring
+relevant metrics.</p>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.execution.collectors.DataCollector.cache_hit" title="icarus.execution.collectors.DataCollector.cache_hit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cache_hit</span></code></a>(node)</p></td>
+<td><p>Reports that the requested content has been served by the cache at node <em>node</em>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#icarus.execution.collectors.DataCollector.cache_miss" title="icarus.execution.collectors.DataCollector.cache_miss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cache_miss</span></code></a>(node)</p></td>
+<td><p>Reports that the cache at node <em>node</em> has been looked up for requested content but there was a cache miss.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.execution.collectors.DataCollector.content_hop" title="icarus.execution.collectors.DataCollector.content_hop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">content_hop</span></code></a>(u, v[, main_path])</p></td>
+<td><p>Reports that a content has traversed the link <em>(u, v)</em></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#icarus.execution.collectors.DataCollector.end_session" title="icarus.execution.collectors.DataCollector.end_session"><code class="xref py py-obj docutils literal notranslate"><span class="pre">end_session</span></code></a>([success])</p></td>
+<td><p>Reports that the session is closed, i.e. the content has been successfully delivered to the receiver or a failure blocked the execution of the request.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.execution.collectors.DataCollector.request_hop" title="icarus.execution.collectors.DataCollector.request_hop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">request_hop</span></code></a>(u, v[, main_path])</p></td>
+<td><p>Reports that a request has traversed the link <em>(u, v)</em></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#icarus.execution.collectors.DataCollector.results" title="icarus.execution.collectors.DataCollector.results"><code class="xref py py-obj docutils literal notranslate"><span class="pre">results</span></code></a>()</p></td>
+<td><p>Returns the aggregated results measured by the collector.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.execution.collectors.DataCollector.server_hit" title="icarus.execution.collectors.DataCollector.server_hit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">server_hit</span></code></a>(node)</p></td>
+<td><p>Reports that the requested content has been served by the server at node <em>node</em>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#icarus.execution.collectors.DataCollector.start_session" title="icarus.execution.collectors.DataCollector.start_session"><code class="xref py py-obj docutils literal notranslate"><span class="pre">start_session</span></code></a>(timestamp, receiver, content)</p></td>
+<td><p>Notifies the collector that a new network session started.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.collectors.DataCollector.cache_hit">
+<span class="sig-name descname"><span class="pre">cache_hit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/collectors.html#DataCollector.cache_hit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.collectors.DataCollector.cache_hit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reports that the requested content has been served by the cache at
+node <em>node</em>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>node</strong><span class="classifier">any hashable type</span></dt><dd><p>The node whose cache served the content</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.collectors.DataCollector.cache_miss">
+<span class="sig-name descname"><span class="pre">cache_miss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/collectors.html#DataCollector.cache_miss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.collectors.DataCollector.cache_miss" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reports that the cache at node <em>node</em> has been looked up for
+requested content but there was a cache miss.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>node</strong><span class="classifier">any hashable type</span></dt><dd><p>The node whose cache served the content</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.collectors.DataCollector.content_hop">
+<span class="sig-name descname"><span class="pre">content_hop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">main_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/collectors.html#DataCollector.content_hop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.collectors.DataCollector.content_hop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reports that a content has traversed the link <em>(u, v)</em></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>u</strong><span class="classifier">any hashable type</span></dt><dd><p>Origin node</p>
+</dd>
+<dt><strong>v</strong><span class="classifier">any hashable type</span></dt><dd><p>Destination node</p>
+</dd>
+<dt><strong>main_path</strong><span class="classifier">bool, optional</span></dt><dd><p>If <em>True</em>, indicates that this link is being traversed by content
+that will be delivered to the receiver. This is needed to
+calculate latency correctly in multicast cases. Default value is
+<em>True</em></p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.collectors.DataCollector.end_session">
+<span class="sig-name descname"><span class="pre">end_session</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">success</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/collectors.html#DataCollector.end_session"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.collectors.DataCollector.end_session" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reports that the session is closed, i.e. the content has been
+successfully delivered to the receiver or a failure blocked the
+execution of the request</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>success</strong><span class="classifier">bool, optional</span></dt><dd><p><em>True</em> if the session was completed successfully, <em>False</em> otherwise</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.collectors.DataCollector.request_hop">
+<span class="sig-name descname"><span class="pre">request_hop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">main_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/collectors.html#DataCollector.request_hop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.collectors.DataCollector.request_hop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reports that a request has traversed the link <em>(u, v)</em></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>u</strong><span class="classifier">any hashable type</span></dt><dd><p>Origin node</p>
+</dd>
+<dt><strong>v</strong><span class="classifier">any hashable type</span></dt><dd><p>Destination node</p>
+</dd>
+<dt><strong>main_path</strong><span class="classifier">bool, optional</span></dt><dd><p>If <em>True</em>, indicates that link link is on the main path that will
+lead to hit a content. It is normally used to calculate latency
+correctly in multicast cases. Default value is <em>True</em></p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.collectors.DataCollector.results">
+<span class="sig-name descname"><span class="pre">results</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/collectors.html#DataCollector.results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.collectors.DataCollector.results" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the aggregated results measured by the collector.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>results</strong><span class="classifier">dict</span></dt><dd><p>Dictionary mapping metric with results.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.collectors.DataCollector.server_hit">
+<span class="sig-name descname"><span class="pre">server_hit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/collectors.html#DataCollector.server_hit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.collectors.DataCollector.server_hit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reports that the requested content has been served by the server at
+node <em>node</em>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>node</strong><span class="classifier">any hashable type</span></dt><dd><p>The server node which served the content</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.collectors.DataCollector.start_session">
+<span class="sig-name descname"><span class="pre">start_session</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timestamp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">receiver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/collectors.html#DataCollector.start_session"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.collectors.DataCollector.start_session" title="Permalink to this definition">¶</a></dt>
+<dd><p>Notifies the collector that a new network session started.</p>
+<p>A session refers to the retrieval of a content from a receiver, from
+the issuing of a content request to the delivery of the content.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>timestamp</strong><span class="classifier">int</span></dt><dd><p>The timestamp of the event</p>
+</dd>
+<dt><strong>receiver</strong><span class="classifier">any hashable type</span></dt><dd><p>The receiver node requesting a content</p>
+</dd>
+<dt><strong>content</strong><span class="classifier">any hashable type</span></dt><dd><p>The content identifier requested by the receiver</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="icarus.execution.collectors.DummyCollector">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DummyCollector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">view</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/collectors.html#DummyCollector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.collectors.DummyCollector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#icarus.execution.collectors.DataCollector" title="icarus.execution.collectors.DataCollector"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataCollector</span></code></a></p>
+<p>Dummy collector to be used for test cases only.</p>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.execution.collectors.DummyCollector.cache_hit" title="icarus.execution.collectors.DummyCollector.cache_hit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cache_hit</span></code></a>(node)</p></td>
+<td><p>Reports that the requested content has been served by the cache at node <em>node</em>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#icarus.execution.collectors.DummyCollector.cache_miss" title="icarus.execution.collectors.DummyCollector.cache_miss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cache_miss</span></code></a>(node)</p></td>
+<td><p>Reports that the cache at node <em>node</em> has been looked up for requested content but there was a cache miss.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.execution.collectors.DummyCollector.content_hop" title="icarus.execution.collectors.DummyCollector.content_hop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">content_hop</span></code></a>(u, v[, main_path])</p></td>
+<td><p>Reports that a content has traversed the link <em>(u, v)</em></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#icarus.execution.collectors.DummyCollector.end_session" title="icarus.execution.collectors.DummyCollector.end_session"><code class="xref py py-obj docutils literal notranslate"><span class="pre">end_session</span></code></a>([success])</p></td>
+<td><p>Reports that the session is closed, i.e. the content has been successfully delivered to the receiver or a failure blocked the execution of the request.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.execution.collectors.DummyCollector.request_hop" title="icarus.execution.collectors.DummyCollector.request_hop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">request_hop</span></code></a>(u, v[, main_path])</p></td>
+<td><p>Reports that a request has traversed the link <em>(u, v)</em></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">results</span></code>()</p></td>
+<td><p>Returns the aggregated results measured by the collector.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.execution.collectors.DummyCollector.server_hit" title="icarus.execution.collectors.DummyCollector.server_hit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">server_hit</span></code></a>(node)</p></td>
+<td><p>Reports that the requested content has been served by the server at node <em>node</em>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#icarus.execution.collectors.DummyCollector.session_summary" title="icarus.execution.collectors.DummyCollector.session_summary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">session_summary</span></code></a>()</p></td>
+<td><p>Return a summary of latest session</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.execution.collectors.DummyCollector.start_session" title="icarus.execution.collectors.DummyCollector.start_session"><code class="xref py py-obj docutils literal notranslate"><span class="pre">start_session</span></code></a>(timestamp, receiver, content)</p></td>
+<td><p>Notifies the collector that a new network session started.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.collectors.DummyCollector.cache_hit">
+<span class="sig-name descname"><span class="pre">cache_hit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/collectors.html#DummyCollector.cache_hit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.collectors.DummyCollector.cache_hit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reports that the requested content has been served by the cache at
+node <em>node</em>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>node</strong><span class="classifier">any hashable type</span></dt><dd><p>The node whose cache served the content</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.collectors.DummyCollector.cache_miss">
+<span class="sig-name descname"><span class="pre">cache_miss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/collectors.html#DummyCollector.cache_miss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.collectors.DummyCollector.cache_miss" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reports that the cache at node <em>node</em> has been looked up for
+requested content but there was a cache miss.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>node</strong><span class="classifier">any hashable type</span></dt><dd><p>The node whose cache served the content</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.collectors.DummyCollector.content_hop">
+<span class="sig-name descname"><span class="pre">content_hop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">main_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/collectors.html#DummyCollector.content_hop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.collectors.DummyCollector.content_hop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reports that a content has traversed the link <em>(u, v)</em></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>u</strong><span class="classifier">any hashable type</span></dt><dd><p>Origin node</p>
+</dd>
+<dt><strong>v</strong><span class="classifier">any hashable type</span></dt><dd><p>Destination node</p>
+</dd>
+<dt><strong>main_path</strong><span class="classifier">bool, optional</span></dt><dd><p>If <em>True</em>, indicates that this link is being traversed by content
+that will be delivered to the receiver. This is needed to
+calculate latency correctly in multicast cases. Default value is
+<em>True</em></p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.collectors.DummyCollector.end_session">
+<span class="sig-name descname"><span class="pre">end_session</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">success</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/collectors.html#DummyCollector.end_session"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.collectors.DummyCollector.end_session" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reports that the session is closed, i.e. the content has been
+successfully delivered to the receiver or a failure blocked the
+execution of the request</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>success</strong><span class="classifier">bool, optional</span></dt><dd><p><em>True</em> if the session was completed successfully, <em>False</em> otherwise</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="icarus.execution.collectors.DummyCollector.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'DUMMY'</span></em><a class="headerlink" href="#icarus.execution.collectors.DummyCollector.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.collectors.DummyCollector.request_hop">
+<span class="sig-name descname"><span class="pre">request_hop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">main_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/collectors.html#DummyCollector.request_hop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.collectors.DummyCollector.request_hop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reports that a request has traversed the link <em>(u, v)</em></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>u</strong><span class="classifier">any hashable type</span></dt><dd><p>Origin node</p>
+</dd>
+<dt><strong>v</strong><span class="classifier">any hashable type</span></dt><dd><p>Destination node</p>
+</dd>
+<dt><strong>main_path</strong><span class="classifier">bool, optional</span></dt><dd><p>If <em>True</em>, indicates that link link is on the main path that will
+lead to hit a content. It is normally used to calculate latency
+correctly in multicast cases. Default value is <em>True</em></p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.collectors.DummyCollector.server_hit">
+<span class="sig-name descname"><span class="pre">server_hit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/collectors.html#DummyCollector.server_hit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.collectors.DummyCollector.server_hit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reports that the requested content has been served by the server at
+node <em>node</em>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>node</strong><span class="classifier">any hashable type</span></dt><dd><p>The server node which served the content</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.collectors.DummyCollector.session_summary">
+<span class="sig-name descname"><span class="pre">session_summary</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/collectors.html#DummyCollector.session_summary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.collectors.DummyCollector.session_summary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a summary of latest session</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>session</strong><span class="classifier">dict</span></dt><dd><p>Summary of session</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.collectors.DummyCollector.start_session">
+<span class="sig-name descname"><span class="pre">start_session</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timestamp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">receiver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/collectors.html#DummyCollector.start_session"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.collectors.DummyCollector.start_session" title="Permalink to this definition">¶</a></dt>
+<dd><p>Notifies the collector that a new network session started.</p>
+<p>A session refers to the retrieval of a content from a receiver, from
+the issuing of a content request to the delivery of the content.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>timestamp</strong><span class="classifier">int</span></dt><dd><p>The timestamp of the event</p>
+</dd>
+<dt><strong>receiver</strong><span class="classifier">any hashable type</span></dt><dd><p>The receiver node requesting a content</p>
+</dd>
+<dt><strong>content</strong><span class="classifier">any hashable type</span></dt><dd><p>The content identifier requested by the receiver</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="icarus.execution.collectors.LatencyCollector">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">LatencyCollector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">view</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cdf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/collectors.html#LatencyCollector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.collectors.LatencyCollector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#icarus.execution.collectors.DataCollector" title="icarus.execution.collectors.DataCollector"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataCollector</span></code></a></p>
+<p>Data collector measuring latency, i.e. the delay taken to delivery a
+content.</p>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">cache_hit</span></code>(node)</p></td>
+<td><p>Reports that the requested content has been served by the cache at node <em>node</em>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">cache_miss</span></code>(node)</p></td>
+<td><p>Reports that the cache at node <em>node</em> has been looked up for requested content but there was a cache miss.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.execution.collectors.LatencyCollector.content_hop" title="icarus.execution.collectors.LatencyCollector.content_hop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">content_hop</span></code></a>(u, v[, main_path])</p></td>
+<td><p>Reports that a content has traversed the link <em>(u, v)</em></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#icarus.execution.collectors.LatencyCollector.end_session" title="icarus.execution.collectors.LatencyCollector.end_session"><code class="xref py py-obj docutils literal notranslate"><span class="pre">end_session</span></code></a>([success])</p></td>
+<td><p>Reports that the session is closed, i.e. the content has been successfully delivered to the receiver or a failure blocked the execution of the request.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.execution.collectors.LatencyCollector.request_hop" title="icarus.execution.collectors.LatencyCollector.request_hop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">request_hop</span></code></a>(u, v[, main_path])</p></td>
+<td><p>Reports that a request has traversed the link <em>(u, v)</em></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#icarus.execution.collectors.LatencyCollector.results" title="icarus.execution.collectors.LatencyCollector.results"><code class="xref py py-obj docutils literal notranslate"><span class="pre">results</span></code></a>()</p></td>
+<td><p>Returns the aggregated results measured by the collector.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">server_hit</span></code>(node)</p></td>
+<td><p>Reports that the requested content has been served by the server at node <em>node</em>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#icarus.execution.collectors.LatencyCollector.start_session" title="icarus.execution.collectors.LatencyCollector.start_session"><code class="xref py py-obj docutils literal notranslate"><span class="pre">start_session</span></code></a>(timestamp, receiver, content)</p></td>
+<td><p>Notifies the collector that a new network session started.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.collectors.LatencyCollector.content_hop">
+<span class="sig-name descname"><span class="pre">content_hop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">main_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/collectors.html#LatencyCollector.content_hop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.collectors.LatencyCollector.content_hop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reports that a content has traversed the link <em>(u, v)</em></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>u</strong><span class="classifier">any hashable type</span></dt><dd><p>Origin node</p>
+</dd>
+<dt><strong>v</strong><span class="classifier">any hashable type</span></dt><dd><p>Destination node</p>
+</dd>
+<dt><strong>main_path</strong><span class="classifier">bool, optional</span></dt><dd><p>If <em>True</em>, indicates that this link is being traversed by content
+that will be delivered to the receiver. This is needed to
+calculate latency correctly in multicast cases. Default value is
+<em>True</em></p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.collectors.LatencyCollector.end_session">
+<span class="sig-name descname"><span class="pre">end_session</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">success</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/collectors.html#LatencyCollector.end_session"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.collectors.LatencyCollector.end_session" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reports that the session is closed, i.e. the content has been
+successfully delivered to the receiver or a failure blocked the
+execution of the request</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>success</strong><span class="classifier">bool, optional</span></dt><dd><p><em>True</em> if the session was completed successfully, <em>False</em> otherwise</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="icarus.execution.collectors.LatencyCollector.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'LATENCY'</span></em><a class="headerlink" href="#icarus.execution.collectors.LatencyCollector.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.collectors.LatencyCollector.request_hop">
+<span class="sig-name descname"><span class="pre">request_hop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">main_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/collectors.html#LatencyCollector.request_hop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.collectors.LatencyCollector.request_hop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reports that a request has traversed the link <em>(u, v)</em></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>u</strong><span class="classifier">any hashable type</span></dt><dd><p>Origin node</p>
+</dd>
+<dt><strong>v</strong><span class="classifier">any hashable type</span></dt><dd><p>Destination node</p>
+</dd>
+<dt><strong>main_path</strong><span class="classifier">bool, optional</span></dt><dd><p>If <em>True</em>, indicates that link link is on the main path that will
+lead to hit a content. It is normally used to calculate latency
+correctly in multicast cases. Default value is <em>True</em></p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.collectors.LatencyCollector.results">
+<span class="sig-name descname"><span class="pre">results</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/collectors.html#LatencyCollector.results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.collectors.LatencyCollector.results" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the aggregated results measured by the collector.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>results</strong><span class="classifier">dict</span></dt><dd><p>Dictionary mapping metric with results.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.collectors.LatencyCollector.start_session">
+<span class="sig-name descname"><span class="pre">start_session</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timestamp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">receiver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/collectors.html#LatencyCollector.start_session"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.collectors.LatencyCollector.start_session" title="Permalink to this definition">¶</a></dt>
+<dd><p>Notifies the collector that a new network session started.</p>
+<p>A session refers to the retrieval of a content from a receiver, from
+the issuing of a content request to the delivery of the content.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>timestamp</strong><span class="classifier">int</span></dt><dd><p>The timestamp of the event</p>
+</dd>
+<dt><strong>receiver</strong><span class="classifier">any hashable type</span></dt><dd><p>The receiver node requesting a content</p>
+</dd>
+<dt><strong>content</strong><span class="classifier">any hashable type</span></dt><dd><p>The content identifier requested by the receiver</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="icarus.execution.collectors.LinkLoadCollector">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">LinkLoadCollector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">view</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">req_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">150</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1500</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/collectors.html#LinkLoadCollector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.collectors.LinkLoadCollector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#icarus.execution.collectors.DataCollector" title="icarus.execution.collectors.DataCollector"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataCollector</span></code></a></p>
+<p>Data collector measuring the link load</p>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">cache_hit</span></code>(node)</p></td>
+<td><p>Reports that the requested content has been served by the cache at node <em>node</em>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">cache_miss</span></code>(node)</p></td>
+<td><p>Reports that the cache at node <em>node</em> has been looked up for requested content but there was a cache miss.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.execution.collectors.LinkLoadCollector.content_hop" title="icarus.execution.collectors.LinkLoadCollector.content_hop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">content_hop</span></code></a>(u, v[, main_path])</p></td>
+<td><p>Reports that a content has traversed the link <em>(u, v)</em></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">end_session</span></code>([success])</p></td>
+<td><p>Reports that the session is closed, i.e. the content has been successfully delivered to the receiver or a failure blocked the execution of the request.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.execution.collectors.LinkLoadCollector.request_hop" title="icarus.execution.collectors.LinkLoadCollector.request_hop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">request_hop</span></code></a>(u, v[, main_path])</p></td>
+<td><p>Reports that a request has traversed the link <em>(u, v)</em></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#icarus.execution.collectors.LinkLoadCollector.results" title="icarus.execution.collectors.LinkLoadCollector.results"><code class="xref py py-obj docutils literal notranslate"><span class="pre">results</span></code></a>()</p></td>
+<td><p>Returns the aggregated results measured by the collector.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">server_hit</span></code>(node)</p></td>
+<td><p>Reports that the requested content has been served by the server at node <em>node</em>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#icarus.execution.collectors.LinkLoadCollector.start_session" title="icarus.execution.collectors.LinkLoadCollector.start_session"><code class="xref py py-obj docutils literal notranslate"><span class="pre">start_session</span></code></a>(timestamp, receiver, content)</p></td>
+<td><p>Notifies the collector that a new network session started.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.collectors.LinkLoadCollector.content_hop">
+<span class="sig-name descname"><span class="pre">content_hop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">main_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/collectors.html#LinkLoadCollector.content_hop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.collectors.LinkLoadCollector.content_hop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reports that a content has traversed the link <em>(u, v)</em></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>u</strong><span class="classifier">any hashable type</span></dt><dd><p>Origin node</p>
+</dd>
+<dt><strong>v</strong><span class="classifier">any hashable type</span></dt><dd><p>Destination node</p>
+</dd>
+<dt><strong>main_path</strong><span class="classifier">bool, optional</span></dt><dd><p>If <em>True</em>, indicates that this link is being traversed by content
+that will be delivered to the receiver. This is needed to
+calculate latency correctly in multicast cases. Default value is
+<em>True</em></p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="icarus.execution.collectors.LinkLoadCollector.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'LINK_LOAD'</span></em><a class="headerlink" href="#icarus.execution.collectors.LinkLoadCollector.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.collectors.LinkLoadCollector.request_hop">
+<span class="sig-name descname"><span class="pre">request_hop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">main_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/collectors.html#LinkLoadCollector.request_hop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.collectors.LinkLoadCollector.request_hop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reports that a request has traversed the link <em>(u, v)</em></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>u</strong><span class="classifier">any hashable type</span></dt><dd><p>Origin node</p>
+</dd>
+<dt><strong>v</strong><span class="classifier">any hashable type</span></dt><dd><p>Destination node</p>
+</dd>
+<dt><strong>main_path</strong><span class="classifier">bool, optional</span></dt><dd><p>If <em>True</em>, indicates that link link is on the main path that will
+lead to hit a content. It is normally used to calculate latency
+correctly in multicast cases. Default value is <em>True</em></p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.collectors.LinkLoadCollector.results">
+<span class="sig-name descname"><span class="pre">results</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/collectors.html#LinkLoadCollector.results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.collectors.LinkLoadCollector.results" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the aggregated results measured by the collector.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>results</strong><span class="classifier">dict</span></dt><dd><p>Dictionary mapping metric with results.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.collectors.LinkLoadCollector.start_session">
+<span class="sig-name descname"><span class="pre">start_session</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timestamp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">receiver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/collectors.html#LinkLoadCollector.start_session"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.collectors.LinkLoadCollector.start_session" title="Permalink to this definition">¶</a></dt>
+<dd><p>Notifies the collector that a new network session started.</p>
+<p>A session refers to the retrieval of a content from a receiver, from
+the issuing of a content request to the delivery of the content.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>timestamp</strong><span class="classifier">int</span></dt><dd><p>The timestamp of the event</p>
+</dd>
+<dt><strong>receiver</strong><span class="classifier">any hashable type</span></dt><dd><p>The receiver node requesting a content</p>
+</dd>
+<dt><strong>content</strong><span class="classifier">any hashable type</span></dt><dd><p>The content identifier requested by the receiver</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="icarus.execution.collectors.PathStretchCollector">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PathStretchCollector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">view</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cdf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/collectors.html#PathStretchCollector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.collectors.PathStretchCollector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#icarus.execution.collectors.DataCollector" title="icarus.execution.collectors.DataCollector"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataCollector</span></code></a></p>
+<p>Collector measuring the path stretch, i.e. the ratio between the actual
+path length and the shortest path length.</p>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">cache_hit</span></code>(node)</p></td>
+<td><p>Reports that the requested content has been served by the cache at node <em>node</em>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">cache_miss</span></code>(node)</p></td>
+<td><p>Reports that the cache at node <em>node</em> has been looked up for requested content but there was a cache miss.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.execution.collectors.PathStretchCollector.content_hop" title="icarus.execution.collectors.PathStretchCollector.content_hop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">content_hop</span></code></a>(u, v[, main_path])</p></td>
+<td><p>Reports that a content has traversed the link <em>(u, v)</em></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#icarus.execution.collectors.PathStretchCollector.end_session" title="icarus.execution.collectors.PathStretchCollector.end_session"><code class="xref py py-obj docutils literal notranslate"><span class="pre">end_session</span></code></a>([success])</p></td>
+<td><p>Reports that the session is closed, i.e. the content has been successfully delivered to the receiver or a failure blocked the execution of the request.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.execution.collectors.PathStretchCollector.request_hop" title="icarus.execution.collectors.PathStretchCollector.request_hop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">request_hop</span></code></a>(u, v[, main_path])</p></td>
+<td><p>Reports that a request has traversed the link <em>(u, v)</em></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#icarus.execution.collectors.PathStretchCollector.results" title="icarus.execution.collectors.PathStretchCollector.results"><code class="xref py py-obj docutils literal notranslate"><span class="pre">results</span></code></a>()</p></td>
+<td><p>Returns the aggregated results measured by the collector.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">server_hit</span></code>(node)</p></td>
+<td><p>Reports that the requested content has been served by the server at node <em>node</em>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#icarus.execution.collectors.PathStretchCollector.start_session" title="icarus.execution.collectors.PathStretchCollector.start_session"><code class="xref py py-obj docutils literal notranslate"><span class="pre">start_session</span></code></a>(timestamp, receiver, content)</p></td>
+<td><p>Notifies the collector that a new network session started.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.collectors.PathStretchCollector.content_hop">
+<span class="sig-name descname"><span class="pre">content_hop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">main_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/collectors.html#PathStretchCollector.content_hop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.collectors.PathStretchCollector.content_hop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reports that a content has traversed the link <em>(u, v)</em></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>u</strong><span class="classifier">any hashable type</span></dt><dd><p>Origin node</p>
+</dd>
+<dt><strong>v</strong><span class="classifier">any hashable type</span></dt><dd><p>Destination node</p>
+</dd>
+<dt><strong>main_path</strong><span class="classifier">bool, optional</span></dt><dd><p>If <em>True</em>, indicates that this link is being traversed by content
+that will be delivered to the receiver. This is needed to
+calculate latency correctly in multicast cases. Default value is
+<em>True</em></p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.collectors.PathStretchCollector.end_session">
+<span class="sig-name descname"><span class="pre">end_session</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">success</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/collectors.html#PathStretchCollector.end_session"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.collectors.PathStretchCollector.end_session" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reports that the session is closed, i.e. the content has been
+successfully delivered to the receiver or a failure blocked the
+execution of the request</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>success</strong><span class="classifier">bool, optional</span></dt><dd><p><em>True</em> if the session was completed successfully, <em>False</em> otherwise</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="icarus.execution.collectors.PathStretchCollector.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'PATH_STRETCH'</span></em><a class="headerlink" href="#icarus.execution.collectors.PathStretchCollector.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.collectors.PathStretchCollector.request_hop">
+<span class="sig-name descname"><span class="pre">request_hop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">main_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/collectors.html#PathStretchCollector.request_hop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.collectors.PathStretchCollector.request_hop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reports that a request has traversed the link <em>(u, v)</em></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>u</strong><span class="classifier">any hashable type</span></dt><dd><p>Origin node</p>
+</dd>
+<dt><strong>v</strong><span class="classifier">any hashable type</span></dt><dd><p>Destination node</p>
+</dd>
+<dt><strong>main_path</strong><span class="classifier">bool, optional</span></dt><dd><p>If <em>True</em>, indicates that link link is on the main path that will
+lead to hit a content. It is normally used to calculate latency
+correctly in multicast cases. Default value is <em>True</em></p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.collectors.PathStretchCollector.results">
+<span class="sig-name descname"><span class="pre">results</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/collectors.html#PathStretchCollector.results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.collectors.PathStretchCollector.results" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the aggregated results measured by the collector.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>results</strong><span class="classifier">dict</span></dt><dd><p>Dictionary mapping metric with results.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.collectors.PathStretchCollector.start_session">
+<span class="sig-name descname"><span class="pre">start_session</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timestamp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">receiver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/collectors.html#PathStretchCollector.start_session"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.collectors.PathStretchCollector.start_session" title="Permalink to this definition">¶</a></dt>
+<dd><p>Notifies the collector that a new network session started.</p>
+<p>A session refers to the retrieval of a content from a receiver, from
+the issuing of a content request to the delivery of the content.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>timestamp</strong><span class="classifier">int</span></dt><dd><p>The timestamp of the event</p>
+</dd>
+<dt><strong>receiver</strong><span class="classifier">any hashable type</span></dt><dd><p>The receiver node requesting a content</p>
+</dd>
+<dt><strong>content</strong><span class="classifier">any hashable type</span></dt><dd><p>The content identifier requested by the receiver</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-icarus.execution.engine">
+<span id="icarus-execution-engine-module"></span><h2>icarus.execution.engine module<a class="headerlink" href="#module-icarus.execution.engine" title="Permalink to this heading">¶</a></h2>
+<p>This module implements the simulation engine.</p>
+<p>The simulation engine, given the parameters according to which a single
+experiments needs to be run, instantiates all the required classes and executes
+the experiment by iterating through the event provided by an event generator
+and providing them to a strategy instance.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.execution.engine.exec_experiment">
+<span class="sig-name descname"><span class="pre">exec_experiment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">workload</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">netconf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strategy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_policy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">collectors</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/engine.html#exec_experiment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.engine.exec_experiment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Execute the simulation of a specific scenario.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>topology</strong><span class="classifier">Topology</span></dt><dd><p>The FNSS Topology object modelling the network topology on which
+experiments are run.</p>
+</dd>
+<dt><strong>workload</strong><span class="classifier">iterable</span></dt><dd><p>An iterable object whose elements are (time, event) tuples, where time
+is a float type indicating the timestamp of the event to be executed
+and event is a dictionary storing all the attributes of the event to
+execute</p>
+</dd>
+<dt><strong>netconf</strong><span class="classifier">dict</span></dt><dd><p>Dictionary of attributes to inizialize the network model</p>
+</dd>
+<dt><strong>strategy</strong><span class="classifier">tree</span></dt><dd><p>Strategy definition. It is tree describing the name of the strategy
+to use and a list of initialization attributes</p>
+</dd>
+<dt><strong>cache_policy</strong><span class="classifier">tree</span></dt><dd><p>Cache policy definition. It is tree describing the name of the cache
+policy to use and a list of initialization attributes</p>
+</dd>
+<dt><strong>collectors: dict</strong></dt><dd><p>The collectors to be used. It is a dictionary in which keys are the
+names of collectors to use and values are dictionaries of attributes
+for the collector they refer to.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>results</strong><span class="classifier">Tree</span></dt><dd><p>A tree with the aggregated simulation results from all collectors</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-icarus.execution.network">
+<span id="icarus-execution-network-module"></span><h2>icarus.execution.network module<a class="headerlink" href="#module-icarus.execution.network" title="Permalink to this heading">¶</a></h2>
+<p>Network Model-View-Controller (MVC)</p>
+<p>This module contains classes providing an abstraction of the network shown to
+the strategy implementation. The network is modelled using an MVC design
+pattern.</p>
+<p>A strategy performs actions on the network by calling methods of the
+<cite>NetworkController</cite>, that in turns updates  the <cite>NetworkModel</cite> instance that
+updates the <cite>NetworkView</cite> instance. The strategy can get updated information
+about the network status by calling methods of the <cite>NetworkView</cite> instance.</p>
+<p>The <cite>NetworkController</cite> is also responsible to notify a <cite>DataCollectorProxy</cite>
+of all relevant events.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="icarus.execution.network.NetworkController">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">NetworkController</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/network.html#NetworkController"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.network.NetworkController" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Network controller</p>
+<p>This class is in charge of executing operations on the network model on
+behalf of a strategy implementation. It is also in charge of notifying
+data collectors of relevant events.</p>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.execution.network.NetworkController.attach_collector" title="icarus.execution.network.NetworkController.attach_collector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">attach_collector</span></code></a>(collector)</p></td>
+<td><p>Attach a data collector to which all events will be reported.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#icarus.execution.network.NetworkController.detach_collector" title="icarus.execution.network.NetworkController.detach_collector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">detach_collector</span></code></a>()</p></td>
+<td><p>Detach the data collector.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.execution.network.NetworkController.end_session" title="icarus.execution.network.NetworkController.end_session"><code class="xref py py-obj docutils literal notranslate"><span class="pre">end_session</span></code></a>([success])</p></td>
+<td><p>Close a session</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#icarus.execution.network.NetworkController.forward_content_hop" title="icarus.execution.network.NetworkController.forward_content_hop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">forward_content_hop</span></code></a>(u, v[, main_path])</p></td>
+<td><p>Forward a content over link  u -&gt; v.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.execution.network.NetworkController.forward_content_path" title="icarus.execution.network.NetworkController.forward_content_path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">forward_content_path</span></code></a>(u, v[, path, main_path])</p></td>
+<td><p>Forward a content from node <em>s</em> to node <em>t</em> over the provided path.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#icarus.execution.network.NetworkController.forward_request_hop" title="icarus.execution.network.NetworkController.forward_request_hop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">forward_request_hop</span></code></a>(u, v[, main_path])</p></td>
+<td><p>Forward a request over link  u -&gt; v.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.execution.network.NetworkController.forward_request_path" title="icarus.execution.network.NetworkController.forward_request_path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">forward_request_path</span></code></a>(s, t[, path, main_path])</p></td>
+<td><p>Forward a request from node <em>s</em> to node <em>t</em> over the provided path.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#icarus.execution.network.NetworkController.get_content" title="icarus.execution.network.NetworkController.get_content"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_content</span></code></a>(node)</p></td>
+<td><p>Get a content from a server or a cache.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.execution.network.NetworkController.get_content_local_cache" title="icarus.execution.network.NetworkController.get_content_local_cache"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_content_local_cache</span></code></a>(node)</p></td>
+<td><p>Get content from local cache of node (if any)</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#icarus.execution.network.NetworkController.put_content" title="icarus.execution.network.NetworkController.put_content"><code class="xref py py-obj docutils literal notranslate"><span class="pre">put_content</span></code></a>(node)</p></td>
+<td><p>Store content in the specified node.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.execution.network.NetworkController.put_content_local_cache" title="icarus.execution.network.NetworkController.put_content_local_cache"><code class="xref py py-obj docutils literal notranslate"><span class="pre">put_content_local_cache</span></code></a>(node)</p></td>
+<td><p>Put content into local cache of node (if any)</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#icarus.execution.network.NetworkController.remove_content" title="icarus.execution.network.NetworkController.remove_content"><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove_content</span></code></a>(node)</p></td>
+<td><p>Remove the content being handled from the cache</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.execution.network.NetworkController.remove_link" title="icarus.execution.network.NetworkController.remove_link"><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove_link</span></code></a>(u, v[, recompute_paths])</p></td>
+<td><p>Remove a link from the topology and update the network model.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#icarus.execution.network.NetworkController.remove_node" title="icarus.execution.network.NetworkController.remove_node"><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove_node</span></code></a>(v[, recompute_paths])</p></td>
+<td><p>Remove a node from the topology and update the network model.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.execution.network.NetworkController.reserve_local_cache" title="icarus.execution.network.NetworkController.reserve_local_cache"><code class="xref py py-obj docutils literal notranslate"><span class="pre">reserve_local_cache</span></code></a>([ratio])</p></td>
+<td><p>Reserve a fraction of cache as local.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#icarus.execution.network.NetworkController.restore_link" title="icarus.execution.network.NetworkController.restore_link"><code class="xref py py-obj docutils literal notranslate"><span class="pre">restore_link</span></code></a>(u, v[, recompute_paths])</p></td>
+<td><p>Restore a previously-removed link and update the network model</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.execution.network.NetworkController.restore_node" title="icarus.execution.network.NetworkController.restore_node"><code class="xref py py-obj docutils literal notranslate"><span class="pre">restore_node</span></code></a>(v[, recompute_paths])</p></td>
+<td><p>Restore a previously-removed node and update the network model.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#icarus.execution.network.NetworkController.rewire_link" title="icarus.execution.network.NetworkController.rewire_link"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rewire_link</span></code></a>(u, v, up, vp[, recompute_paths])</p></td>
+<td><p>Rewire an existing link to new endpoints</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.execution.network.NetworkController.start_session" title="icarus.execution.network.NetworkController.start_session"><code class="xref py py-obj docutils literal notranslate"><span class="pre">start_session</span></code></a>(timestamp, receiver, content, log)</p></td>
+<td><p>Instruct the controller to start a new session (i.e.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.network.NetworkController.attach_collector">
+<span class="sig-name descname"><span class="pre">attach_collector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">collector</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/network.html#NetworkController.attach_collector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.network.NetworkController.attach_collector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Attach a data collector to which all events will be reported.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>collector</strong><span class="classifier">DataCollector</span></dt><dd><p>The data collector</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.network.NetworkController.detach_collector">
+<span class="sig-name descname"><span class="pre">detach_collector</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/network.html#NetworkController.detach_collector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.network.NetworkController.detach_collector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Detach the data collector.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.network.NetworkController.end_session">
+<span class="sig-name descname"><span class="pre">end_session</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">success</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/network.html#NetworkController.end_session"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.network.NetworkController.end_session" title="Permalink to this definition">¶</a></dt>
+<dd><p>Close a session</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>success</strong><span class="classifier">bool, optional</span></dt><dd><p><em>True</em> if the session was completed successfully, <em>False</em> otherwise</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.network.NetworkController.forward_content_hop">
+<span class="sig-name descname"><span class="pre">forward_content_hop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">main_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/network.html#NetworkController.forward_content_hop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.network.NetworkController.forward_content_hop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Forward a content over link  u -&gt; v.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>u</strong><span class="classifier">any hashable type</span></dt><dd><p>Origin node</p>
+</dd>
+<dt><strong>v</strong><span class="classifier">any hashable type</span></dt><dd><p>Destination node</p>
+</dd>
+<dt><strong>main_path</strong><span class="classifier">bool, optional</span></dt><dd><p>If <em>True</em>, indicates that this link is being traversed by content
+that will be delivered to the receiver. This is needed to
+calculate latency correctly in multicast cases. Default value is
+<em>True</em></p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.network.NetworkController.forward_content_path">
+<span class="sig-name descname"><span class="pre">forward_content_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">main_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/network.html#NetworkController.forward_content_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.network.NetworkController.forward_content_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Forward a content from node <em>s</em> to node <em>t</em> over the provided path.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>s</strong><span class="classifier">any hashable type</span></dt><dd><p>Origin node</p>
+</dd>
+<dt><strong>t</strong><span class="classifier">any hashable type</span></dt><dd><p>Destination node</p>
+</dd>
+<dt><strong>path</strong><span class="classifier">list, optional</span></dt><dd><p>The path to use. If not provided, shortest path is used</p>
+</dd>
+<dt><strong>main_path</strong><span class="classifier">bool, optional</span></dt><dd><p>If <em>True</em>, indicates that this path is being traversed by content
+that will be delivered to the receiver. This is needed to
+calculate latency correctly in multicast cases. Default value is
+<em>True</em></p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.network.NetworkController.forward_request_hop">
+<span class="sig-name descname"><span class="pre">forward_request_hop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">main_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/network.html#NetworkController.forward_request_hop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.network.NetworkController.forward_request_hop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Forward a request over link  u -&gt; v.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>u</strong><span class="classifier">any hashable type</span></dt><dd><p>Origin node</p>
+</dd>
+<dt><strong>v</strong><span class="classifier">any hashable type</span></dt><dd><p>Destination node</p>
+</dd>
+<dt><strong>main_path</strong><span class="classifier">bool, optional</span></dt><dd><p>If <em>True</em>, indicates that link link is on the main path that will
+lead to hit a content. It is normally used to calculate latency
+correctly in multicast cases. Default value is <em>True</em></p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.network.NetworkController.forward_request_path">
+<span class="sig-name descname"><span class="pre">forward_request_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">main_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/network.html#NetworkController.forward_request_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.network.NetworkController.forward_request_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Forward a request from node <em>s</em> to node <em>t</em> over the provided path.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>s</strong><span class="classifier">any hashable type</span></dt><dd><p>Origin node</p>
+</dd>
+<dt><strong>t</strong><span class="classifier">any hashable type</span></dt><dd><p>Destination node</p>
+</dd>
+<dt><strong>path</strong><span class="classifier">list, optional</span></dt><dd><p>The path to use. If not provided, shortest path is used</p>
+</dd>
+<dt><strong>main_path</strong><span class="classifier">bool, optional</span></dt><dd><p>If <em>True</em>, indicates that link path is on the main path that will
+lead to hit a content. It is normally used to calculate latency
+correctly in multicast cases. Default value is <em>True</em></p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.network.NetworkController.get_content">
+<span class="sig-name descname"><span class="pre">get_content</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/network.html#NetworkController.get_content"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.network.NetworkController.get_content" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a content from a server or a cache.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>node</strong><span class="classifier">any hashable type</span></dt><dd><p>The node where the content is retrieved</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>content</strong><span class="classifier">bool</span></dt><dd><p>True if the content is available, False otherwise</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.network.NetworkController.get_content_local_cache">
+<span class="sig-name descname"><span class="pre">get_content_local_cache</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/network.html#NetworkController.get_content_local_cache"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.network.NetworkController.get_content_local_cache" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get content from local cache of node (if any)</p>
+<p>Get content from a local cache of a node. Local cache must be
+initialized with the <cite>reserve_local_cache</cite> method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>node</strong><span class="classifier">any hashable type</span></dt><dd><p>The node to query</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.network.NetworkController.put_content">
+<span class="sig-name descname"><span class="pre">put_content</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/network.html#NetworkController.put_content"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.network.NetworkController.put_content" title="Permalink to this definition">¶</a></dt>
+<dd><p>Store content in the specified node.</p>
+<p>The node must have a cache stack and the actual insertion of the
+content is executed according to the caching policy. If the caching
+policy has a selective insertion policy, then content may not be
+inserted.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>node</strong><span class="classifier">any hashable type</span></dt><dd><p>The node where the content is inserted</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>evicted</strong><span class="classifier">any hashable type</span></dt><dd><p>The evicted object or <em>None</em> if no contents were evicted.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.network.NetworkController.put_content_local_cache">
+<span class="sig-name descname"><span class="pre">put_content_local_cache</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/network.html#NetworkController.put_content_local_cache"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.network.NetworkController.put_content_local_cache" title="Permalink to this definition">¶</a></dt>
+<dd><p>Put content into local cache of node (if any)</p>
+<p>Put content into a local cache of a node. Local cache must be
+initialized with the <cite>reserve_local_cache</cite> method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>node</strong><span class="classifier">any hashable type</span></dt><dd><p>The node to query</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.network.NetworkController.remove_content">
+<span class="sig-name descname"><span class="pre">remove_content</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/network.html#NetworkController.remove_content"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.network.NetworkController.remove_content" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove the content being handled from the cache</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>node</strong><span class="classifier">any hashable type</span></dt><dd><p>The node where the cached content is removed</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>removed</strong><span class="classifier">bool</span></dt><dd><p><em>True</em> if the entry was in the cache, <em>False</em> if it was not.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.network.NetworkController.remove_link">
+<span class="sig-name descname"><span class="pre">remove_link</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recompute_paths</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/network.html#NetworkController.remove_link"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.network.NetworkController.remove_link" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove a link from the topology and update the network model.</p>
+<p>Note well. With great power comes great responsibility. Be careful when
+using this method. In fact as a result of link removal, network
+partitions and other corner cases might occur. Ensure that the
+implementation of strategies using this method deal with all potential
+corner cases appropriately.</p>
+<p>Also, note that, for these changes to be effective, the strategy must
+use fresh data provided by the network view and not storing local copies
+of network state because they won’t be updated by this method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>u</strong><span class="classifier">any hashable type</span></dt><dd><p>Origin node</p>
+</dd>
+<dt><strong>v</strong><span class="classifier">any hashable type</span></dt><dd><p>Destination node</p>
+</dd>
+<dt><strong>recompute_paths: bool, optional</strong></dt><dd><p>If True, recompute all shortest paths</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.network.NetworkController.remove_node">
+<span class="sig-name descname"><span class="pre">remove_node</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">v</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recompute_paths</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/network.html#NetworkController.remove_node"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.network.NetworkController.remove_node" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove a node from the topology and update the network model.</p>
+<p>Note well. With great power comes great responsibility. Be careful when
+using this method. In fact, as a result of node removal, network
+partitions and other corner cases might occur. Ensure that the
+implementation of strategies using this method deal with all potential
+corner cases appropriately.</p>
+<p>It should be noted that when this method is called, all links connected
+to the node to be removed are removed as well. These links are however
+restored when the node is restored. However, if a link attached to this
+node was previously removed using the remove_link method, restoring the
+node won’t restore that link as well. It will need to be restored with a
+call to restore_link.</p>
+<p>This method is normally quite safe when applied to remove cache nodes or
+routers if this does not cause partitions. If used to remove content
+sources or receiver, special attention is required. In particular, if
+a source is removed, the content items stored by that source will no
+longer be available if not cached elsewhere.</p>
+<p>Also, note that, for these changes to be effective, the strategy must
+use fresh data provided by the network view and not storing local copies
+of network state because they won’t be updated by this method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>v</strong><span class="classifier">any hashable type</span></dt><dd><p>Node to remove</p>
+</dd>
+<dt><strong>recompute_paths: bool, optional</strong></dt><dd><p>If True, recompute all shortest paths</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.network.NetworkController.reserve_local_cache">
+<span class="sig-name descname"><span class="pre">reserve_local_cache</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ratio</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/network.html#NetworkController.reserve_local_cache"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.network.NetworkController.reserve_local_cache" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reserve a fraction of cache as local.</p>
+<p>This method reserves a fixed fraction of the cache of each caching node
+to act as local uncoodinated cache. Methods <cite>get_content</cite> and
+<cite>put_content</cite> will only operated to the coordinated cache. The reserved
+local cache can be accessed with methods <cite>get_content_local_cache</cite> and
+<cite>put_content_local_cache</cite>.</p>
+<p>This function is currently used only by hybrid hash-routing strategies.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>ratio</strong><span class="classifier">float</span></dt><dd><p>The ratio of cache space to be reserved as local cache.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.network.NetworkController.restore_link">
+<span class="sig-name descname"><span class="pre">restore_link</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recompute_paths</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/network.html#NetworkController.restore_link"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.network.NetworkController.restore_link" title="Permalink to this definition">¶</a></dt>
+<dd><p>Restore a previously-removed link and update the network model</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>u</strong><span class="classifier">any hashable type</span></dt><dd><p>Origin node</p>
+</dd>
+<dt><strong>v</strong><span class="classifier">any hashable type</span></dt><dd><p>Destination node</p>
+</dd>
+<dt><strong>recompute_paths: bool, optional</strong></dt><dd><p>If True, recompute all shortest paths</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.network.NetworkController.restore_node">
+<span class="sig-name descname"><span class="pre">restore_node</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">v</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recompute_paths</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/network.html#NetworkController.restore_node"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.network.NetworkController.restore_node" title="Permalink to this definition">¶</a></dt>
+<dd><p>Restore a previously-removed node and update the network model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>v</strong><span class="classifier">any hashable type</span></dt><dd><p>Node to restore</p>
+</dd>
+<dt><strong>recompute_paths: bool, optional</strong></dt><dd><p>If True, recompute all shortest paths</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.network.NetworkController.rewire_link">
+<span class="sig-name descname"><span class="pre">rewire_link</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">up</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recompute_paths</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/network.html#NetworkController.rewire_link"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.network.NetworkController.rewire_link" title="Permalink to this definition">¶</a></dt>
+<dd><p>Rewire an existing link to new endpoints</p>
+<p>This method can be used to model mobility patters, e.g., changing
+attachment points of sources and/or receivers.</p>
+<p>Note well. With great power comes great responsibility. Be careful when
+using this method. In fact as a result of link rewiring, network
+partitions and other corner cases might occur. Ensure that the
+implementation of strategies using this method deal with all potential
+corner cases appropriately.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>u, v</strong><span class="classifier">any hashable type</span></dt><dd><p>Endpoints of link before rewiring</p>
+</dd>
+<dt><strong>up, vp</strong><span class="classifier">any hashable type</span></dt><dd><p>Endpoints of link after rewiring</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.network.NetworkController.start_session">
+<span class="sig-name descname"><span class="pre">start_session</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timestamp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">receiver</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/network.html#NetworkController.start_session"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.network.NetworkController.start_session" title="Permalink to this definition">¶</a></dt>
+<dd><p>Instruct the controller to start a new session (i.e. the retrieval
+of a content).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>timestamp</strong><span class="classifier">int</span></dt><dd><p>The timestamp of the event</p>
+</dd>
+<dt><strong>receiver</strong><span class="classifier">any hashable type</span></dt><dd><p>The receiver node requesting a content</p>
+</dd>
+<dt><strong>content</strong><span class="classifier">any hashable type</span></dt><dd><p>The content identifier requested by the receiver</p>
+</dd>
+<dt><strong>log</strong><span class="classifier">bool</span></dt><dd><p><em>True</em> if this session needs to be reported to the collector,
+<em>False</em> otherwise</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="icarus.execution.network.NetworkModel">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">NetworkModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_policy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shortest_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/network.html#NetworkModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.network.NetworkModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Models the internal state of the network.</p>
+<p>This object should never be edited by strategies directly, but only through
+calls to the network controller.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="icarus.execution.network.NetworkView">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">NetworkView</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/network.html#NetworkView"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.network.NetworkView" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Network view</p>
+<p>This class provides an interface that strategies and data collectors can
+use to know updated information about the status of the network.
+For example the network view provides information about shortest paths,
+characteristics of links and currently cached objects in nodes.</p>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.execution.network.NetworkView.all_pairs_shortest_paths" title="icarus.execution.network.NetworkView.all_pairs_shortest_paths"><code class="xref py py-obj docutils literal notranslate"><span class="pre">all_pairs_shortest_paths</span></code></a>()</p></td>
+<td><p>Return all pairs shortest paths</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#icarus.execution.network.NetworkView.cache_dump" title="icarus.execution.network.NetworkView.cache_dump"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cache_dump</span></code></a>(node)</p></td>
+<td><p>Returns the dump of the content of a cache in a specific node</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.execution.network.NetworkView.cache_lookup" title="icarus.execution.network.NetworkView.cache_lookup"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cache_lookup</span></code></a>(node, content)</p></td>
+<td><p>Check if the cache of a node has a content object, without changing the internal state of the cache.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#icarus.execution.network.NetworkView.cache_nodes" title="icarus.execution.network.NetworkView.cache_nodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cache_nodes</span></code></a>([size])</p></td>
+<td><p>Returns a list of nodes with caching capability</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.execution.network.NetworkView.cluster" title="icarus.execution.network.NetworkView.cluster"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cluster</span></code></a>(v)</p></td>
+<td><p>Return cluster to which a node belongs, if any</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#icarus.execution.network.NetworkView.content_locations" title="icarus.execution.network.NetworkView.content_locations"><code class="xref py py-obj docutils literal notranslate"><span class="pre">content_locations</span></code></a>(k)</p></td>
+<td><p>Return a set of all current locations of a specific content.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.execution.network.NetworkView.content_source" title="icarus.execution.network.NetworkView.content_source"><code class="xref py py-obj docutils literal notranslate"><span class="pre">content_source</span></code></a>(k)</p></td>
+<td><p>Return the node identifier where the content is persistently stored.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#icarus.execution.network.NetworkView.has_cache" title="icarus.execution.network.NetworkView.has_cache"><code class="xref py py-obj docutils literal notranslate"><span class="pre">has_cache</span></code></a>(node)</p></td>
+<td><p>Check if a node has a content cache.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.execution.network.NetworkView.link_delay" title="icarus.execution.network.NetworkView.link_delay"><code class="xref py py-obj docutils literal notranslate"><span class="pre">link_delay</span></code></a>(u, v)</p></td>
+<td><p>Return the delay of link <em>(u, v)</em>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#icarus.execution.network.NetworkView.link_type" title="icarus.execution.network.NetworkView.link_type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">link_type</span></code></a>(u, v)</p></td>
+<td><p>Return the type of link <em>(u, v)</em>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.execution.network.NetworkView.local_cache_lookup" title="icarus.execution.network.NetworkView.local_cache_lookup"><code class="xref py py-obj docutils literal notranslate"><span class="pre">local_cache_lookup</span></code></a>(node, content)</p></td>
+<td><p>Check if the local cache of a node has a content object, without changing the internal state of the cache.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#icarus.execution.network.NetworkView.shortest_path" title="icarus.execution.network.NetworkView.shortest_path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">shortest_path</span></code></a>(s, t)</p></td>
+<td><p>Return the shortest path from <em>s</em> to <em>t</em></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.execution.network.NetworkView.topology" title="icarus.execution.network.NetworkView.topology"><code class="xref py py-obj docutils literal notranslate"><span class="pre">topology</span></code></a>()</p></td>
+<td><p>Return the network topology</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.network.NetworkView.all_pairs_shortest_paths">
+<span class="sig-name descname"><span class="pre">all_pairs_shortest_paths</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/network.html#NetworkView.all_pairs_shortest_paths"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.network.NetworkView.all_pairs_shortest_paths" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return all pairs shortest paths</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.network.NetworkView.cache_dump">
+<span class="sig-name descname"><span class="pre">cache_dump</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/network.html#NetworkView.cache_dump"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.network.NetworkView.cache_dump" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the dump of the content of a cache in a specific node</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>node</strong><span class="classifier">any hashable type</span></dt><dd><p>The node identifier</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>dump</strong><span class="classifier">list</span></dt><dd><p>List of contents currently in the cache</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.network.NetworkView.cache_lookup">
+<span class="sig-name descname"><span class="pre">cache_lookup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/network.html#NetworkView.cache_lookup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.network.NetworkView.cache_lookup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if the cache of a node has a content object, without changing
+the internal state of the cache.</p>
+<p>This method is meant to be used by data collectors to calculate
+metrics. It should not be used by strategies to look up for contents
+during the simulation. Instead they should use
+<cite>NetworkController.get_content</cite></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>node</strong><span class="classifier">any hashable type</span></dt><dd><p>The node identifier</p>
+</dd>
+<dt><strong>content</strong><span class="classifier">any hashable type</span></dt><dd><p>The content identifier</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>has_content</strong><span class="classifier">bool</span></dt><dd><p><em>True</em> if the cache of the node has the content, <em>False</em> otherwise.
+If the node does not have a cache, return <em>None</em></p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.network.NetworkView.cache_nodes">
+<span class="sig-name descname"><span class="pre">cache_nodes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/network.html#NetworkView.cache_nodes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.network.NetworkView.cache_nodes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of nodes with caching capability</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>size: bool, opt</strong></dt><dd><p>If <em>True</em> return dict mapping nodes with size</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>cache_nodes</strong><span class="classifier">list or dict</span></dt><dd><p>If size parameter is False or not specified, it is a list of nodes
+with caches. Otherwise it is a dict mapping nodes with a cache
+and their size.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.network.NetworkView.cluster">
+<span class="sig-name descname"><span class="pre">cluster</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">v</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/network.html#NetworkView.cluster"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.network.NetworkView.cluster" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return cluster to which a node belongs, if any</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>v</strong><span class="classifier">any hashable type</span></dt><dd><p>Node</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>cluster</strong><span class="classifier">int</span></dt><dd><p>Cluster to which the node belongs, None if the topology is not
+clustered or the node does not belong to any cluster</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.network.NetworkView.content_locations">
+<span class="sig-name descname"><span class="pre">content_locations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">k</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/network.html#NetworkView.content_locations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.network.NetworkView.content_locations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a set of all current locations of a specific content.</p>
+<p>This include both persistent content sources and temporary caches.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>k</strong><span class="classifier">any hashable type</span></dt><dd><p>The content identifier</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>nodes</strong><span class="classifier">set</span></dt><dd><p>A set of all nodes currently storing the given content</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.network.NetworkView.content_source">
+<span class="sig-name descname"><span class="pre">content_source</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">k</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/network.html#NetworkView.content_source"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.network.NetworkView.content_source" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the node identifier where the content is persistently stored.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>k</strong><span class="classifier">any hashable type</span></dt><dd><p>The content identifier</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>node</strong><span class="classifier">any hashable type</span></dt><dd><p>The node persistently storing the given content or None if the
+source is unavailable</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.network.NetworkView.has_cache">
+<span class="sig-name descname"><span class="pre">has_cache</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/network.html#NetworkView.has_cache"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.network.NetworkView.has_cache" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if a node has a content cache.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>node</strong><span class="classifier">any hashable type</span></dt><dd><p>The node identifier</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>has_cache</strong><span class="classifier">bool,</span></dt><dd><p><em>True</em> if the node has a cache, <em>False</em> otherwise</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.network.NetworkView.link_delay">
+<span class="sig-name descname"><span class="pre">link_delay</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/network.html#NetworkView.link_delay"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.network.NetworkView.link_delay" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the delay of link <em>(u, v)</em>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>u</strong><span class="classifier">any hashable type</span></dt><dd><p>Origin node</p>
+</dd>
+<dt><strong>v</strong><span class="classifier">any hashable type</span></dt><dd><p>Destination node</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>delay</strong><span class="classifier">float</span></dt><dd><p>The link delay</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.network.NetworkView.link_type">
+<span class="sig-name descname"><span class="pre">link_type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/network.html#NetworkView.link_type"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.network.NetworkView.link_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the type of link <em>(u, v)</em>.</p>
+<p>Type can be either <em>internal</em> or <em>external</em></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>u</strong><span class="classifier">any hashable type</span></dt><dd><p>Origin node</p>
+</dd>
+<dt><strong>v</strong><span class="classifier">any hashable type</span></dt><dd><p>Destination node</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>link_type</strong><span class="classifier">str</span></dt><dd><p>The link type</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.network.NetworkView.local_cache_lookup">
+<span class="sig-name descname"><span class="pre">local_cache_lookup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/network.html#NetworkView.local_cache_lookup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.network.NetworkView.local_cache_lookup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if the local cache of a node has a content object, without
+changing the internal state of the cache.</p>
+<p>The local cache is an area of the cache of a node reserved for
+uncoordinated caching. This is currently used only by hybrid
+hash-routing strategies.</p>
+<p>This method is meant to be used by data collectors to calculate
+metrics. It should not be used by strategies to look up for contents
+during the simulation. Instead they should use
+<cite>NetworkController.get_content_local_cache</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>node</strong><span class="classifier">any hashable type</span></dt><dd><p>The node identifier</p>
+</dd>
+<dt><strong>content</strong><span class="classifier">any hashable type</span></dt><dd><p>The content identifier</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>has_content</strong><span class="classifier">bool</span></dt><dd><p><em>True</em> if the cache of the node has the content, <em>False</em> otherwise.
+If the node does not have a cache, return <em>None</em></p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.network.NetworkView.shortest_path">
+<span class="sig-name descname"><span class="pre">shortest_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/network.html#NetworkView.shortest_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.network.NetworkView.shortest_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the shortest path from <em>s</em> to <em>t</em></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>s</strong><span class="classifier">any hashable type</span></dt><dd><p>Origin node</p>
+</dd>
+<dt><strong>t</strong><span class="classifier">any hashable type</span></dt><dd><p>Destination node</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>shortest_path</strong><span class="classifier">list</span></dt><dd><p>List of nodes of the shortest path (origin and destination
+included)</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.execution.network.NetworkView.topology">
+<span class="sig-name descname"><span class="pre">topology</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/execution/network.html#NetworkView.topology"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.execution.network.NetworkView.topology" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the network topology</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>topology</strong><span class="classifier">fnss.Topology</span></dt><dd><p>The topology object</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>The topology object returned by this method must not be modified by the
+caller. This object can only be modified through the NetworkController.
+Changes to this object will lead to inconsistent network state.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-icarus.execution">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-icarus.execution" title="Permalink to this heading">¶</a></h2>
+<p>This package contains the code for the execution of a single experiment.</p>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">icarus.execution package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-icarus.execution.collectors">icarus.execution.collectors module</a></li>
+<li><a class="reference internal" href="#module-icarus.execution.engine">icarus.execution.engine module</a></li>
+<li><a class="reference internal" href="#module-icarus.execution.network">icarus.execution.network module</a></li>
+<li><a class="reference internal" href="#module-icarus.execution">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="icarus.html"
+                          title="previous chapter">icarus package</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="icarus.models.html"
+                          title="next chapter">icarus.models package</a></p>
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="icarus.models.html" title="icarus.models package"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="icarus.html" title="icarus package"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Icarus 0.8.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="icarus.html" >icarus package</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">icarus.execution package</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2016, Lorenzo Saino, Ioannis Psaras.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.1.1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,79 @@
+EXPERIMENT 1/3:
+  CONFIGURATION:
+   * topology -> name: PATH, n: 10, delay: 10
+   * workload -> name: STATIONARY, n_contents: 100000, n_warmup: 100, n_measured: 400, alpha: 1.0, rate: 1
+   * cache_placement -> name: CONSOLIDATED, network_cache: 0.01, spread: 0.8
+   * content_placement -> name: UNIFORM
+   * cache_policy -> name: LRU
+   * strategy -> name: LCE
+   * desc -> Line topology with 10 nodes
+  RESULTS:
+    CACHE_HIT_RATIO
+     * MEAN: 0.285
+     * PER_NODE_CACHE_HIT_RATIO: Tree({2: 0.28, 3: 0.005})
+     * PER_NODE_SERVER_HIT_RATIO: Tree({9: 0.715})
+    LATENCY
+     * MEAN: 140.2
+    LINK_LOAD
+     * MEAN_INTERNAL: 626.83529582491
+     * MEAN_EXTERNAL: 0
+     * PER_LINK_INTERNAL: Tree({(0, 1): 146.32389216506778, (1, 2): 146.32389216506778, (3, 4): 104.62158289802346, (2, 1): 1463.2389216506776, (6, 5): 1046.2158289802346, (4, 3): 1046.2158289802346, (8, 7): 1046.2158289802346, (5, 4): 1046.2158289802346, (2, 3): 105.35320235884879, (6, 7): 104.62158289802346, (4, 5): 104.62158289802346, (8, 9): 104.62158289802346, (7, 6): 1046.2158289802346, (5, 6): 104.62158289802346, (9, 8): 1046.2158289802346, (1, 0): 1463.2389216506776, (3, 2): 1053.5320235884878, (7, 8): 104.62158289802346})
+     * PER_LINK_EXTERNAL: Tree({})
+    PATH_STRETCH
+     * MEAN: 0.701
+     * MEAN_REQUEST: 0.701
+     * MEAN_CONTENT: 0.701
+
+EXPERIMENT 2/3:
+  CONFIGURATION:
+   * topology -> name: PATH, n: 10, delay: 10
+   * workload -> name: STATIONARY, n_contents: 100000, n_warmup: 100, n_measured: 400, alpha: 1.0, rate: 1
+   * cache_placement -> name: CONSOLIDATED, network_cache: 0.01, spread: 0.8
+   * content_placement -> name: UNIFORM
+   * cache_policy -> name: LRU
+   * strategy -> name: LCE
+   * desc -> Line topology with 10 nodes
+  RESULTS:
+    CACHE_HIT_RATIO
+     * MEAN: 0.3275
+     * PER_NODE_CACHE_HIT_RATIO: Tree({2: 0.325, 3: 0.0025})
+     * PER_NODE_SERVER_HIT_RATIO: Tree({9: 0.6725})
+    LATENCY
+     * MEAN: 134.2
+    LINK_LOAD
+     * MEAN_INTERNAL: 641.9493271699364
+     * MEAN_EXTERNAL: 0
+     * PER_LINK_INTERNAL: Tree({(0, 1): 156.55179364664485, (1, 2): 156.55179364664485, (3, 4): 105.28108122736866, (2, 1): 1565.5179364664484, (6, 5): 1052.8108122736867, (4, 3): 1052.8108122736867, (8, 7): 1052.8108122736867, (5, 4): 1052.8108122736867, (2, 3): 105.67246071148527, (6, 7): 105.28108122736866, (4, 5): 105.28108122736866, (8, 9): 105.28108122736866, (7, 6): 1052.8108122736867, (5, 6): 105.28108122736866, (9, 8): 1052.8108122736867, (1, 0): 1565.5179364664484, (3, 2): 1056.7246071148527, (7, 8): 105.28108122736866})
+     * PER_LINK_EXTERNAL: Tree({})
+    PATH_STRETCH
+     * MEAN: 0.671
+     * MEAN_REQUEST: 0.671
+     * MEAN_CONTENT: 0.671
+
+EXPERIMENT 3/3:
+  CONFIGURATION:
+   * topology -> name: PATH, n: 10, delay: 10
+   * workload -> name: STATIONARY, n_contents: 100000, n_warmup: 100, n_measured: 400, alpha: 1.0, rate: 1
+   * cache_placement -> name: CONSOLIDATED, network_cache: 0.01, spread: 0.8
+   * content_placement -> name: UNIFORM
+   * cache_policy -> name: LRU
+   * strategy -> name: LCE
+   * desc -> Line topology with 10 nodes
+  RESULTS:
+    CACHE_HIT_RATIO
+     * MEAN: 0.3625
+     * PER_NODE_CACHE_HIT_RATIO: Tree({2: 0.36, 3: 0.0025})
+     * PER_NODE_SERVER_HIT_RATIO: Tree({9: 0.6375})
+    LATENCY
+     * MEAN: 129.3
+    LINK_LOAD
+     * MEAN_INTERNAL: 577.4973308654843
+     * MEAN_EXTERNAL: 0
+     * PER_LINK_INTERNAL: Tree({(0, 1): 146.17101814777078, (1, 2): 146.17101814777078, (3, 4): 93.18402406920387, (2, 1): 1461.7101814777077, (6, 5): 931.8402406920387, (4, 3): 931.8402406920387, (8, 7): 931.8402406920387, (5, 4): 931.8402406920387, (2, 3): 93.5494516145733, (6, 7): 93.18402406920387, (4, 5): 93.18402406920387, (8, 9): 93.18402406920387, (7, 6): 931.8402406920387, (5, 6): 93.18402406920387, (9, 8): 931.8402406920387, (1, 0): 1461.7101814777077, (3, 2): 935.494516145733, (7, 8): 93.18402406920387})
+     * PER_LINK_EXTERNAL: Tree({})
+    PATH_STRETCH
+     * MEAN: 0.6465000000000007
+     * MEAN_REQUEST: 0.6465000000000007
+     * MEAN_CONTENT: 0.6465000000000007
+
+

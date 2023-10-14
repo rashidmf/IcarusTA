@@ -1,0 +1,1212 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>icarus.scenarios package &#8212; Icarus 0.8.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="icarus.tools package" href="icarus.tools.html" />
+    <link rel="prev" title="icarus.results package" href="icarus.results.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="icarus.tools.html" title="icarus.tools package"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="icarus.results.html" title="icarus.results package"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Icarus 0.8.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="icarus.html" accesskey="U">icarus package</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">icarus.scenarios package</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="icarus-scenarios-package">
+<h1>icarus.scenarios package<a class="headerlink" href="#icarus-scenarios-package" title="Permalink to this heading">¶</a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this heading">¶</a></h2>
+</section>
+<section id="module-icarus.scenarios.algorithms">
+<span id="icarus-scenarios-algorithms-module"></span><h2>icarus.scenarios.algorithms module<a class="headerlink" href="#module-icarus.scenarios.algorithms" title="Permalink to this heading">¶</a></h2>
+<p>Various algorithms used for optimal cache placement.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.scenarios.algorithms.compute_clusters">
+<span class="sig-name descname"><span class="pre">compute_clusters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">distance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'delay'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nbunch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_iter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/scenarios/algorithms.html#compute_clusters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.scenarios.algorithms.compute_clusters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cluster nodes of a topologies as to minimize the intra-cluster latency.</p>
+<p>This function assumes that every link is labelled with latencies and
+performs clustering using the k-medoids method with the PAM algorithm.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>topology</strong><span class="classifier">Topology</span></dt><dd><p>The topology</p>
+</dd>
+<dt><strong>k</strong><span class="classifier">int</span></dt><dd><p>The number of clusters</p>
+</dd>
+<dt><strong>distance</strong><span class="classifier">str, optional</span></dt><dd><p>The link metric used to represent distance between nodes.
+If None, hop count is used instead</p>
+</dd>
+<dt><strong>n_iter</strong><span class="classifier">int, optional</span></dt><dd><p>The number of iterations</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.scenarios.algorithms.compute_p_median">
+<span class="sig-name descname"><span class="pre">compute_p_median</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">distances</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_iter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/scenarios/algorithms.html#compute_p_median"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.scenarios.algorithms.compute_p_median" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute p-median solution using the Adjusted Vertex Substitution (AVS)
+algorithm.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>distances</strong><span class="classifier">dict of dicts</span></dt><dd><p>Distance between nodes</p>
+</dd>
+<dt><strong>p</strong><span class="classifier">int</span></dt><dd><p>Number of facilities</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.scenarios.algorithms.deploy_clusters">
+<span class="sig-name descname"><span class="pre">deploy_clusters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clusters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">assign_src_rcv</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/scenarios/algorithms.html#deploy_clusters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.scenarios.algorithms.deploy_clusters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Annotate topology with cluster informations</p>
+<p>This function checks that all ICR candidate nodes are assigned exactly
+to one cluster.</p>
+<p>If assign_src_rcv is True, then it also labels source and receiver nodes
+to the closest cluster.</p>
+<dl class="simple">
+<dt>This function assumes that:</dt><dd><ul class="simple">
+<li><p>each node of the topology is either an icr_candidate, a source or a receiver</p></li>
+<li><p>each source and receiver must have degree equal to 1</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>topology</strong><span class="classifier">Topology</span></dt><dd><p>The topology onto which deploy clusters</p>
+</dd>
+<dt><strong>clusters</strong><span class="classifier">list of sets</span></dt><dd><p>Router-cluster assignment. Each element of a list is a set of node
+identifiers. Nodes in the same set belong to the same cluster.
+The length of the list therefore corresponds to the number of clusters.</p>
+</dd>
+<dt><strong>assign_src_rcv</strong><span class="classifier">bool, optional</span></dt><dd><p>If <em>True</em>, the function labels source and receiver nodes with the
+cluster label of the router they are attached to.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.scenarios.algorithms.extract_cluster_level_topology">
+<span class="sig-name descname"><span class="pre">extract_cluster_level_topology</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/scenarios/algorithms.html#extract_cluster_level_topology"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.scenarios.algorithms.extract_cluster_level_topology" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build a cluster-level topology.</p>
+<p>Each node in the topology must be have the ‘cluster’ attribute</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>topology</strong><span class="classifier">Topology</span></dt><dd><p>The router-level topology</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>topology</strong><span class="classifier">Topology</span></dt><dd><p>The cluster-level topology</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>Each router must have a cache deployed</p></li>
+<li><p>All sources and receiver must have one single attachment point with a
+cache</p></li>
+<li><p>Each node must be labelled with cluster</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.scenarios.algorithms.pam">
+<span class="sig-name descname"><span class="pre">pam</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">distances</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_iter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/scenarios/algorithms.html#pam"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.scenarios.algorithms.pam" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute k-medoids using the PAM algorithm</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>distances</strong><span class="classifier">2-d NumPy array</span></dt><dd><p>Array of distances between points</p>
+</dd>
+<dt><strong>k</strong><span class="classifier">int</span></dt><dd><p>Number of clusters</p>
+</dd>
+<dt><strong>n_iter</strong><span class="classifier">int</span></dt><dd><p>Number of iterations to repeat. Each repetition is executed using a
+different initial random assignment. Repetiting the experiment allow
+to reach different local optima, possibly achieving a best solution.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Implementation based on:
+<a class="reference external" href="https://github.com/salspaugh/machine_learning/blob/master/clustering/kmedoids.py">https://github.com/salspaugh/machine_learning/blob/master/clustering/kmedoids.py</a></p>
+</dd></dl>
+
+</section>
+<section id="module-icarus.scenarios.cacheplacement">
+<span id="icarus-scenarios-cacheplacement-module"></span><h2>icarus.scenarios.cacheplacement module<a class="headerlink" href="#module-icarus.scenarios.cacheplacement" title="Permalink to this heading">¶</a></h2>
+<p>Cache placement strategies</p>
+<p>This module provides algorithms for performing cache placement, i.e., given
+a cumulative cache size and a topology where each possible node candidate is
+labelled, these functions deploy caching space to the nodes of the topology.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.scenarios.cacheplacement.betweenness_centrality_cache_placement">
+<span class="sig-name descname"><span class="pre">betweenness_centrality_cache_placement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_budget</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/scenarios/cacheplacement.html#betweenness_centrality_cache_placement"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.scenarios.cacheplacement.betweenness_centrality_cache_placement" title="Permalink to this definition">¶</a></dt>
+<dd><p>Places cache budget proportionally to the betweenness centrality of the
+node.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>topology</strong><span class="classifier">Topology</span></dt><dd><p>The topology object</p>
+</dd>
+<dt><strong>cache_budget</strong><span class="classifier">int</span></dt><dd><p>The cumulative cache budget</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.scenarios.cacheplacement.clustered_hashrouting_cache_placement">
+<span class="sig-name descname"><span class="pre">clustered_hashrouting_cache_placement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_budget</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_clusters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">policy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">distance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'delay'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/scenarios/cacheplacement.html#clustered_hashrouting_cache_placement"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.scenarios.cacheplacement.clustered_hashrouting_cache_placement" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deploy caching nodes for hashrouting in with clusters</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>topology</strong><span class="classifier">Topology</span></dt><dd><p>The topology object</p>
+</dd>
+<dt><strong>cache_budget</strong><span class="classifier">int</span></dt><dd><p>The cumulative cache budget</p>
+</dd>
+<dt><strong>n_clusters</strong><span class="classifier">int</span></dt><dd><p>The number of clusters</p>
+</dd>
+<dt><strong>policy</strong><span class="classifier">str (node_const | cluster_const)</span></dt><dd><p>The expected global cache hit ratio</p>
+</dd>
+<dt><strong>distance</strong><span class="classifier">str</span></dt><dd><p>The attribute used to quantify distance between pairs of nodes.
+Default is ‘delay’</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">References</p>
+<div role="list" class="citation-list">
+<div class="citation" id="rfb36d4602f84-1" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></span>
+<p>L. Saino, I. Psaras and G. Pavlou, Framework and Algorithms for
+Operator-managed Content Caching, in IEEE Transactions on
+Network and Service Management (TNSM), Volume 17, Issue 1, March 2020
+<a class="reference external" href="https://doi.org/10.1109/TNSM.2019.2956525">https://doi.org/10.1109/TNSM.2019.2956525</a></p>
+</div>
+<div class="citation" id="rfb36d4602f84-2" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span>2<span class="fn-bracket">]</span></span>
+<p>L. Saino, On the Design of Efficient Caching Systems, Ph.D. thesis
+University College London, Dec. 2015. Available:
+<a class="reference external" href="http://discovery.ucl.ac.uk/1473436/">http://discovery.ucl.ac.uk/1473436/</a></p>
+</div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.scenarios.cacheplacement.degree_centrality_cache_placement">
+<span class="sig-name descname"><span class="pre">degree_centrality_cache_placement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_budget</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/scenarios/cacheplacement.html#degree_centrality_cache_placement"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.scenarios.cacheplacement.degree_centrality_cache_placement" title="Permalink to this definition">¶</a></dt>
+<dd><p>Places cache budget proportionally to the degree of the node.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>topology</strong><span class="classifier">Topology</span></dt><dd><p>The topology object</p>
+</dd>
+<dt><strong>cache_budget</strong><span class="classifier">int</span></dt><dd><p>The cumulative cache budget</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.scenarios.cacheplacement.optimal_hashrouting_cache_placement">
+<span class="sig-name descname"><span class="pre">optimal_hashrouting_cache_placement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_budget</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_cache_nodes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hit_ratio</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'delay'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/scenarios/cacheplacement.html#optimal_hashrouting_cache_placement"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.scenarios.cacheplacement.optimal_hashrouting_cache_placement" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deploy caching nodes for hashrouting in optimized location</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>topology</strong><span class="classifier">Topology</span></dt><dd><p>The topology object</p>
+</dd>
+<dt><strong>cache_budget</strong><span class="classifier">int</span></dt><dd><p>The cumulative cache budget</p>
+</dd>
+<dt><strong>n_nodes</strong><span class="classifier">int</span></dt><dd><p>The number of caching nodes to deploy</p>
+</dd>
+<dt><strong>hit_ratio</strong><span class="classifier">float</span></dt><dd><p>The expected global cache hit ratio</p>
+</dd>
+<dt><strong>weight</strong><span class="classifier">str, optional</span></dt><dd><p>The weight attribute. Default is ‘delay’</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">References</p>
+<div role="list" class="citation-list">
+<div class="citation" id="r5b9a3ecb461c-1" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></span>
+<p>L. Saino, I. Psaras and G. Pavlou, Framework and Algorithms for
+Operator-managed Content Caching, in IEEE Transactions on
+Network and Service Management (TNSM), Volume 17, Issue 1, March 2020
+<a class="reference external" href="https://doi.org/10.1109/TNSM.2019.2956525">https://doi.org/10.1109/TNSM.2019.2956525</a></p>
+</div>
+<div class="citation" id="r5b9a3ecb461c-2" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span>2<span class="fn-bracket">]</span></span>
+<p>L. Saino, On the Design of Efficient Caching Systems, Ph.D. thesis
+University College London, Dec. 2015. Available:
+<a class="reference external" href="http://discovery.ucl.ac.uk/1473436/">http://discovery.ucl.ac.uk/1473436/</a></p>
+</div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.scenarios.cacheplacement.optimal_median_cache_placement">
+<span class="sig-name descname"><span class="pre">optimal_median_cache_placement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_budget</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_cache_nodes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hit_ratio</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'delay'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/scenarios/cacheplacement.html#optimal_median_cache_placement"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.scenarios.cacheplacement.optimal_median_cache_placement" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deploy caching nodes in locations that minimize overall latency assuming
+a partitioned strategy (a la Google Global Cache). According to this, in
+the network, a set of caching nodes are deployed and each receiver is
+mapped to one and only one caching node. Requests from this receiver are
+always sent to the designated caching node. In case of cache miss requests
+are forwarded to the original source.</p>
+<p>This placement problem can be mapped to the p-median location-allocation
+problem. This function solves this problem using the vertex substitution
+heuristic, which practically works like the k-medoid PAM algorithms, which
+is also similar to the k-means clustering algorithm. The result is not
+guaranteed to be globally optimal, only locally optimal.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>topology</strong><span class="classifier">Topology</span></dt><dd><p>The topology object</p>
+</dd>
+<dt><strong>cache_budget</strong><span class="classifier">int</span></dt><dd><p>The cumulative cache budget</p>
+</dd>
+<dt><strong>n_nodes</strong><span class="classifier">int</span></dt><dd><p>The number of caching nodes to deploy</p>
+</dd>
+<dt><strong>hit_ratio</strong><span class="classifier">float</span></dt><dd><p>The expected cache hit ratio of a single cache</p>
+</dd>
+<dt><strong>weight</strong><span class="classifier">str</span></dt><dd><p>The weight attribute</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>This placement assumes that all receivers have degree = 1 and are connected
+to an ICR candidate nodes. Also, it assumes that contents are uniformly
+assigned to sources.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.scenarios.cacheplacement.random_cache_placement">
+<span class="sig-name descname"><span class="pre">random_cache_placement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_budget</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_cache_nodes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/scenarios/cacheplacement.html#random_cache_placement"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.scenarios.cacheplacement.random_cache_placement" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deploy caching nodes randomly</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>topology</strong><span class="classifier">Topology</span></dt><dd><p>The topology object</p>
+</dd>
+<dt><strong>cache_budget</strong><span class="classifier">int</span></dt><dd><p>The cumulative cache budget</p>
+</dd>
+<dt><strong>n_nodes</strong><span class="classifier">int</span></dt><dd><p>The number of caching nodes to deploy</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.scenarios.cacheplacement.uniform_cache_placement">
+<span class="sig-name descname"><span class="pre">uniform_cache_placement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_budget</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/scenarios/cacheplacement.html#uniform_cache_placement"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.scenarios.cacheplacement.uniform_cache_placement" title="Permalink to this definition">¶</a></dt>
+<dd><p>Places cache budget uniformly across cache nodes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>topology</strong><span class="classifier">Topology</span></dt><dd><p>The topology object</p>
+</dd>
+<dt><strong>cache_budget</strong><span class="classifier">int</span></dt><dd><p>The cumulative cache budget</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.scenarios.cacheplacement.uniform_consolidated_cache_placement">
+<span class="sig-name descname"><span class="pre">uniform_consolidated_cache_placement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_budget</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spread</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metric_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'top'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/scenarios/cacheplacement.html#uniform_consolidated_cache_placement"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.scenarios.cacheplacement.uniform_consolidated_cache_placement" title="Permalink to this definition">¶</a></dt>
+<dd><p>Consolidate caches in nodes with top centrality.</p>
+<p>Differently from other cache placement strategies that place cache space
+to all nodes but proportionally to their centrality, this strategy places
+caches of all the same size in a set of selected nodes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>topology</strong><span class="classifier">Topology</span></dt><dd><p>The topology object</p>
+</dd>
+<dt><strong>cache_budget</strong><span class="classifier">int</span></dt><dd><p>The cumulative cache budget</p>
+</dd>
+<dt><strong>spread</strong><span class="classifier">float [0, 1], optional</span></dt><dd><p>The spread factor, The greater it is the more the cache budget is
+spread among nodes. If it is 1, all candidate nodes are assigned a
+cache, if it is 0, only the node with the highest/lowest centrality
+is assigned a cache</p>
+</dd>
+<dt><strong>metric_dict</strong><span class="classifier">dict, optional</span></dt><dd><p>The centrality metric according to which nodes are selected. If not
+specified, betweenness centrality is selected.</p>
+</dd>
+<dt><strong>target</strong><span class="classifier">(“top” | “bottom”), optional</span></dt><dd><p>The subsection of the ranked node on which to the deploy caches.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-icarus.scenarios.contentplacement">
+<span id="icarus-scenarios-contentplacement-module"></span><h2>icarus.scenarios.contentplacement module<a class="headerlink" href="#module-icarus.scenarios.contentplacement" title="Permalink to this heading">¶</a></h2>
+<p>Content placement strategies.</p>
+<p>This module contains function to decide the allocation of content objects to
+source nodes.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.scenarios.contentplacement.uniform_content_placement">
+<span class="sig-name descname"><span class="pre">uniform_content_placement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contents</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/scenarios/contentplacement.html#uniform_content_placement"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.scenarios.contentplacement.uniform_content_placement" title="Permalink to this definition">¶</a></dt>
+<dd><p>Places content objects to source nodes randomly following a uniform
+distribution.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>topology</strong><span class="classifier">Topology</span></dt><dd><p>The topology object</p>
+</dd>
+<dt><strong>contents</strong><span class="classifier">iterable</span></dt><dd><p>Iterable of content objects</p>
+</dd>
+<dt><strong>source_nodes</strong><span class="classifier">list</span></dt><dd><p>List of nodes of the topology which are content sources</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>cache_placement</strong><span class="classifier">dict</span></dt><dd><p>Dictionary mapping content objects to source nodes</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>A deterministic placement of objects (e.g., for reproducing results) can be
+achieved by using a fix seed value</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.scenarios.contentplacement.weighted_content_placement">
+<span class="sig-name descname"><span class="pre">weighted_content_placement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contents</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source_weights</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/scenarios/contentplacement.html#weighted_content_placement"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.scenarios.contentplacement.weighted_content_placement" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>Places content objects to source nodes randomly according to the weight</dt><dd><p>of the source node.</p>
+</dd>
+</dl>
+<dl class="field-list">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl>
+<dt><strong>topology</strong><span class="classifier">Topology</span></dt><dd><p>The topology object</p>
+</dd>
+<dt><strong>contents</strong><span class="classifier">iterable</span></dt><dd><blockquote>
+<div><p>Iterable of content objects</p>
+</div></blockquote>
+<dl class="simple">
+<dt>source_weights<span class="classifier">dict</span></dt><dd><p>Dict mapping nodes nodes of the topology which are content sources and
+the weight according to which content placement decision is made.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>cache_placement</strong><span class="classifier">dict</span></dt><dd><p>Dictionary mapping content objects to source nodes</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>A deterministic placement of objects (e.g., for reproducing results) can be
+achieved by using a fix seed value</p>
+</dd></dl>
+
+</section>
+<section id="module-icarus.scenarios.topology">
+<span id="icarus-scenarios-topology-module"></span><h2>icarus.scenarios.topology module<a class="headerlink" href="#module-icarus.scenarios.topology" title="Permalink to this heading">¶</a></h2>
+<p>Functions for creating or importing topologies for experiments.</p>
+<p>To create a custom topology, create a function returning an instance of the
+<cite>IcnTopology</cite> class. An IcnTopology is simply a subclass of a Topology class
+provided by FNSS.</p>
+<dl class="simple">
+<dt>A valid ICN topology must have the following attributes:</dt><dd><ul class="simple">
+<li><p>Each node must have one stack among: source, receiver, router</p></li>
+<li><p>The topology must have an attribute called <cite>icr_candidates</cite> which is a set
+of router nodes on which a cache may be possibly deployed. Caches are not
+deployed directly at topology creation, instead they are deployed by a
+cache placement algorithm.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py class">
+<dt class="sig sig-object py" id="icarus.scenarios.topology.IcnTopology">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">IcnTopology</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/scenarios/topology.html#IcnTopology"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.scenarios.topology.IcnTopology" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Topology</span></code></p>
+<p>Class modelling an ICN topology</p>
+<p>An ICN topology is a simple FNSS Topology with addition methods that
+return sets of caching nodes, sources and receivers.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Attributes<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></dt><dd><p>String identifier of the graph.</p>
+</dd>
+<dt><strong>node</strong></dt><dd></dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_edge</span></code>(u_of_edge, v_of_edge, **attr)</p></td>
+<td><p>Add an edge between u and v.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_edges_from</span></code>(ebunch_to_add, **attr)</p></td>
+<td><p>Add all the edges in ebunch_to_add.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_node</span></code>(node_for_adding, **attr)</p></td>
+<td><p>Add a single node <cite>node_for_adding</cite> and update node attributes.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_nodes_from</span></code>(nodes_for_adding, **attr)</p></td>
+<td><p>Add multiple nodes.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_path</span></code>(nodes, **attr)</p></td>
+<td><p>Add a path to the topology</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_weighted_edges_from</span></code>(ebunch_to_add[, weight])</p></td>
+<td><p>Add weighted edges in <cite>ebunch_to_add</cite> with specified weight attr</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">adjacency</span></code>()</p></td>
+<td><p>Returns an iterator over (node, adjacency dict) tuples for all nodes.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">adjlist_inner_dict_factory</span></code></p></td>
+<td><p>alias of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">adjlist_outer_dict_factory</span></code></p></td>
+<td><p>alias of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">applications</span></code>()</p></td>
+<td><p>Return a dictionary of all applications deployed, keyed by node</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">buffers</span></code>()</p></td>
+<td><p>Return a dictionary of all buffer sizes, keyed by interface</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#icarus.scenarios.topology.IcnTopology.cache_nodes" title="icarus.scenarios.topology.IcnTopology.cache_nodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cache_nodes</span></code></a>()</p></td>
+<td><p>Return a dictionary mapping nodes with a cache and respective cache size</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">capacities</span></code>()</p></td>
+<td><p>Return a dictionary of all link capacities, keyed by link</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">clear</span></code>()</p></td>
+<td><p>Remove all nodes and edges from the graph.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">clear_edges</span></code>()</p></td>
+<td><p>Remove all edges from the graph without altering nodes.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">copy</span></code>()</p></td>
+<td><p>Return a copy of the topology.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">delays</span></code>()</p></td>
+<td><p>Return a dictionary of all link delays, keyed by link</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">edge_attr_dict_factory</span></code></p></td>
+<td><p>alias of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">edge_subgraph</span></code>(edges)</p></td>
+<td><p>Returns the subgraph induced by the specified edges.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_edge_data</span></code>(u, v[, default])</p></td>
+<td><p>Returns the attribute dictionary associated with edge (u, v).</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">graph_attr_dict_factory</span></code></p></td>
+<td><p>alias of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">has_edge</span></code>(u, v)</p></td>
+<td><p>Returns True if the edge (u, v) is in the graph.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">has_node</span></code>(n)</p></td>
+<td><p>Returns True if the graph contains the node n.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_directed</span></code>()</p></td>
+<td><p>Returns True if graph is directed, False otherwise.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_multigraph</span></code>()</p></td>
+<td><p>Returns True if graph is a multigraph, False otherwise.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">nbunch_iter</span></code>([nbunch])</p></td>
+<td><p>Returns an iterator over nodes contained in nbunch that are also in the graph.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">neighbors</span></code>(n)</p></td>
+<td><p>Returns an iterator over all neighbors of node n.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">node_attr_dict_factory</span></code></p></td>
+<td><p>alias of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">node_dict_factory</span></code></p></td>
+<td><p>alias of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">number_of_edges</span></code>([u, v])</p></td>
+<td><p>Returns the number of edges between two nodes.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">number_of_nodes</span></code>()</p></td>
+<td><p>Returns the number of nodes in the graph.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">order</span></code>()</p></td>
+<td><p>Returns the number of nodes in the graph.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.scenarios.topology.IcnTopology.receivers" title="icarus.scenarios.topology.IcnTopology.receivers"><code class="xref py py-obj docutils literal notranslate"><span class="pre">receivers</span></code></a>()</p></td>
+<td><p>Return a set of receiver nodes</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove_edge</span></code>(u, v)</p></td>
+<td><p>Remove the edge between u and v.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove_edges_from</span></code>(ebunch)</p></td>
+<td><p>Remove all edges specified in ebunch.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove_node</span></code>(n)</p></td>
+<td><p>Remove node n.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove_nodes_from</span></code>(nodes)</p></td>
+<td><p>Remove multiple nodes.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">size</span></code>([weight])</p></td>
+<td><p>Returns the number of edges or total of all edge weights.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.scenarios.topology.IcnTopology.sources" title="icarus.scenarios.topology.IcnTopology.sources"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sources</span></code></a>()</p></td>
+<td><p>Return a set of source nodes</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">stacks</span></code>()</p></td>
+<td><p>Return a dictionary of all node stacks, keyed by node</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">subgraph</span></code>(nbunch)</p></td>
+<td><p>Return the subgraph induced on nodes in nbunch.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_directed</span></code>()</p></td>
+<td><p>Return a directed representation of the topology.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_directed_class</span></code>()</p></td>
+<td><p>Returns the class to use for empty directed copies.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_undirected</span></code>()</p></td>
+<td><p>Return an undirected copy of the topology.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_undirected_class</span></code>()</p></td>
+<td><p>Returns the class to use for empty undirected copies.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">update</span></code>([edges, nodes])</p></td>
+<td><p>Update the graph using nodes/edges/graphs as input.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">weights</span></code>()</p></td>
+<td><p>Return a dictionary of all link weights, keyed by link</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.scenarios.topology.IcnTopology.cache_nodes">
+<span class="sig-name descname"><span class="pre">cache_nodes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/scenarios/topology.html#IcnTopology.cache_nodes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.scenarios.topology.IcnTopology.cache_nodes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a dictionary mapping nodes with a cache and respective cache
+size</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>cache_nodes</strong><span class="classifier">dict</span></dt><dd><p>Dictionary mapping node identifiers and cache size</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.scenarios.topology.IcnTopology.receivers">
+<span class="sig-name descname"><span class="pre">receivers</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/scenarios/topology.html#IcnTopology.receivers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.scenarios.topology.IcnTopology.receivers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a set of receiver nodes</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>receivers</strong><span class="classifier">set</span></dt><dd><p>Set of receiver nodes</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.scenarios.topology.IcnTopology.sources">
+<span class="sig-name descname"><span class="pre">sources</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/scenarios/topology.html#IcnTopology.sources"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.scenarios.topology.IcnTopology.sources" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a set of source nodes</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>sources</strong><span class="classifier">set</span></dt><dd><p>Set of source nodes</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.scenarios.topology.topology_garr">
+<span class="sig-name descname"><span class="pre">topology_garr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/scenarios/topology.html#topology_garr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.scenarios.topology.topology_garr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a scenario based on GARR topology</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>seed</strong><span class="classifier">int, optional</span></dt><dd><p>The seed used for random number generation</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>topology</strong><span class="classifier">fnss.Topology</span></dt><dd><p>The topology object</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.scenarios.topology.topology_geant">
+<span class="sig-name descname"><span class="pre">topology_geant</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/scenarios/topology.html#topology_geant"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.scenarios.topology.topology_geant" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a scenario based on GEANT topology</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>seed</strong><span class="classifier">int, optional</span></dt><dd><p>The seed used for random number generation</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>topology</strong><span class="classifier">fnss.Topology</span></dt><dd><p>The topology object</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.scenarios.topology.topology_mesh">
+<span class="sig-name descname"><span class="pre">topology_mesh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delay_int</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delay_ext</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/scenarios/topology.html#topology_mesh"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.scenarios.topology.topology_mesh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a ring topology</p>
+<p>This topology is comprised of a mesh of <em>n</em> nodes. Each of these nodes is
+attached to a receiver. In addition <em>m</em> router are attached each to a source.
+Therefore, this topology has in fact 2n + m nodes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>n</strong><span class="classifier">int</span></dt><dd><p>The number of routers in the ring</p>
+</dd>
+<dt><strong>m</strong><span class="classifier">int</span></dt><dd><p>The number of sources</p>
+</dd>
+<dt><strong>delay_int</strong><span class="classifier">float</span></dt><dd><p>The internal link delay in milliseconds</p>
+</dd>
+<dt><strong>delay_ext</strong><span class="classifier">float</span></dt><dd><p>The external link delay in milliseconds</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>topology</strong><span class="classifier">IcnTopology</span></dt><dd><p>The topology object</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.scenarios.topology.topology_path">
+<span class="sig-name descname"><span class="pre">topology_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/scenarios/topology.html#topology_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.scenarios.topology.topology_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a path topology with a receiver on node <cite>0</cite> and a source at node
+‘n-1’</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>n</strong><span class="classifier">int (&gt;=3)</span></dt><dd><p>The number of nodes</p>
+</dd>
+<dt><strong>delay</strong><span class="classifier">float</span></dt><dd><p>The link delay in milliseconds</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>topology</strong><span class="classifier">IcnTopology</span></dt><dd><p>The topology object</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.scenarios.topology.topology_ring">
+<span class="sig-name descname"><span class="pre">topology_ring</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delay_int</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delay_ext</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/scenarios/topology.html#topology_ring"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.scenarios.topology.topology_ring" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a ring topology</p>
+<p>This topology is comprised of a ring of <em>n</em> nodes. Each of these nodes is
+attached to a receiver. In addition one router is attached to a source.
+Therefore, this topology has in fact 2n + 1 nodes.</p>
+<p>It models the case of a metro ring network, with many receivers and one
+only source towards the core network.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>n</strong><span class="classifier">int</span></dt><dd><p>The number of routers in the ring</p>
+</dd>
+<dt><strong>delay_int</strong><span class="classifier">float</span></dt><dd><p>The internal link delay in milliseconds</p>
+</dd>
+<dt><strong>delay_ext</strong><span class="classifier">float</span></dt><dd><p>The external link delay in milliseconds</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>topology</strong><span class="classifier">IcnTopology</span></dt><dd><p>The topology object</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.scenarios.topology.topology_rocketfuel_latency">
+<span class="sig-name descname"><span class="pre">topology_rocketfuel_latency</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">asn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source_ratio</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ext_delay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">34</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/scenarios/topology.html#topology_rocketfuel_latency"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.scenarios.topology.topology_rocketfuel_latency" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse a generic RocketFuel topology with annotated latencies</p>
+<p>To each node of the parsed topology it is attached an artificial receiver
+node. To the routers with highest degree it is also attached a source node.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>asn</strong><span class="classifier">int</span></dt><dd><p>AS number</p>
+</dd>
+<dt><strong>source_ratio</strong><span class="classifier">float</span></dt><dd><p>Ratio between number of source nodes (artificially attached) and routers</p>
+</dd>
+<dt><strong>ext_delay</strong><span class="classifier">float</span></dt><dd><p>Delay on external nodes</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.scenarios.topology.topology_tiscali">
+<span class="sig-name descname"><span class="pre">topology_tiscali</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/scenarios/topology.html#topology_tiscali"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.scenarios.topology.topology_tiscali" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a scenario based on Tiscali topology, parsed from RocketFuel dataset</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>seed</strong><span class="classifier">int, optional</span></dt><dd><p>The seed used for random number generation</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>topology</strong><span class="classifier">fnss.Topology</span></dt><dd><p>The topology object</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.scenarios.topology.topology_tree">
+<span class="sig-name descname"><span class="pre">topology_tree</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">k</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/scenarios/topology.html#topology_tree"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.scenarios.topology.topology_tree" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a tree topology, with a source at the root, receivers at the
+leafs and caches at all intermediate nodes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>h</strong><span class="classifier">int</span></dt><dd><p>The height of the tree</p>
+</dd>
+<dt><strong>k</strong><span class="classifier">int</span></dt><dd><p>The branching factor of the tree</p>
+</dd>
+<dt><strong>delay</strong><span class="classifier">float</span></dt><dd><p>The link delay in milliseconds</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>topology</strong><span class="classifier">IcnTopology</span></dt><dd><p>The topology object</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.scenarios.topology.topology_wide">
+<span class="sig-name descname"><span class="pre">topology_wide</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/scenarios/topology.html#topology_wide"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.scenarios.topology.topology_wide" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a scenario based on GARR topology</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>seed</strong><span class="classifier">int, optional</span></dt><dd><p>The seed used for random number generation</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>topology</strong><span class="classifier">fnss.Topology</span></dt><dd><p>The topology object</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-icarus.scenarios.workload">
+<span id="icarus-scenarios-workload-module"></span><h2>icarus.scenarios.workload module<a class="headerlink" href="#module-icarus.scenarios.workload" title="Permalink to this heading">¶</a></h2>
+<p>Traffic workloads</p>
+<p>Every traffic workload to be used with Icarus must be modelled as an iterable
+class, i.e. a class with at least an <cite>__init__</cite> method (through which it is
+initialized, with values taken from the configuration file) and an <cite>__iter__</cite>
+method that is called to return a new event.</p>
+<p>Each call to the <cite>__iter__</cite> method must return a 2-tuple in which the first
+element is the timestamp at which the event occurs and the second is a
+dictionary, describing the event, which must contain at least the three
+following attributes:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>receiver: The name of the node issuing the request</p></li>
+<li><p>content: The name of the content for which the request is issued</p></li>
+<li><p>log: A boolean value indicating whether this request should be logged or not
+for measurement purposes.</p></li>
+</ul>
+</div></blockquote>
+<p>Each workload must expose the <cite>contents</cite> attribute which is an iterable of
+all content identifiers. This is needed for content placement.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="icarus.scenarios.workload.GlobetraffWorkload">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GlobetraffWorkload</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reqs_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contents_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/scenarios/workload.html#GlobetraffWorkload"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.scenarios.workload.GlobetraffWorkload" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Parse requests from GlobeTraff workload generator</p>
+<p>All requests are mapped to receivers uniformly unless a positive <em>beta</em>
+parameter is specified.</p>
+<p>If a <em>beta</em> parameter is specified, then receivers issue requests at
+different rates. The algorithm used to determine the requests rates for
+each receiver is the following:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>All receiver are sorted in decreasing order of degree of the PoP they
+are attached to. This assumes that all receivers have degree = 1 and are
+attached to a node with degree &gt; 1</p></li>
+<li><p>Rates are then assigned following a Zipf distribution of coefficient
+beta where nodes with higher-degree PoPs have a higher request rate</p></li>
+</ul>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>topology</strong><span class="classifier">fnss.Topology</span></dt><dd><p>The topology to which the workload refers</p>
+</dd>
+<dt><strong>reqs_file</strong><span class="classifier">str</span></dt><dd><p>The GlobeTraff request file</p>
+</dd>
+<dt><strong>contents_file</strong><span class="classifier">str</span></dt><dd><p>The GlobeTraff content file</p>
+</dd>
+<dt><strong>beta</strong><span class="classifier">float, optional</span></dt><dd><p>Spatial skewness of requests rates</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>events</strong><span class="classifier">iterator</span></dt><dd><p>Iterator of events. Each event is a 2-tuple where the first element is
+the timestamp at which the event occurs and the second element is a
+dictionary of event attributes.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="icarus.scenarios.workload.GlobetraffWorkload.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'GLOBETRAFF'</span></em><a class="headerlink" href="#icarus.scenarios.workload.GlobetraffWorkload.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="icarus.scenarios.workload.StationaryWorkload">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">StationaryWorkload</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_contents</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_warmup</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_measured</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">400000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/scenarios/workload.html#StationaryWorkload"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.scenarios.workload.StationaryWorkload" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>This function generates events on the fly, i.e. instead of creating an
+event schedule to be kept in memory, returns an iterator that generates
+events when needed.</p>
+<p>This is useful for running large schedules of events where RAM is limited
+as its memory impact is considerably lower.</p>
+<p>These requests are Poisson-distributed while content popularity is
+Zipf-distributed</p>
+<p>All requests are mapped to receivers uniformly unless a positive <em>beta</em>
+parameter is specified.</p>
+<p>If a <em>beta</em> parameter is specified, then receivers issue requests at
+different rates. The algorithm used to determine the requests rates for
+each receiver is the following:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>All receiver are sorted in decreasing order of degree of the PoP they
+are attached to. This assumes that all receivers have degree = 1 and are
+attached to a node with degree &gt; 1</p></li>
+<li><p>Rates are then assigned following a Zipf distribution of coefficient
+beta where nodes with higher-degree PoPs have a higher request rate</p></li>
+</ul>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>topology</strong><span class="classifier">fnss.Topology</span></dt><dd><p>The topology to which the workload refers</p>
+</dd>
+<dt><strong>n_contents</strong><span class="classifier">int</span></dt><dd><p>The number of content object</p>
+</dd>
+<dt><strong>alpha</strong><span class="classifier">float</span></dt><dd><p>The Zipf alpha parameter</p>
+</dd>
+<dt><strong>beta</strong><span class="classifier">float, optional</span></dt><dd><p>Parameter indicating</p>
+</dd>
+<dt><strong>rate</strong><span class="classifier">float, optional</span></dt><dd><p>The mean rate of requests per second</p>
+</dd>
+<dt><strong>n_warmup</strong><span class="classifier">int, optional</span></dt><dd><p>The number of warmup requests (i.e. requests executed to fill cache but
+not logged)</p>
+</dd>
+<dt><strong>n_measured</strong><span class="classifier">int, optional</span></dt><dd><p>The number of logged requests after the warmup</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>events</strong><span class="classifier">iterator</span></dt><dd><p>Iterator of events. Each event is a 2-tuple where the first element is
+the timestamp at which the event occurs and the second element is a
+dictionary of event attributes.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="icarus.scenarios.workload.StationaryWorkload.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'STATIONARY'</span></em><a class="headerlink" href="#icarus.scenarios.workload.StationaryWorkload.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="icarus.scenarios.workload.TraceDrivenWorkload">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TraceDrivenWorkload</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reqs_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contents_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_contents</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_warmup</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_measured</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/scenarios/workload.html#TraceDrivenWorkload"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.scenarios.workload.TraceDrivenWorkload" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Parse requests from a generic request trace.</p>
+<dl class="simple">
+<dt>This workload requires two text files:</dt><dd><ul class="simple">
+<li><p>a requests file, where each line corresponds to a string identifying
+the content requested</p></li>
+<li><p>a contents file, which lists all unique content identifiers appearing
+in the requests file.</p></li>
+</ul>
+</dd>
+</dl>
+<p>Since the trace do not provide timestamps, requests are scheduled according
+to a Poisson process of rate <em>rate</em>. All requests are mapped to receivers
+uniformly unless a positive <em>beta</em> parameter is specified.</p>
+<p>If a <em>beta</em> parameter is specified, then receivers issue requests at
+different rates. The algorithm used to determine the requests rates for
+each receiver is the following:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>All receiver are sorted in decreasing order of degree of the PoP they
+are attached to. This assumes that all receivers have degree = 1 and are
+attached to a node with degree &gt; 1</p></li>
+<li><p>Rates are then assigned following a Zipf distribution of coefficient
+beta where nodes with higher-degree PoPs have a higher request rate</p></li>
+</ul>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>topology</strong><span class="classifier">fnss.Topology</span></dt><dd><p>The topology to which the workload refers</p>
+</dd>
+<dt><strong>reqs_file</strong><span class="classifier">str</span></dt><dd><p>The path to the requests file</p>
+</dd>
+<dt><strong>contents_file</strong><span class="classifier">str</span></dt><dd><p>The path to the contents file</p>
+</dd>
+<dt><strong>n_contents</strong><span class="classifier">int</span></dt><dd><p>The number of content object (i.e. the number of lines of contents_file)</p>
+</dd>
+<dt><strong>n_warmup</strong><span class="classifier">int</span></dt><dd><p>The number of warmup requests (i.e. requests executed to fill cache but
+not logged)</p>
+</dd>
+<dt><strong>n_measured</strong><span class="classifier">int</span></dt><dd><p>The number of logged requests after the warmup</p>
+</dd>
+<dt><strong>rate</strong><span class="classifier">float, optional</span></dt><dd><p>The network-wide mean rate of requests per second</p>
+</dd>
+<dt><strong>beta</strong><span class="classifier">float, optional</span></dt><dd><p>Spatial skewness of requests rates</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>events</strong><span class="classifier">iterator</span></dt><dd><p>Iterator of events. Each event is a 2-tuple where the first element is
+the timestamp at which the event occurs and the second element is a
+dictionary of event attributes.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="icarus.scenarios.workload.TraceDrivenWorkload.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'TRACE_DRIVEN'</span></em><a class="headerlink" href="#icarus.scenarios.workload.TraceDrivenWorkload.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="icarus.scenarios.workload.YCSBWorkload">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">YCSBWorkload</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">workload</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_contents</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_warmup</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_measured</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.99</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/scenarios/workload.html#YCSBWorkload"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.scenarios.workload.YCSBWorkload" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Yahoo! Cloud Serving Benchmark (YCSB)</p>
+<p>The YCSB is a set of reference workloads used to benchmark databases and,
+more generally any storage/caching systems. It comprises five workloads:</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p>Workload</p></td>
+<td><p>Operations</p></td>
+<td><p>Record selection</p></td>
+</tr>
+<tr class="row-even"><td><p>A - Update heavy
+B - Read heavy
+C - Read only
+D - Read latest
+E - Short ranges</p></td>
+<td><p>Read: 50%, Update: 50%
+Read: 95%, Update: 5%
+Read: 100%
+Read: 95%, Insert: 5%
+Scan: 95%, Insert 5%</p></td>
+<td><p>Zipfian
+Zipfian
+Zipfian
+Latest
+Zipfian/Uniform</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>At the moment only workloads A, B and C are implemented, since they are the
+most relevant for caching systems.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="icarus.scenarios.workload.YCSBWorkload.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'YCSB'</span></em><a class="headerlink" href="#icarus.scenarios.workload.YCSBWorkload.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-icarus.scenarios">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-icarus.scenarios" title="Permalink to this heading">¶</a></h2>
+<p>This package contains the code for generating simulation scenarios.</p>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">icarus.scenarios package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-icarus.scenarios.algorithms">icarus.scenarios.algorithms module</a></li>
+<li><a class="reference internal" href="#module-icarus.scenarios.cacheplacement">icarus.scenarios.cacheplacement module</a></li>
+<li><a class="reference internal" href="#module-icarus.scenarios.contentplacement">icarus.scenarios.contentplacement module</a></li>
+<li><a class="reference internal" href="#module-icarus.scenarios.topology">icarus.scenarios.topology module</a></li>
+<li><a class="reference internal" href="#module-icarus.scenarios.workload">icarus.scenarios.workload module</a></li>
+<li><a class="reference internal" href="#module-icarus.scenarios">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="icarus.results.html"
+                          title="previous chapter">icarus.results package</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="icarus.tools.html"
+                          title="next chapter">icarus.tools package</a></p>
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="icarus.tools.html" title="icarus.tools package"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="icarus.results.html" title="icarus.results package"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Icarus 0.8.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="icarus.html" >icarus package</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">icarus.scenarios package</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2016, Lorenzo Saino, Ioannis Psaras.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.1.1.
+    </div>
+  </body>
+</html>

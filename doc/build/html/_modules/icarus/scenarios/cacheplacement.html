@@ -1,0 +1,452 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>icarus.scenarios.cacheplacement &#8212; Icarus 0.8.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinxdoc.css" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Icarus 0.8.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">icarus.scenarios.cacheplacement</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for icarus.scenarios.cacheplacement</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Cache placement strategies</span>
+
+<span class="sd">This module provides algorithms for performing cache placement, i.e., given</span>
+<span class="sd">a cumulative cache size and a topology where each possible node candidate is</span>
+<span class="sd">labelled, these functions deploy caching space to the nodes of the topology.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
+
+<span class="kn">from</span> <span class="nn">icarus.util</span> <span class="kn">import</span> <span class="n">iround</span>
+<span class="kn">from</span> <span class="nn">icarus.registry</span> <span class="kn">import</span> <span class="n">register_cache_placement</span>
+<span class="kn">from</span> <span class="nn">icarus.scenarios.algorithms</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">compute_clusters</span><span class="p">,</span>
+    <span class="n">compute_p_median</span><span class="p">,</span>
+    <span class="n">deploy_clusters</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;uniform_cache_placement&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;degree_centrality_cache_placement&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;betweenness_centrality_cache_placement&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;uniform_consolidated_cache_placement&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;random_cache_placement&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;optimal_median_cache_placement&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;optimal_hashrouting_cache_placement&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;clustered_hashrouting_cache_placement&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+
+
+<div class="viewcode-block" id="uniform_cache_placement"><a class="viewcode-back" href="../../../apidoc/icarus.scenarios.html#icarus.scenarios.cacheplacement.uniform_cache_placement">[docs]</a><span class="nd">@register_cache_placement</span><span class="p">(</span><span class="s2">&quot;UNIFORM&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">uniform_cache_placement</span><span class="p">(</span><span class="n">topology</span><span class="p">,</span> <span class="n">cache_budget</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Places cache budget uniformly across cache nodes.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    topology : Topology</span>
+<span class="sd">        The topology object</span>
+<span class="sd">    cache_budget : int</span>
+<span class="sd">        The cumulative cache budget</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">icr_candidates</span> <span class="o">=</span> <span class="n">topology</span><span class="o">.</span><span class="n">graph</span><span class="p">[</span><span class="s2">&quot;icr_candidates&quot;</span><span class="p">]</span>
+    <span class="n">cache_size</span> <span class="o">=</span> <span class="n">iround</span><span class="p">(</span><span class="n">cache_budget</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">icr_candidates</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">icr_candidates</span><span class="p">:</span>
+        <span class="n">topology</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="s2">&quot;stack&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;cache_size&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cache_size</span></div>
+
+
+<div class="viewcode-block" id="degree_centrality_cache_placement"><a class="viewcode-back" href="../../../apidoc/icarus.scenarios.html#icarus.scenarios.cacheplacement.degree_centrality_cache_placement">[docs]</a><span class="nd">@register_cache_placement</span><span class="p">(</span><span class="s2">&quot;DEGREE&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">degree_centrality_cache_placement</span><span class="p">(</span><span class="n">topology</span><span class="p">,</span> <span class="n">cache_budget</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Places cache budget proportionally to the degree of the node.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    topology : Topology</span>
+<span class="sd">        The topology object</span>
+<span class="sd">    cache_budget : int</span>
+<span class="sd">        The cumulative cache budget</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">deg</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">nx</span><span class="o">.</span><span class="n">degree</span><span class="p">(</span><span class="n">topology</span><span class="p">))</span>
+    <span class="n">icr_candidates</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">topology</span><span class="o">.</span><span class="n">graph</span><span class="p">[</span><span class="s2">&quot;icr_candidates&quot;</span><span class="p">])</span>
+    <span class="n">total_deg</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">deg</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">icr_candidates</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">icr_candidates</span><span class="p">:</span>
+        <span class="n">topology</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="s2">&quot;stack&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;cache_size&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">iround</span><span class="p">(</span>
+            <span class="n">cache_budget</span> <span class="o">*</span> <span class="n">deg</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">/</span> <span class="n">total_deg</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="betweenness_centrality_cache_placement"><a class="viewcode-back" href="../../../apidoc/icarus.scenarios.html#icarus.scenarios.cacheplacement.betweenness_centrality_cache_placement">[docs]</a><span class="nd">@register_cache_placement</span><span class="p">(</span><span class="s2">&quot;BETWEENNESS_CENTRALITY&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">betweenness_centrality_cache_placement</span><span class="p">(</span><span class="n">topology</span><span class="p">,</span> <span class="n">cache_budget</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Places cache budget proportionally to the betweenness centrality of the</span>
+<span class="sd">    node.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    topology : Topology</span>
+<span class="sd">        The topology object</span>
+<span class="sd">    cache_budget : int</span>
+<span class="sd">        The cumulative cache budget</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">betw</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">nx</span><span class="o">.</span><span class="n">betweenness_centrality</span><span class="p">(</span><span class="n">topology</span><span class="p">))</span>
+    <span class="n">icr_candidates</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">topology</span><span class="o">.</span><span class="n">graph</span><span class="p">[</span><span class="s2">&quot;icr_candidates&quot;</span><span class="p">])</span>
+    <span class="n">total_betw</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">betw</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">icr_candidates</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">icr_candidates</span><span class="p">:</span>
+        <span class="n">topology</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="s2">&quot;stack&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;cache_size&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">iround</span><span class="p">(</span>
+            <span class="n">cache_budget</span> <span class="o">*</span> <span class="n">betw</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">/</span> <span class="n">total_betw</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="uniform_consolidated_cache_placement"><a class="viewcode-back" href="../../../apidoc/icarus.scenarios.html#icarus.scenarios.cacheplacement.uniform_consolidated_cache_placement">[docs]</a><span class="nd">@register_cache_placement</span><span class="p">(</span><span class="s2">&quot;CONSOLIDATED&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">uniform_consolidated_cache_placement</span><span class="p">(</span>
+    <span class="n">topology</span><span class="p">,</span> <span class="n">cache_budget</span><span class="p">,</span> <span class="n">spread</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">metric_dict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="s2">&quot;top&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+<span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Consolidate caches in nodes with top centrality.</span>
+
+<span class="sd">    Differently from other cache placement strategies that place cache space</span>
+<span class="sd">    to all nodes but proportionally to their centrality, this strategy places</span>
+<span class="sd">    caches of all the same size in a set of selected nodes.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    topology : Topology</span>
+<span class="sd">        The topology object</span>
+<span class="sd">    cache_budget : int</span>
+<span class="sd">        The cumulative cache budget</span>
+<span class="sd">    spread : float [0, 1], optional</span>
+<span class="sd">        The spread factor, The greater it is the more the cache budget is</span>
+<span class="sd">        spread among nodes. If it is 1, all candidate nodes are assigned a</span>
+<span class="sd">        cache, if it is 0, only the node with the highest/lowest centrality</span>
+<span class="sd">        is assigned a cache</span>
+<span class="sd">    metric_dict : dict, optional</span>
+<span class="sd">        The centrality metric according to which nodes are selected. If not</span>
+<span class="sd">        specified, betweenness centrality is selected.</span>
+<span class="sd">    target : (&quot;top&quot; | &quot;bottom&quot;), optional</span>
+<span class="sd">        The subsection of the ranked node on which to the deploy caches.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">spread</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">spread</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;spread factor must be between 0 and 1&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">target</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;top&quot;</span><span class="p">,</span> <span class="s2">&quot;bottom&quot;</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;target argument must be either &quot;top&quot; or &quot;bottom&quot;&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">metric_dict</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">spread</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">metric_dict</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">betweenness_centrality</span><span class="p">(</span><span class="n">topology</span><span class="p">)</span>
+
+    <span class="n">icr_candidates</span> <span class="o">=</span> <span class="n">topology</span><span class="o">.</span><span class="n">graph</span><span class="p">[</span><span class="s2">&quot;icr_candidates&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">spread</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">target_nodes</span> <span class="o">=</span> <span class="n">icr_candidates</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">nodes</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">icr_candidates</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">k</span><span class="p">:</span> <span class="n">metric_dict</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">target</span> <span class="o">==</span> <span class="s2">&quot;top&quot;</span><span class="p">:</span>
+            <span class="n">nodes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">reversed</span><span class="p">(</span><span class="n">nodes</span><span class="p">))</span>
+        <span class="c1"># cutoff node must be at least one otherwise, if spread is too low, no</span>
+        <span class="c1"># nodes would be selected</span>
+        <span class="n">cutoff</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">iround</span><span class="p">(</span><span class="n">spread</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">nodes</span><span class="p">)))</span>
+        <span class="n">target_nodes</span> <span class="o">=</span> <span class="n">nodes</span><span class="p">[:</span><span class="n">cutoff</span><span class="p">]</span>
+    <span class="n">cache_size</span> <span class="o">=</span> <span class="n">iround</span><span class="p">(</span><span class="n">cache_budget</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">target_nodes</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">cache_size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span>
+    <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">target_nodes</span><span class="p">:</span>
+        <span class="n">topology</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="s2">&quot;stack&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;cache_size&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cache_size</span></div>
+
+
+<div class="viewcode-block" id="random_cache_placement"><a class="viewcode-back" href="../../../apidoc/icarus.scenarios.html#icarus.scenarios.cacheplacement.random_cache_placement">[docs]</a><span class="nd">@register_cache_placement</span><span class="p">(</span><span class="s2">&quot;RANDOM&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">random_cache_placement</span><span class="p">(</span><span class="n">topology</span><span class="p">,</span> <span class="n">cache_budget</span><span class="p">,</span> <span class="n">n_cache_nodes</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Deploy caching nodes randomly</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    topology : Topology</span>
+<span class="sd">        The topology object</span>
+<span class="sd">    cache_budget : int</span>
+<span class="sd">        The cumulative cache budget</span>
+<span class="sd">    n_nodes : int</span>
+<span class="sd">        The number of caching nodes to deploy</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n_cache_nodes</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_cache_nodes</span><span class="p">)</span>
+    <span class="n">icr_candidates</span> <span class="o">=</span> <span class="n">topology</span><span class="o">.</span><span class="n">graph</span><span class="p">[</span><span class="s2">&quot;icr_candidates&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">icr_candidates</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">n_cache_nodes</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;The number of ICR candidates is lower than the target number of caches&quot;</span>
+        <span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">icr_candidates</span><span class="p">)</span> <span class="o">==</span> <span class="n">n_cache_nodes</span><span class="p">:</span>
+        <span class="n">caches</span> <span class="o">=</span> <span class="n">icr_candidates</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+        <span class="n">caches</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">icr_candidates</span><span class="p">,</span> <span class="n">n_cache_nodes</span><span class="p">)</span>
+    <span class="n">cache_size</span> <span class="o">=</span> <span class="n">iround</span><span class="p">(</span><span class="n">cache_budget</span> <span class="o">/</span> <span class="n">n_cache_nodes</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">cache_size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span>
+    <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">caches</span><span class="p">:</span>
+        <span class="n">topology</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="s2">&quot;stack&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;cache_size&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cache_size</span></div>
+
+
+<div class="viewcode-block" id="optimal_median_cache_placement"><a class="viewcode-back" href="../../../apidoc/icarus.scenarios.html#icarus.scenarios.cacheplacement.optimal_median_cache_placement">[docs]</a><span class="nd">@register_cache_placement</span><span class="p">(</span><span class="s2">&quot;OPTIMAL_MEDIAN&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">optimal_median_cache_placement</span><span class="p">(</span>
+    <span class="n">topology</span><span class="p">,</span> <span class="n">cache_budget</span><span class="p">,</span> <span class="n">n_cache_nodes</span><span class="p">,</span> <span class="n">hit_ratio</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="s2">&quot;delay&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+<span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Deploy caching nodes in locations that minimize overall latency assuming</span>
+<span class="sd">    a partitioned strategy (a la Google Global Cache). According to this, in</span>
+<span class="sd">    the network, a set of caching nodes are deployed and each receiver is</span>
+<span class="sd">    mapped to one and only one caching node. Requests from this receiver are</span>
+<span class="sd">    always sent to the designated caching node. In case of cache miss requests</span>
+<span class="sd">    are forwarded to the original source.</span>
+
+<span class="sd">    This placement problem can be mapped to the p-median location-allocation</span>
+<span class="sd">    problem. This function solves this problem using the vertex substitution</span>
+<span class="sd">    heuristic, which practically works like the k-medoid PAM algorithms, which</span>
+<span class="sd">    is also similar to the k-means clustering algorithm. The result is not</span>
+<span class="sd">    guaranteed to be globally optimal, only locally optimal.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    This placement assumes that all receivers have degree = 1 and are connected</span>
+<span class="sd">    to an ICR candidate nodes. Also, it assumes that contents are uniformly</span>
+<span class="sd">    assigned to sources.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    topology : Topology</span>
+<span class="sd">        The topology object</span>
+<span class="sd">    cache_budget : int</span>
+<span class="sd">        The cumulative cache budget</span>
+<span class="sd">    n_nodes : int</span>
+<span class="sd">        The number of caching nodes to deploy</span>
+<span class="sd">    hit_ratio : float</span>
+<span class="sd">        The expected cache hit ratio of a single cache</span>
+<span class="sd">    weight : str</span>
+<span class="sd">        The weight attribute</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n_cache_nodes</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_cache_nodes</span><span class="p">)</span>
+    <span class="n">icr_candidates</span> <span class="o">=</span> <span class="n">topology</span><span class="o">.</span><span class="n">graph</span><span class="p">[</span><span class="s2">&quot;icr_candidates&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">icr_candidates</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">n_cache_nodes</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;The number of ICR candidates (</span><span class="si">%d</span><span class="s2">) is lower than &quot;</span>
+            <span class="s2">&quot;the target number of caches (</span><span class="si">%d</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">icr_candidates</span><span class="p">),</span> <span class="n">n_cache_nodes</span><span class="p">)</span>
+        <span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">icr_candidates</span><span class="p">)</span> <span class="o">==</span> <span class="n">n_cache_nodes</span><span class="p">:</span>
+        <span class="n">caches</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">icr_candidates</span><span class="p">)</span>
+        <span class="n">cache_assignment</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">v</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">topology</span><span class="o">.</span><span class="n">adj</span><span class="p">[</span><span class="n">v</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">topology</span><span class="o">.</span><span class="n">receivers</span><span class="p">()</span>
+        <span class="p">}</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Need to optimally allocate caching nodes</span>
+        <span class="n">distances</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">nx</span><span class="o">.</span><span class="n">all_pairs_dijkstra_path_length</span><span class="p">(</span><span class="n">topology</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="n">weight</span><span class="p">))</span>
+        <span class="n">sources</span> <span class="o">=</span> <span class="n">topology</span><span class="o">.</span><span class="n">sources</span><span class="p">()</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="p">{</span><span class="n">u</span><span class="p">:</span> <span class="p">{}</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">icr_candidates</span><span class="p">}</span>
+        <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">icr_candidates</span><span class="p">:</span>
+            <span class="n">source_dist</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">distances</span><span class="p">[</span><span class="n">u</span><span class="p">][</span><span class="n">source</span><span class="p">]</span> <span class="k">for</span> <span class="n">source</span> <span class="ow">in</span> <span class="n">sources</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">sources</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">icr_candidates</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">d</span><span class="p">[</span><span class="n">u</span><span class="p">]:</span>
+                    <span class="n">d</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="n">u</span><span class="p">]</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="n">u</span><span class="p">][</span><span class="n">v</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">d</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="n">u</span><span class="p">]</span> <span class="o">=</span> <span class="n">distances</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="n">u</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="n">hit_ratio</span> <span class="o">*</span> <span class="n">source_dist</span><span class="p">)</span>
+        <span class="n">allocation</span><span class="p">,</span> <span class="n">caches</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">compute_p_median</span><span class="p">(</span><span class="n">distances</span><span class="p">,</span> <span class="n">n_cache_nodes</span><span class="p">)</span>
+        <span class="n">cache_assignment</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">v</span><span class="p">:</span> <span class="n">allocation</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">topology</span><span class="o">.</span><span class="n">adj</span><span class="p">[</span><span class="n">v</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">]]</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">topology</span><span class="o">.</span><span class="n">receivers</span><span class="p">()</span>
+        <span class="p">}</span>
+
+    <span class="n">cache_size</span> <span class="o">=</span> <span class="n">iround</span><span class="p">(</span><span class="n">cache_budget</span> <span class="o">/</span> <span class="n">n_cache_nodes</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">cache_size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Cache budget is </span><span class="si">%d</span><span class="s2"> but it&#39;s too small to deploy it on </span><span class="si">%d</span><span class="s2"> nodes. &quot;</span>
+            <span class="s2">&quot;Each node will have a zero-sized cache. &quot;</span>
+            <span class="s2">&quot;Set a larger cache budget and try again&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">cache_budget</span><span class="p">,</span> <span class="n">n_cache_nodes</span><span class="p">)</span>
+        <span class="p">)</span>
+    <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">caches</span><span class="p">:</span>
+        <span class="n">topology</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="s2">&quot;stack&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;cache_size&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cache_size</span>
+    <span class="n">topology</span><span class="o">.</span><span class="n">graph</span><span class="p">[</span><span class="s2">&quot;cache_assignment&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cache_assignment</span></div>
+
+
+<div class="viewcode-block" id="optimal_hashrouting_cache_placement"><a class="viewcode-back" href="../../../apidoc/icarus.scenarios.html#icarus.scenarios.cacheplacement.optimal_hashrouting_cache_placement">[docs]</a><span class="nd">@register_cache_placement</span><span class="p">(</span><span class="s2">&quot;OPTIMAL_HASHROUTING&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">optimal_hashrouting_cache_placement</span><span class="p">(</span>
+    <span class="n">topology</span><span class="p">,</span> <span class="n">cache_budget</span><span class="p">,</span> <span class="n">n_cache_nodes</span><span class="p">,</span> <span class="n">hit_ratio</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="s2">&quot;delay&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+<span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Deploy caching nodes for hashrouting in optimized location</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    topology : Topology</span>
+<span class="sd">        The topology object</span>
+<span class="sd">    cache_budget : int</span>
+<span class="sd">        The cumulative cache budget</span>
+<span class="sd">    n_nodes : int</span>
+<span class="sd">        The number of caching nodes to deploy</span>
+<span class="sd">    hit_ratio : float</span>
+<span class="sd">        The expected global cache hit ratio</span>
+<span class="sd">    weight : str, optional</span>
+<span class="sd">        The weight attribute. Default is &#39;delay&#39;</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    .. [1] L. Saino, I. Psaras and G. Pavlou, Framework and Algorithms for</span>
+<span class="sd">           Operator-managed Content Caching, in IEEE Transactions on</span>
+<span class="sd">           Network and Service Management (TNSM), Volume 17, Issue 1, March 2020</span>
+<span class="sd">           https://doi.org/10.1109/TNSM.2019.2956525</span>
+<span class="sd">    .. [2] L. Saino, On the Design of Efficient Caching Systems, Ph.D. thesis</span>
+<span class="sd">           University College London, Dec. 2015. Available:</span>
+<span class="sd">           http://discovery.ucl.ac.uk/1473436/</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n_cache_nodes</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_cache_nodes</span><span class="p">)</span>
+    <span class="n">icr_candidates</span> <span class="o">=</span> <span class="n">topology</span><span class="o">.</span><span class="n">graph</span><span class="p">[</span><span class="s2">&quot;icr_candidates&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">icr_candidates</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">n_cache_nodes</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;The number of ICR candidates (</span><span class="si">%d</span><span class="s2">) is lower than &quot;</span>
+            <span class="s2">&quot;the target number of caches (</span><span class="si">%d</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">icr_candidates</span><span class="p">),</span> <span class="n">n_cache_nodes</span><span class="p">)</span>
+        <span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">icr_candidates</span><span class="p">)</span> <span class="o">==</span> <span class="n">n_cache_nodes</span><span class="p">:</span>
+        <span class="n">caches</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">icr_candidates</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Need to optimally allocate caching nodes</span>
+        <span class="n">distances</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">nx</span><span class="o">.</span><span class="n">all_pairs_dijkstra_path_length</span><span class="p">(</span><span class="n">topology</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="n">weight</span><span class="p">))</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">icr_candidates</span><span class="p">:</span>
+            <span class="n">d</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">topology</span><span class="o">.</span><span class="n">receivers</span><span class="p">():</span>
+                <span class="n">d</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">+=</span> <span class="n">distances</span><span class="p">[</span><span class="n">r</span><span class="p">][</span><span class="n">v</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">topology</span><span class="o">.</span><span class="n">sources</span><span class="p">():</span>
+                <span class="n">d</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">+=</span> <span class="n">distances</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="n">s</span><span class="p">]</span> <span class="o">*</span> <span class="n">hit_ratio</span>
+
+        <span class="c1"># Sort caches in increasing order of distances and assign cache sizes</span>
+        <span class="n">caches</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">icr_candidates</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">k</span><span class="p">:</span> <span class="n">d</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+    <span class="n">cache_size</span> <span class="o">=</span> <span class="n">iround</span><span class="p">(</span><span class="n">cache_budget</span> <span class="o">/</span> <span class="n">n_cache_nodes</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">cache_size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Cache budget is </span><span class="si">%d</span><span class="s2"> but it&#39;s too small to deploy it on </span><span class="si">%d</span><span class="s2"> nodes. &quot;</span>
+            <span class="s2">&quot;Each node will have a zero-sized cache. &quot;</span>
+            <span class="s2">&quot;Set a larger cache budget and try again&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">cache_budget</span><span class="p">,</span> <span class="n">n_cache_nodes</span><span class="p">)</span>
+        <span class="p">)</span>
+    <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">caches</span><span class="p">[:</span><span class="n">n_cache_nodes</span><span class="p">]:</span>
+        <span class="n">topology</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="s2">&quot;stack&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;cache_size&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cache_size</span></div>
+
+
+<div class="viewcode-block" id="clustered_hashrouting_cache_placement"><a class="viewcode-back" href="../../../apidoc/icarus.scenarios.html#icarus.scenarios.cacheplacement.clustered_hashrouting_cache_placement">[docs]</a><span class="nd">@register_cache_placement</span><span class="p">(</span><span class="s2">&quot;CLUSTERED_HASHROUTING&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">clustered_hashrouting_cache_placement</span><span class="p">(</span>
+    <span class="n">topology</span><span class="p">,</span> <span class="n">cache_budget</span><span class="p">,</span> <span class="n">n_clusters</span><span class="p">,</span> <span class="n">policy</span><span class="p">,</span> <span class="n">distance</span><span class="o">=</span><span class="s2">&quot;delay&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+<span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Deploy caching nodes for hashrouting in with clusters</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    topology : Topology</span>
+<span class="sd">        The topology object</span>
+<span class="sd">    cache_budget : int</span>
+<span class="sd">        The cumulative cache budget</span>
+<span class="sd">    n_clusters : int</span>
+<span class="sd">        The number of clusters</span>
+<span class="sd">    policy : str (node_const | cluster_const)</span>
+<span class="sd">        The expected global cache hit ratio</span>
+<span class="sd">    distance : str</span>
+<span class="sd">        The attribute used to quantify distance between pairs of nodes.</span>
+<span class="sd">        Default is &#39;delay&#39;</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    .. [1] L. Saino, I. Psaras and G. Pavlou, Framework and Algorithms for</span>
+<span class="sd">           Operator-managed Content Caching, in IEEE Transactions on</span>
+<span class="sd">           Network and Service Management (TNSM), Volume 17, Issue 1, March 2020</span>
+<span class="sd">           https://doi.org/10.1109/TNSM.2019.2956525</span>
+<span class="sd">    .. [2] L. Saino, On the Design of Efficient Caching Systems, Ph.D. thesis</span>
+<span class="sd">           University College London, Dec. 2015. Available:</span>
+<span class="sd">           http://discovery.ucl.ac.uk/1473436/</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">icr_candidates</span> <span class="o">=</span> <span class="n">topology</span><span class="o">.</span><span class="n">graph</span><span class="p">[</span><span class="s2">&quot;icr_candidates&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">n_clusters</span> <span class="o">&lt;=</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">n_clusters</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">icr_candidates</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;The number of cluster must be positive and &lt;= the &quot;</span>
+            <span class="s2">&quot;number of ICR candidate nodes&quot;</span>
+        <span class="p">)</span>
+    <span class="k">elif</span> <span class="n">n_clusters</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">clusters</span> <span class="o">=</span> <span class="p">[</span><span class="nb">set</span><span class="p">(</span><span class="n">icr_candidates</span><span class="p">)]</span>
+    <span class="k">elif</span> <span class="n">n_clusters</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">icr_candidates</span><span class="p">):</span>
+        <span class="n">clusters</span> <span class="o">=</span> <span class="p">[{</span><span class="n">v</span><span class="p">}</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">icr_candidates</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">clusters</span> <span class="o">=</span> <span class="n">compute_clusters</span><span class="p">(</span>
+            <span class="n">topology</span><span class="p">,</span> <span class="n">n_clusters</span><span class="p">,</span> <span class="n">distance</span><span class="o">=</span><span class="n">distance</span><span class="p">,</span> <span class="n">nbunch</span><span class="o">=</span><span class="n">icr_candidates</span><span class="p">,</span> <span class="n">n_iter</span><span class="o">=</span><span class="mi">100</span>
+        <span class="p">)</span>
+    <span class="n">deploy_clusters</span><span class="p">(</span><span class="n">topology</span><span class="p">,</span> <span class="n">clusters</span><span class="p">,</span> <span class="n">assign_src_rcv</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">policy</span> <span class="o">==</span> <span class="s2">&quot;node_const&quot;</span><span class="p">:</span>
+        <span class="c1"># Each node is assigned the same amount of caching space</span>
+        <span class="n">cache_size</span> <span class="o">=</span> <span class="n">iround</span><span class="p">(</span><span class="n">cache_budget</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">icr_candidates</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">cache_size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">icr_candidates</span><span class="p">:</span>
+            <span class="n">topology</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="s2">&quot;stack&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;cache_size&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cache_size</span>
+    <span class="k">elif</span> <span class="n">policy</span> <span class="o">==</span> <span class="s2">&quot;cluster_const&quot;</span><span class="p">:</span>
+        <span class="n">cluster_cache_size</span> <span class="o">=</span> <span class="n">iround</span><span class="p">(</span><span class="n">cache_budget</span> <span class="o">/</span> <span class="n">n_clusters</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">cluster</span> <span class="ow">in</span> <span class="n">topology</span><span class="o">.</span><span class="n">graph</span><span class="p">[</span><span class="s2">&quot;clusters&quot;</span><span class="p">]:</span>
+            <span class="n">cache_size</span> <span class="o">=</span> <span class="n">iround</span><span class="p">(</span><span class="n">cluster_cache_size</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">cluster</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">cluster</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">v</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">icr_candidates</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="n">topology</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="s2">&quot;stack&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;cache_size&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cache_size</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;clustering policy </span><span class="si">%s</span><span class="s2"> not supported&quot;</span> <span class="o">%</span> <span class="n">policy</span><span class="p">)</span></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Icarus 0.8.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">icarus.scenarios.cacheplacement</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2016, Lorenzo Saino, Ioannis Psaras.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.1.1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,422 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>icarus.orchestration &#8212; Icarus 0.8.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinxdoc.css" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Icarus 0.8.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">icarus.orchestration</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for icarus.orchestration</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Orchestrate the execution of all experiments.</span>
+
+<span class="sd">The orchestrator is responsible for scheduling experiments specified in the</span>
+<span class="sd">user-provided settings.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">collections</span>
+<span class="kn">import</span> <span class="nn">multiprocessing</span> <span class="k">as</span> <span class="nn">mp</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">signal</span>
+<span class="kn">import</span> <span class="nn">traceback</span>
+
+<span class="kn">from</span> <span class="nn">icarus.execution</span> <span class="kn">import</span> <span class="n">exec_experiment</span>
+<span class="kn">from</span> <span class="nn">icarus.registry</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">TOPOLOGY_FACTORY</span><span class="p">,</span>
+    <span class="n">CACHE_PLACEMENT</span><span class="p">,</span>
+    <span class="n">CONTENT_PLACEMENT</span><span class="p">,</span>
+    <span class="n">CACHE_POLICY</span><span class="p">,</span>
+    <span class="n">WORKLOAD</span><span class="p">,</span>
+    <span class="n">DATA_COLLECTOR</span><span class="p">,</span>
+    <span class="n">STRATEGY</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">icarus.results</span> <span class="kn">import</span> <span class="n">ResultSet</span>
+<span class="kn">from</span> <span class="nn">icarus.util</span> <span class="kn">import</span> <span class="n">SequenceNumber</span><span class="p">,</span> <span class="n">timestr</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Orchestrator&quot;</span><span class="p">,</span> <span class="s2">&quot;run_scenario&quot;</span><span class="p">]</span>
+
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;orchestration&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Orchestrator"><a class="viewcode-back" href="../../apidoc/icarus.html#icarus.orchestration.Orchestrator">[docs]</a><span class="k">class</span> <span class="nc">Orchestrator</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Orchestrator.</span>
+
+<span class="sd">    It is responsible for orchestrating the execution of all experiments and</span>
+<span class="sd">    aggregate results.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">settings</span><span class="p">,</span> <span class="n">summary_freq</span><span class="o">=</span><span class="mi">4</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Constructor</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        settings : Settings</span>
+<span class="sd">            The settings of the simulator</span>
+<span class="sd">        summary_freq : int</span>
+<span class="sd">            Frequency (in number of experiment) at which summary messages</span>
+<span class="sd">            are displayed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">settings</span> <span class="o">=</span> <span class="n">settings</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">results</span> <span class="o">=</span> <span class="n">ResultSet</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seq</span> <span class="o">=</span> <span class="n">SequenceNumber</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exp_durations</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">deque</span><span class="p">(</span><span class="n">maxlen</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_success</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_fail</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">summary_freq</span> <span class="o">=</span> <span class="n">summary_freq</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stop</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">PARALLEL_EXECUTION</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pool</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">Pool</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">N_PROCESSES</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Orchestrator.stop"><a class="viewcode-back" href="../../apidoc/icarus.html#icarus.orchestration.Orchestrator.stop">[docs]</a>    <span class="k">def</span> <span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Stop the execution of the orchestrator&quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Orchestrator is stopping&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stop</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">PARALLEL_EXECUTION</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pool</span><span class="o">.</span><span class="n">terminate</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pool</span><span class="o">.</span><span class="n">join</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Orchestrator.run"><a class="viewcode-back" href="../../apidoc/icarus.html#icarus.orchestration.Orchestrator.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Run the orchestrator.</span>
+
+<span class="sd">        This call is blocking, whether multiple processes are used or not. This</span>
+<span class="sd">        methods returns only after all experiments are executed.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Create queue of experiment configurations</span>
+        <span class="n">queue</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">deque</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">EXPERIMENT_QUEUE</span><span class="p">)</span>
+        <span class="c1"># Calculate number of experiments and number of processes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_exp</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">queue</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">N_REPLICATIONS</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_proc</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">N_PROCESSES</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">PARALLEL_EXECUTION</span> <span class="k">else</span> <span class="mi">1</span>
+        <span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="s2">&quot;Starting simulations: </span><span class="si">%d</span><span class="s2"> experiments, </span><span class="si">%d</span><span class="s2"> process(es)&quot;</span>
+            <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_exp</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_proc</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">PARALLEL_EXECUTION</span><span class="p">:</span>
+            <span class="c1"># Starting from Python 3.2, multiprocessing.Pool.apply_async</span>
+            <span class="c1"># accepts a new error_callback argument that is a callable for</span>
+            <span class="c1"># returning a message when uncaught errors are thrown.</span>
+            <span class="c1"># The following lines ensure compatibility with Python &lt; 3.2</span>
+            <span class="n">callbacks</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;callback&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">experiment_callback</span><span class="p">}</span>
+            <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span> <span class="o">&gt;</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
+                <span class="n">callbacks</span><span class="p">[</span><span class="s2">&quot;error_callback&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">error_callback</span>
+            <span class="c1"># This job queue is used only to keep track of which jobs have</span>
+            <span class="c1"># finished and which are still running. Currently this information</span>
+            <span class="c1"># is used only to handle keyboard interrupts correctly</span>
+            <span class="n">job_queue</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">deque</span><span class="p">()</span>
+            <span class="c1"># Schedule experiments from the queue</span>
+            <span class="k">while</span> <span class="n">queue</span><span class="p">:</span>
+                <span class="n">experiment</span> <span class="o">=</span> <span class="n">queue</span><span class="o">.</span><span class="n">popleft</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">N_REPLICATIONS</span><span class="p">):</span>
+                    <span class="n">job_queue</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">pool</span><span class="o">.</span><span class="n">apply_async</span><span class="p">(</span>
+                            <span class="n">run_scenario</span><span class="p">,</span>
+                            <span class="n">args</span><span class="o">=</span><span class="p">(</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">,</span>
+                                <span class="n">experiment</span><span class="p">,</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">seq</span><span class="o">.</span><span class="n">assign</span><span class="p">(),</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">n_exp</span><span class="p">,</span>
+                            <span class="p">),</span>
+                            <span class="o">**</span><span class="n">callbacks</span>
+                        <span class="p">)</span>
+                    <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pool</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="c1"># This solution is probably not optimal, but at least makes</span>
+            <span class="c1"># KeyboardInterrupt work fine, which is crucial if launching the</span>
+            <span class="c1"># simulation remotely via screen.</span>
+            <span class="c1"># What happens here is that we keep waiting for possible</span>
+            <span class="c1"># KeyboardInterrupts till the last process terminates successfully.</span>
+            <span class="c1"># We may have to wait up to 5 seconds after the last process</span>
+            <span class="c1"># terminates before exiting, which is really negligible</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">while</span> <span class="n">job_queue</span><span class="p">:</span>
+                    <span class="n">job</span> <span class="o">=</span> <span class="n">job_queue</span><span class="o">.</span><span class="n">popleft</span><span class="p">()</span>
+                    <span class="k">while</span> <span class="ow">not</span> <span class="n">job</span><span class="o">.</span><span class="n">ready</span><span class="p">():</span>
+                        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">KeyboardInterrupt</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">pool</span><span class="o">.</span><span class="n">terminate</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pool</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+
+        <span class="k">else</span><span class="p">:</span>  <span class="c1"># Single-process execution</span>
+            <span class="k">while</span> <span class="n">queue</span><span class="p">:</span>
+                <span class="n">experiment</span> <span class="o">=</span> <span class="n">queue</span><span class="o">.</span><span class="n">popleft</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">N_REPLICATIONS</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">experiment_callback</span><span class="p">(</span>
+                        <span class="n">run_scenario</span><span class="p">(</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">,</span> <span class="n">experiment</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">seq</span><span class="o">.</span><span class="n">assign</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_exp</span>
+                        <span class="p">)</span>
+                    <span class="p">)</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stop</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="s2">&quot;END | Planned: </span><span class="si">%d</span><span class="s2">, Completed: </span><span class="si">%d</span><span class="s2">, Succeeded: </span><span class="si">%d</span><span class="s2">, Failed: </span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">n_exp</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">n_fail</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_success</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">n_success</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">n_fail</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="Orchestrator.error_callback"><a class="viewcode-back" href="../../apidoc/icarus.html#icarus.orchestration.Orchestrator.error_callback">[docs]</a>    <span class="k">def</span> <span class="nf">error_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Callback method called in case of error in Python &gt; 3.2</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        msg : string</span>
+<span class="sd">            Error message</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;FAILURE | Experiment failed: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">msg</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_fail</span> <span class="o">+=</span> <span class="mi">1</span></div>
+
+<div class="viewcode-block" id="Orchestrator.experiment_callback"><a class="viewcode-back" href="../../apidoc/icarus.html#icarus.orchestration.Orchestrator.experiment_callback">[docs]</a>    <span class="k">def</span> <span class="nf">experiment_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Callback method called by run_scenario</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        args : tuple</span>
+<span class="sd">            Tuple of arguments</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># If args is None, that means that an exception was raised during the</span>
+        <span class="c1"># execution of the experiment. In such case, ignore it</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">args</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">n_fail</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">return</span>
+        <span class="c1"># Extract parameters</span>
+        <span class="n">params</span><span class="p">,</span> <span class="n">results</span><span class="p">,</span> <span class="n">duration</span> <span class="o">=</span> <span class="n">args</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_success</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="c1"># Store results</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">results</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exp_durations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">duration</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_success</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_freq</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># Number of experiments scheduled to be executed</span>
+            <span class="n">n_scheduled</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_exp</span> <span class="o">-</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_fail</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_success</span><span class="p">)</span>
+            <span class="c1"># Compute ETA</span>
+            <span class="n">n_cores</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">mp</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_proc</span><span class="p">)</span>
+            <span class="n">mean_duration</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exp_durations</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exp_durations</span><span class="p">)</span>
+            <span class="n">eta</span> <span class="o">=</span> <span class="n">timestr</span><span class="p">(</span><span class="n">n_scheduled</span> <span class="o">*</span> <span class="n">mean_duration</span> <span class="o">/</span> <span class="n">n_cores</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+            <span class="c1"># Print summary</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="s2">&quot;SUMMARY | Completed: </span><span class="si">%d</span><span class="s2">, Failed: </span><span class="si">%d</span><span class="s2">, Scheduled: </span><span class="si">%d</span><span class="s2">, ETA: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">n_success</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">n_fail</span><span class="p">,</span>
+                <span class="n">n_scheduled</span><span class="p">,</span>
+                <span class="n">eta</span><span class="p">,</span>
+            <span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="run_scenario"><a class="viewcode-back" href="../../apidoc/icarus.html#icarus.orchestration.run_scenario">[docs]</a><span class="k">def</span> <span class="nf">run_scenario</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">curr_exp</span><span class="p">,</span> <span class="n">n_exp</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Run a single scenario experiment</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    settings : Settings</span>
+<span class="sd">        The simulator settings</span>
+<span class="sd">    params : Tree</span>
+<span class="sd">        experiment parameters tree</span>
+<span class="sd">    curr_exp : int</span>
+<span class="sd">        sequence number of the experiment</span>
+<span class="sd">    n_exp : int</span>
+<span class="sd">        Number of scheduled experiments</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    results : 3-tuple</span>
+<span class="sd">        A (params, results, duration) 3-tuple. The first element is a dictionary</span>
+<span class="sd">        which stores all the attributes of the experiment. The second element</span>
+<span class="sd">        is a dictionary which stores the results. The third element is an</span>
+<span class="sd">        integer expressing the wall-clock duration of the experiment (in</span>
+<span class="sd">        seconds)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="n">proc_name</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">current_process</span><span class="p">()</span><span class="o">.</span><span class="n">name</span>
+        <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;runner-</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">proc_name</span><span class="p">)</span>
+
+        <span class="c1"># Get list of metrics required</span>
+        <span class="n">metrics</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">DATA_COLLECTORS</span>
+
+        <span class="c1"># Copy parameters so that they can be manipulated</span>
+        <span class="n">tree</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+
+        <span class="c1"># Set topology</span>
+        <span class="n">topology_spec</span> <span class="o">=</span> <span class="n">tree</span><span class="p">[</span><span class="s2">&quot;topology&quot;</span><span class="p">]</span>
+        <span class="n">topology_name</span> <span class="o">=</span> <span class="n">topology_spec</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">topology_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">TOPOLOGY_FACTORY</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="s2">&quot;No topology factory implementation for </span><span class="si">%s</span><span class="s2"> was found.&quot;</span> <span class="o">%</span> <span class="n">topology_name</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="n">topology</span> <span class="o">=</span> <span class="n">TOPOLOGY_FACTORY</span><span class="p">[</span><span class="n">topology_name</span><span class="p">](</span><span class="o">**</span><span class="n">topology_spec</span><span class="p">)</span>
+
+        <span class="n">workload_spec</span> <span class="o">=</span> <span class="n">tree</span><span class="p">[</span><span class="s2">&quot;workload&quot;</span><span class="p">]</span>
+        <span class="n">workload_name</span> <span class="o">=</span> <span class="n">workload_spec</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">workload_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">WORKLOAD</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="s2">&quot;No workload implementation named </span><span class="si">%s</span><span class="s2"> was found.&quot;</span> <span class="o">%</span> <span class="n">workload_name</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="n">workload</span> <span class="o">=</span> <span class="n">WORKLOAD</span><span class="p">[</span><span class="n">workload_name</span><span class="p">](</span><span class="n">topology</span><span class="p">,</span> <span class="o">**</span><span class="n">workload_spec</span><span class="p">)</span>
+
+        <span class="c1"># Assign caches to nodes</span>
+        <span class="k">if</span> <span class="s2">&quot;cache_placement&quot;</span> <span class="ow">in</span> <span class="n">tree</span><span class="p">:</span>
+            <span class="n">cachepl_spec</span> <span class="o">=</span> <span class="n">tree</span><span class="p">[</span><span class="s2">&quot;cache_placement&quot;</span><span class="p">]</span>
+            <span class="n">cachepl_name</span> <span class="o">=</span> <span class="n">cachepl_spec</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">cachepl_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">CACHE_PLACEMENT</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;No cache placement named </span><span class="si">%s</span><span class="s2"> was found.&quot;</span> <span class="o">%</span> <span class="n">cachepl_name</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">None</span>
+            <span class="n">network_cache</span> <span class="o">=</span> <span class="n">cachepl_spec</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;network_cache&quot;</span><span class="p">)</span>
+            <span class="c1"># Cache budget is the cumulative number of cache entries across</span>
+            <span class="c1"># the whole network</span>
+            <span class="n">cachepl_spec</span><span class="p">[</span><span class="s2">&quot;cache_budget&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">workload</span><span class="o">.</span><span class="n">n_contents</span> <span class="o">*</span> <span class="n">network_cache</span>
+            <span class="n">CACHE_PLACEMENT</span><span class="p">[</span><span class="n">cachepl_name</span><span class="p">](</span><span class="n">topology</span><span class="p">,</span> <span class="o">**</span><span class="n">cachepl_spec</span><span class="p">)</span>
+
+        <span class="c1"># Assign contents to sources</span>
+        <span class="c1"># If there are many contents, after doing this, performing operations</span>
+        <span class="c1"># requiring a topology deep copy, i.e. to_directed/undirected, will</span>
+        <span class="c1"># take long.</span>
+        <span class="n">contpl_spec</span> <span class="o">=</span> <span class="n">tree</span><span class="p">[</span><span class="s2">&quot;content_placement&quot;</span><span class="p">]</span>
+        <span class="n">contpl_name</span> <span class="o">=</span> <span class="n">contpl_spec</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">contpl_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">CONTENT_PLACEMENT</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="s2">&quot;No content placement implementation named </span><span class="si">%s</span><span class="s2"> was found.&quot;</span> <span class="o">%</span> <span class="n">contpl_name</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="n">CONTENT_PLACEMENT</span><span class="p">[</span><span class="n">contpl_name</span><span class="p">](</span><span class="n">topology</span><span class="p">,</span> <span class="n">workload</span><span class="o">.</span><span class="n">contents</span><span class="p">,</span> <span class="o">**</span><span class="n">contpl_spec</span><span class="p">)</span>
+
+        <span class="c1"># caching and routing strategy definition</span>
+        <span class="n">strategy</span> <span class="o">=</span> <span class="n">tree</span><span class="p">[</span><span class="s2">&quot;strategy&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">strategy</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">STRATEGY</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="s2">&quot;No implementation of strategy </span><span class="si">%s</span><span class="s2"> was found.&quot;</span> <span class="o">%</span> <span class="n">strategy</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="c1"># cache eviction policy definition</span>
+        <span class="n">cache_policy</span> <span class="o">=</span> <span class="n">tree</span><span class="p">[</span><span class="s2">&quot;cache_policy&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">cache_policy</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">CACHE_POLICY</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="s2">&quot;No implementation of cache policy </span><span class="si">%s</span><span class="s2"> was found.&quot;</span> <span class="o">%</span> <span class="n">cache_policy</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="c1"># Configuration parameters of network model</span>
+        <span class="n">netconf</span> <span class="o">=</span> <span class="n">tree</span><span class="p">[</span><span class="s2">&quot;netconf&quot;</span><span class="p">]</span>
+
+        <span class="c1"># Text description of the scenario run to print on screen</span>
+        <span class="n">scenario</span> <span class="o">=</span> <span class="n">tree</span><span class="p">[</span><span class="s2">&quot;desc&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;desc&quot;</span> <span class="ow">in</span> <span class="n">tree</span> <span class="k">else</span> <span class="s2">&quot;Description N/A&quot;</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="s2">&quot;Experiment </span><span class="si">%d</span><span class="s2">/</span><span class="si">%d</span><span class="s2"> | Preparing scenario: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">curr_exp</span><span class="p">,</span> <span class="n">n_exp</span><span class="p">,</span> <span class="n">scenario</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">m</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">DATA_COLLECTOR</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">metrics</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="s2">&quot;There are no implementations for at least one data collector specified&quot;</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="n">collectors</span> <span class="o">=</span> <span class="p">{</span><span class="n">m</span><span class="p">:</span> <span class="p">{}</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">metrics</span><span class="p">}</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Experiment </span><span class="si">%d</span><span class="s2">/</span><span class="si">%d</span><span class="s2"> | Start simulation&quot;</span><span class="p">,</span> <span class="n">curr_exp</span><span class="p">,</span> <span class="n">n_exp</span><span class="p">)</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="n">exec_experiment</span><span class="p">(</span>
+            <span class="n">topology</span><span class="p">,</span> <span class="n">workload</span><span class="p">,</span> <span class="n">netconf</span><span class="p">,</span> <span class="n">strategy</span><span class="p">,</span> <span class="n">cache_policy</span><span class="p">,</span> <span class="n">collectors</span>
+        <span class="p">)</span>
+
+        <span class="n">duration</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="s2">&quot;Experiment </span><span class="si">%d</span><span class="s2">/</span><span class="si">%d</span><span class="s2"> | End simulation | Duration </span><span class="si">%s</span><span class="s2">.&quot;</span><span class="p">,</span>
+            <span class="n">curr_exp</span><span class="p">,</span>
+            <span class="n">n_exp</span><span class="p">,</span>
+            <span class="n">timestr</span><span class="p">(</span><span class="n">duration</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">results</span><span class="p">,</span> <span class="n">duration</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">KeyboardInterrupt</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Received keyboard interrupt. Terminating&quot;</span><span class="p">)</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="o">-</span><span class="n">signal</span><span class="o">.</span><span class="n">SIGINT</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">err_type</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">e</span><span class="p">))</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;&#39;&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">err_message</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">message</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+            <span class="s2">&quot;Experiment </span><span class="si">%d</span><span class="s2">/</span><span class="si">%d</span><span class="s2"> | Failed | </span><span class="si">%s</span><span class="s2">: </span><span class="si">%s</span><span class="se">\n</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">curr_exp</span><span class="p">,</span>
+            <span class="n">n_exp</span><span class="p">,</span>
+            <span class="n">err_type</span><span class="p">,</span>
+            <span class="n">err_message</span><span class="p">,</span>
+            <span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">(),</span>
+        <span class="p">)</span></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Icarus 0.8.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">icarus.orchestration</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2016, Lorenzo Saino, Ioannis Psaras.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.1.1.
+    </div>
+  </body>
+</html>

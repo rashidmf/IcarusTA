@@ -1,0 +1,27 @@
+EXPERIMENT 1/1:
+  CONFIGURATION:
+   * topology -> name: PATH, n: 10
+   * workload -> name: STATIONARY, n_contents: 100000, n_warmup: 10000, n_measured: 200000, alpha: 1.2, rate: 1
+   * cache_placement -> name: Eigenvector, network_cache: 0.01
+   * content_placement -> name: UNIFORM
+   * cache_policy -> name: LRU
+   * strategy -> name: LCE
+   * desc -> Experiment cache placement
+  RESULTS:
+    CACHE_HIT_RATIO
+     * MEAN: 0.64122
+     * PER_NODE_CACHE_HIT_RATIO: Tree({1: 0.58983, 2: 0.02796, 3: 0.0151, 5: 0.001075, 4: 0.007255})
+     * PER_NODE_SERVER_HIT_RATIO: Tree({9: 0.35878})
+    LATENCY
+     * MEAN: 7.90893
+    LINK_LOAD
+     * MEAN_INTERNAL: 363.170332989324
+     * MEAN_EXTERNAL: 0
+     * PER_LINK_INTERNAL: Tree({(0, 1): 150.28043659756827, (1, 2): 61.64052667922457, (3, 4): 55.169451079333285, (2, 1): 616.4052667922457, (6, 5): 539.1761504247554, (4, 3): 551.6945107933328, (8, 7): 539.1761504247554, (5, 4): 540.7916651181793, (2, 3): 57.43868567195656, (6, 7): 53.91761504247554, (4, 5): 54.079166511817924, (8, 9): 53.91761504247554, (7, 6): 539.1761504247554, (5, 6): 53.91761504247554, (9, 8): 539.1761504247554, (1, 0): 1502.8043659756827, (3, 2): 574.3868567195657, (7, 8): 53.91761504247554})
+     * PER_LINK_EXTERNAL: Tree({})
+    PATH_STRETCH
+     * MEAN: 0.3954465000000072
+     * MEAN_REQUEST: 0.3954465000000072
+     * MEAN_CONTENT: 0.3954465000000072
+
+

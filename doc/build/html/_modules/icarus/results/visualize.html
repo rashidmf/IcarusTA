@@ -1,0 +1,198 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>icarus.results.visualize &#8212; Icarus 0.8.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinxdoc.css" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Icarus 0.8.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">icarus.results.visualize</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for icarus.results.visualize</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Functions for visualizing results on graphs of topologies&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib</span> <span class="k">as</span> <span class="nn">mpl</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;draw_stack_deployment&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;draw_network_load&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+
+
+<span class="c1"># Colormap for node stacks</span>
+<span class="n">COLORMAP</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="s2">&quot;blue&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;receiver&quot;</span><span class="p">:</span> <span class="s2">&quot;green&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;router&quot;</span><span class="p">:</span> <span class="s2">&quot;white&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;cache&quot;</span><span class="p">:</span> <span class="s2">&quot;red&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+
+
+<span class="k">def</span> <span class="nf">stack_map</span><span class="p">(</span><span class="n">topology</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return dict mapping node ID to stack type</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    topology : Topology</span>
+<span class="sd">        The topology</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    stack_map : dict</span>
+<span class="sd">        Dict mapping node to stack. Options are:</span>
+<span class="sd">        source | receiver | router | cache</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">stack</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">v</span><span class="p">,</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">props</span><span class="p">)</span> <span class="ow">in</span> <span class="n">topology</span><span class="o">.</span><span class="n">stacks</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;router&quot;</span><span class="p">:</span>
+            <span class="n">cache</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">if</span> <span class="s2">&quot;cache_size&quot;</span> <span class="ow">in</span> <span class="n">props</span> <span class="ow">and</span> <span class="n">props</span><span class="p">[</span><span class="s2">&quot;cache_size&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">cache</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">elif</span> <span class="n">cache</span><span class="p">:</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;cache&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;router&quot;</span>
+        <span class="n">stack</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="n">name</span>
+    <span class="k">return</span> <span class="n">stack</span>
+
+
+<div class="viewcode-block" id="draw_stack_deployment"><a class="viewcode-back" href="../../../apidoc/icarus.results.html#icarus.results.visualize.draw_stack_deployment">[docs]</a><span class="k">def</span> <span class="nf">draw_stack_deployment</span><span class="p">(</span><span class="n">topology</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">plotdir</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Draw a topology with different node colors according to stack</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    topology : Topology</span>
+<span class="sd">        The topology to draw</span>
+<span class="sd">    plotdir : string</span>
+<span class="sd">        The directory onto which draw plots</span>
+<span class="sd">    filename : string</span>
+<span class="sd">        The name of the image file to save</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">stack</span> <span class="o">=</span> <span class="n">stack_map</span><span class="p">(</span><span class="n">topology</span><span class="p">)</span>
+    <span class="n">node_color</span> <span class="o">=</span> <span class="p">[</span><span class="n">COLORMAP</span><span class="p">[</span><span class="n">stack</span><span class="p">[</span><span class="n">v</span><span class="p">]]</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">topology</span><span class="o">.</span><span class="n">nodes_iter</span><span class="p">()]</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+    <span class="n">nx</span><span class="o">.</span><span class="n">draw_graphviz</span><span class="p">(</span><span class="n">topology</span><span class="p">,</span> <span class="n">node_color</span><span class="o">=</span><span class="n">node_color</span><span class="p">,</span> <span class="n">with_labels</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">plotdir</span><span class="p">,</span> <span class="n">filename</span><span class="p">),</span> <span class="n">bbox_inches</span><span class="o">=</span><span class="s2">&quot;tight&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="draw_network_load"><a class="viewcode-back" href="../../../apidoc/icarus.results.html#icarus.results.visualize.draw_network_load">[docs]</a><span class="k">def</span> <span class="nf">draw_network_load</span><span class="p">(</span><span class="n">topology</span><span class="p">,</span> <span class="n">result</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">plotdir</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Draw topology with node colors according to stack and node size and link</span>
+<span class="sd">    color according to server/cache hits and link loads.</span>
+
+<span class="sd">    Nodes are colored according to COLORMAP. Edge are colored on a blue-red</span>
+<span class="sd">    scale where blue means min link load and red means max link load.</span>
+<span class="sd">    Sources and caches have variable size proportional to their hit ratios.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    topology : Topology</span>
+<span class="sd">        The topology to draw</span>
+<span class="sd">    result : Tree</span>
+<span class="sd">        The tree representing the specific experiment result from which metric</span>
+<span class="sd">        are read</span>
+<span class="sd">    plotdir : string</span>
+<span class="sd">        The directory onto which draw plots</span>
+<span class="sd">    filename : string</span>
+<span class="sd">        The name of the image file to save</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">stack</span> <span class="o">=</span> <span class="n">stack_map</span><span class="p">(</span><span class="n">topology</span><span class="p">)</span>
+    <span class="n">node_color</span> <span class="o">=</span> <span class="p">[</span><span class="n">COLORMAP</span><span class="p">[</span><span class="n">stack</span><span class="p">[</span><span class="n">v</span><span class="p">]]</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">topology</span><span class="o">.</span><span class="n">nodes_iter</span><span class="p">()]</span>
+    <span class="n">node_min</span> <span class="o">=</span> <span class="mi">50</span>
+    <span class="n">node_max</span> <span class="o">=</span> <span class="mi">600</span>
+    <span class="n">hits</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;CACHE_HIT_RATIO&quot;</span><span class="p">][</span><span class="s2">&quot;PER_NODE_CACHE_HIT_RATIO&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">hits</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;CACHE_HIT_RATIO&quot;</span><span class="p">][</span><span class="s2">&quot;PER_NODE_SERVER_HIT_RATIO&quot;</span><span class="p">])</span>
+    <span class="n">hits</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">hits</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="k">if</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">hits</span> <span class="k">else</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">topology</span><span class="o">.</span><span class="n">nodes_iter</span><span class="p">()])</span>
+    <span class="n">min_hits</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">hits</span><span class="p">)</span>
+    <span class="n">max_hits</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">hits</span><span class="p">)</span>
+    <span class="n">hits</span> <span class="o">=</span> <span class="n">node_min</span> <span class="o">+</span> <span class="p">(</span><span class="n">node_max</span> <span class="o">-</span> <span class="n">node_min</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">hits</span> <span class="o">-</span> <span class="n">min_hits</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">max_hits</span> <span class="o">-</span> <span class="n">min_hits</span><span class="p">)</span>
+    <span class="n">link_load</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;LINK_LOAD&quot;</span><span class="p">][</span><span class="s2">&quot;PER_LINK_INTERNAL&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">link_load</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;LINK_LOAD&quot;</span><span class="p">][</span><span class="s2">&quot;PER_LINK_EXTERNAL&quot;</span><span class="p">])</span>
+    <span class="n">link_load</span> <span class="o">=</span> <span class="p">[</span><span class="n">link_load</span><span class="p">[</span><span class="n">e</span><span class="p">]</span> <span class="k">if</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">link_load</span> <span class="k">else</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">topology</span><span class="o">.</span><span class="n">edges</span><span class="p">()]</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+    <span class="n">nx</span><span class="o">.</span><span class="n">draw_graphviz</span><span class="p">(</span>
+        <span class="n">topology</span><span class="p">,</span>
+        <span class="n">node_color</span><span class="o">=</span><span class="n">node_color</span><span class="p">,</span>
+        <span class="n">node_size</span><span class="o">=</span><span class="n">hits</span><span class="p">,</span>
+        <span class="n">width</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span>
+        <span class="n">edge_color</span><span class="o">=</span><span class="n">link_load</span><span class="p">,</span>
+        <span class="n">edge_cmap</span><span class="o">=</span><span class="n">mpl</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">LinearSegmentedColormap</span><span class="o">.</span><span class="n">from_list</span><span class="p">(</span>
+            <span class="s2">&quot;bluered&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;blue&quot;</span><span class="p">,</span> <span class="s2">&quot;red&quot;</span><span class="p">]</span>
+        <span class="p">),</span>
+        <span class="n">with_labels</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">plotdir</span><span class="p">,</span> <span class="n">filename</span><span class="p">),</span> <span class="n">bbox_inches</span><span class="o">=</span><span class="s2">&quot;tight&quot;</span><span class="p">)</span></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Icarus 0.8.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">icarus.results.visualize</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2016, Lorenzo Saino, Ioannis Psaras.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.1.1.
+    </div>
+  </body>
+</html>

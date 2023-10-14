@@ -1,0 +1,27 @@
+EXPERIMENT 1/1:
+  CONFIGURATION:
+   * topology -> name: PATH, n: 10, delay: 10
+   * workload -> name: TRACE_DRIVEN, reqs_file: ./YouTube/6100s_012908.dat.out.dat, contents_file: ./YouTube/contents.txt, n_contents: 100000, n_warmup: 100, n_measured: 400
+   * cache_placement -> name: CONSOLIDATED, network_cache: 0.01, spread: 0.1
+   * content_placement -> name: UNIFORM
+   * cache_policy -> name: LRU
+   * strategy -> name: LCE
+   * desc -> Line topology with 10 nodes
+  RESULTS:
+    CACHE_HIT_RATIO
+     * MEAN: 0.18
+     * PER_NODE_CACHE_HIT_RATIO: Tree({5: 0.18})
+     * PER_NODE_SERVER_HIT_RATIO: Tree({9: 0.82})
+    LATENCY
+     * MEAN: 165.6
+    LINK_LOAD
+     * MEAN_INTERNAL: 808.6233694002651
+     * MEAN_EXTERNAL: 0
+     * PER_LINK_INTERNAL: Tree({(0, 1): 159.80699000005237, (1, 2): 159.80699000005237, (3, 4): 159.80699000005237, (2, 1): 1598.0699000005236, (6, 5): 1310.4173180004293, (4, 3): 1598.0699000005236, (8, 7): 1310.4173180004293, (5, 4): 1598.0699000005236, (2, 3): 159.80699000005237, (6, 7): 131.04173180004292, (4, 5): 159.80699000005237, (8, 9): 131.04173180004292, (7, 6): 1310.4173180004293, (5, 6): 131.04173180004292, (9, 8): 1310.4173180004293, (1, 0): 1598.0699000005236, (3, 2): 1598.0699000005236, (7, 8): 131.04173180004292})
+     * PER_LINK_EXTERNAL: Tree({})
+    PATH_STRETCH
+     * MEAN: 0.8279999999999985
+     * MEAN_REQUEST: 0.8279999999999985
+     * MEAN_CONTENT: 0.8279999999999985
+
+

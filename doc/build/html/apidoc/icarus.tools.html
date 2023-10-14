@@ -1,0 +1,1249 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>icarus.tools package &#8212; Icarus 0.8.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="icarus.scenarios package" href="icarus.scenarios.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="icarus.scenarios.html" title="icarus.scenarios package"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Icarus 0.8.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="icarus.html" accesskey="U">icarus package</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">icarus.tools package</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="icarus-tools-package">
+<h1>icarus.tools package<a class="headerlink" href="#icarus-tools-package" title="Permalink to this heading">¶</a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this heading">¶</a></h2>
+</section>
+<section id="module-icarus.tools.cacheperf">
+<span id="icarus-tools-cacheperf-module"></span><h2>icarus.tools.cacheperf module<a class="headerlink" href="#module-icarus.tools.cacheperf" title="Permalink to this heading">¶</a></h2>
+<p>Functions for modelling and evaluating the performance of cache
+replacement policies.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.tools.cacheperf.che_cache_hit_ratio">
+<span class="sig-name descname"><span class="pre">che_cache_hit_ratio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pdf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_size</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/tools/cacheperf.html#che_cache_hit_ratio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.tools.cacheperf.che_cache_hit_ratio" title="Permalink to this definition">¶</a></dt>
+<dd><p>Estimate the overall cache hit ratio of an LRU cache under generic IRM
+demand using the Che’s approximation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>pdf</strong><span class="classifier">array-like</span></dt><dd><p>The probability density function of an item being requested</p>
+</dd>
+<dt><strong>cache_size</strong><span class="classifier">int</span></dt><dd><p>The size of the cache (in number of items)</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>cache_hit_ratio</strong><span class="classifier">float</span></dt><dd><p>The overall cache hit ratio</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.tools.cacheperf.che_cache_hit_ratio_generalized">
+<span class="sig-name descname"><span class="pre">che_cache_hit_ratio_generalized</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pdf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">policy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'LRU'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">policy_args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/tools/cacheperf.html#che_cache_hit_ratio_generalized"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.tools.cacheperf.che_cache_hit_ratio_generalized" title="Permalink to this definition">¶</a></dt>
+<dd><p>Estimate the overall cache hit ratio of a cache subject to IRM demand
+according to the extension of Che’s approximation proposed by Martina et al.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>pdf</strong><span class="classifier">array-like</span></dt><dd><p>The probability density function of an item being requested</p>
+</dd>
+<dt><strong>cache_size</strong><span class="classifier">int</span></dt><dd><p>The size of the cache (in number of items)</p>
+</dd>
+<dt><strong>policy</strong><span class="classifier">str, optional</span></dt><dd><p>The cache replacement policy (‘LRU’, ‘q-LRU’, ‘FIFO’, ‘RANDOM’)</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>cache_hit_ratio</strong><span class="classifier">float</span></dt><dd><p>The overall cache hit ratio</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.tools.cacheperf.che_cache_hit_ratio_simplified">
+<span class="sig-name descname"><span class="pre">che_cache_hit_ratio_simplified</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pdf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_size</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/tools/cacheperf.html#che_cache_hit_ratio_simplified"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.tools.cacheperf.che_cache_hit_ratio_simplified" title="Permalink to this definition">¶</a></dt>
+<dd><p>Estimate the overall cache hit ratio of an LRU cache under generic IRM
+demand using the Che’s approximation. This version uses a single
+characteristic time for all contents.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>pdf</strong><span class="classifier">array-like</span></dt><dd><p>The probability density function of an item being requested</p>
+</dd>
+<dt><strong>cache_size</strong><span class="classifier">int</span></dt><dd><p>The size of the cache (in number of items)</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>cache_hit_ratio</strong><span class="classifier">float</span></dt><dd><p>The overall cache hit ratio</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.tools.cacheperf.che_characteristic_time">
+<span class="sig-name descname"><span class="pre">che_characteristic_time</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pdf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/tools/cacheperf.html#che_characteristic_time"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.tools.cacheperf.che_characteristic_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the characteristic time of an item or of all items, as defined by
+Che et al.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>pdf</strong><span class="classifier">array-like</span></dt><dd><p>The probability density function of an item being requested</p>
+</dd>
+<dt><strong>cache_size</strong><span class="classifier">int</span></dt><dd><p>The size of the cache (in number of items)</p>
+</dd>
+<dt><strong>target</strong><span class="classifier">int, optional</span></dt><dd><p>The item index [1,N] for which characteristic time is requested. If not
+specified, the function calculates the characteristic time of all the
+items in the population.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>r</strong><span class="classifier">array of float or float</span></dt><dd><p>If target is None, returns an array with the characteristic times of
+all items in the population. If a target is specified, then it returns
+the characteristic time of only the specified item.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.tools.cacheperf.che_characteristic_time_generalized">
+<span class="sig-name descname"><span class="pre">che_characteristic_time_generalized</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pdf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">policy</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">policy_args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/tools/cacheperf.html#che_characteristic_time_generalized"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.tools.cacheperf.che_characteristic_time_generalized" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the characteristic time of a cache under a given IRM demand
+according to the the extension of Che’s approximation proposed by Martina
+et al.
+This function computes one single characteristic time for all content items.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>pdf</strong><span class="classifier">array-like</span></dt><dd><p>The probability density function of an item being requested</p>
+</dd>
+<dt><strong>cache_size</strong><span class="classifier">int</span></dt><dd><p>The size of the cache (in number of items)</p>
+</dd>
+<dt><strong>policy</strong><span class="classifier">str</span></dt><dd><p>The cache replacement policy (‘LRU’, ‘q-LRU’, ‘FIFO’, ‘RANDOM’)</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>r</strong><span class="classifier">float</span></dt><dd><p>The characteristic time.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.tools.cacheperf.che_characteristic_time_simplified">
+<span class="sig-name descname"><span class="pre">che_characteristic_time_simplified</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pdf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_size</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/tools/cacheperf.html#che_characteristic_time_simplified"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.tools.cacheperf.che_characteristic_time_simplified" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the characteristic time of an LRU cache under a given IRM
+workload, as defined by Che et al.
+This function computes one single characteristic time for all contents.
+This further approximation is normally accurate for workloads with
+reduced skewness in their popularity distribution.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>pdf</strong><span class="classifier">array-like</span></dt><dd><p>The probability density function of an item being requested</p>
+</dd>
+<dt><strong>cache_size</strong><span class="classifier">int</span></dt><dd><p>The size of the cache (in number of items)</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>r</strong><span class="classifier">float</span></dt><dd><p>The characteristic time.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.tools.cacheperf.che_per_content_cache_hit_ratio">
+<span class="sig-name descname"><span class="pre">che_per_content_cache_hit_ratio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pdf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/tools/cacheperf.html#che_per_content_cache_hit_ratio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.tools.cacheperf.che_per_content_cache_hit_ratio" title="Permalink to this definition">¶</a></dt>
+<dd><p>Estimate the cache hit ratio of an item or of all items using the Che’s
+approximation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>pdf</strong><span class="classifier">array-like</span></dt><dd><p>The probability density function of an item being requested</p>
+</dd>
+<dt><strong>cache_size</strong><span class="classifier">int</span></dt><dd><p>The size of the cache (in number of items)</p>
+</dd>
+<dt><strong>target</strong><span class="classifier">int, optional</span></dt><dd><p>The item index for which cache hit ratio is requested. If not
+specified, the function calculates the cache hit ratio of all the items
+in the population.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>cache_hit_ratio</strong><span class="classifier">array of float or float</span></dt><dd><p>If target is None, returns an array with the cache hit ratios of all
+items in the population. If a target is specified, then it returns
+the cache hit ratio of only the specified item.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.tools.cacheperf.che_per_content_cache_hit_ratio_generalized">
+<span class="sig-name descname"><span class="pre">che_per_content_cache_hit_ratio_generalized</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pdf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">policy</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">policy_args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/tools/cacheperf.html#che_per_content_cache_hit_ratio_generalized"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.tools.cacheperf.che_per_content_cache_hit_ratio_generalized" title="Permalink to this definition">¶</a></dt>
+<dd><p>Estimate the cache hit ratio of an item or of all items in a cache
+subject to IRM demand according to the extension of Che’s approximation
+proposed by Martina et al.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>pdf</strong><span class="classifier">array-like</span></dt><dd><p>The probability density function of an item being requested</p>
+</dd>
+<dt><strong>cache_size</strong><span class="classifier">int</span></dt><dd><p>The size of the cache (in number of items)</p>
+</dd>
+<dt><strong>policy</strong><span class="classifier">str, optional</span></dt><dd><p>The cache replacement policy (‘LRU’, ‘q-LRU’, ‘FIFO’, ‘RANDOM’)</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>cache_hit_ratio</strong><span class="classifier">array of float or float</span></dt><dd><p>If target is None, returns an array with the cache hit ratios of all
+items in the population. If a target is specified, then it returns
+the cache hit ratio of only the specified item.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.tools.cacheperf.che_per_content_cache_hit_ratio_simplified">
+<span class="sig-name descname"><span class="pre">che_per_content_cache_hit_ratio_simplified</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pdf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/tools/cacheperf.html#che_per_content_cache_hit_ratio_simplified"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.tools.cacheperf.che_per_content_cache_hit_ratio_simplified" title="Permalink to this definition">¶</a></dt>
+<dd><p>Estimate the cache hit ratio of an item or of all items using the Che’s
+approximation. This version uses a single characteristic time for all
+contents.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>pdf</strong><span class="classifier">array-like</span></dt><dd><p>The probability density function of an item being requested</p>
+</dd>
+<dt><strong>cache_size</strong><span class="classifier">int</span></dt><dd><p>The size of the cache (in number of items)</p>
+</dd>
+<dt><strong>target</strong><span class="classifier">int, optional</span></dt><dd><p>The item index for which cache hit ratio is requested. If not
+specified, the function calculates the cache hit ratio of all the items
+in the population.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>cache_hit_ratio</strong><span class="classifier">array of float or float</span></dt><dd><p>If target is None, returns an array with the cache hit ratios of all
+items in the population. If a target is specified, then it returns
+the cache hit ratio of only the specified item.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.tools.cacheperf.fagin_cache_hit_ratio">
+<span class="sig-name descname"><span class="pre">fagin_cache_hit_ratio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pdf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_size</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/tools/cacheperf.html#fagin_cache_hit_ratio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.tools.cacheperf.fagin_cache_hit_ratio" title="Permalink to this definition">¶</a></dt>
+<dd><p>Estimate the overall cache hit ratio of an LRU cache under generic IRM
+demand using the Fagin’s approximation. This version uses a single
+characteristic time for all contents.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>pdf</strong><span class="classifier">array-like</span></dt><dd><p>The probability density function of an item being requested</p>
+</dd>
+<dt><strong>cache_size</strong><span class="classifier">int</span></dt><dd><p>The size of the cache (in number of items)</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>cache_hit_ratio</strong><span class="classifier">float</span></dt><dd><p>The overall cache hit ratio</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.tools.cacheperf.fagin_characteristic_time">
+<span class="sig-name descname"><span class="pre">fagin_characteristic_time</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pdf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_size</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/tools/cacheperf.html#fagin_characteristic_time"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.tools.cacheperf.fagin_characteristic_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the characteristic time of an LRU cache under a given IRM
+workload, as defined by Fagin.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>pdf</strong><span class="classifier">array-like</span></dt><dd><p>The probability density function of an item being requested</p>
+</dd>
+<dt><strong>cache_size</strong><span class="classifier">int</span></dt><dd><p>The size of the cache (in number of items)</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>r</strong><span class="classifier">float</span></dt><dd><p>The characteristic time.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.tools.cacheperf.fagin_per_content_cache_hit_ratio">
+<span class="sig-name descname"><span class="pre">fagin_per_content_cache_hit_ratio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pdf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/tools/cacheperf.html#fagin_per_content_cache_hit_ratio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.tools.cacheperf.fagin_per_content_cache_hit_ratio" title="Permalink to this definition">¶</a></dt>
+<dd><p>Estimate the cache hit ratio of an item or of all items using the Fagin’s
+approximation. This version uses a single characteristic time for all
+contents.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>pdf</strong><span class="classifier">array-like</span></dt><dd><p>The probability density function of an item being requested</p>
+</dd>
+<dt><strong>cache_size</strong><span class="classifier">int</span></dt><dd><p>The size of the cache (in number of items)</p>
+</dd>
+<dt><strong>target</strong><span class="classifier">int, optional</span></dt><dd><p>The item index for which cache hit ratio is requested. If not
+specified, the function calculates the cache hit ratio of all the items
+in the population.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>cache_hit_ratio</strong><span class="classifier">array of float or float</span></dt><dd><p>If target is None, returns an array with the cache hit ratios of all
+items in the population. If a target is specified, then it returns
+the cache hit ratio of only the specified item.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.tools.cacheperf.hashrouting_model">
+<span class="sig-name descname"><span class="pre">hashrouting_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">routing</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hit_ratio</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source_content_ratio</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">req_rates</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">paths</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/tools/cacheperf.html#hashrouting_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.tools.cacheperf.hashrouting_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute overall latency of hashrouting over an arbitrary topology</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>topology</strong><span class="classifier">Topology</span></dt><dd><p>The topology</p>
+</dd>
+<dt><strong>routing</strong><span class="classifier">str (‘SYMM | ‘MULTICAST’)</span></dt><dd><p>Content routing strategy</p>
+</dd>
+<dt><strong>hit_ratio</strong><span class="classifier">float</span></dt><dd><p>Average cache hit ratio of the system of hash-routed caches</p>
+</dd>
+<dt><strong>source_content_ratio</strong><span class="classifier">dict</span></dt><dd><p>Ratio of contents that each source serve</p>
+</dd>
+<dt><strong>req_rates</strong><span class="classifier">dict</span></dt><dd><p>Rate of requests for each requester</p>
+</dd>
+<dt><strong>paths</strong><span class="classifier">dict of dicts, optional</span></dt><dd><p>Network paths</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>latency</strong><span class="classifier">float</span></dt><dd><p>The average content retrieval latency</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">References</p>
+<div role="list" class="citation-list">
+<div class="citation" id="r9af682147140-1" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></span>
+<p>L. Saino, I. Psaras and G. Pavlou, Framework and Algorithms for
+Operator-managed Content Caching, in IEEE Transactions on
+Network and Service Management (TNSM), Volume 17, Issue 1, March 2020
+<a class="reference external" href="https://doi.org/10.1109/TNSM.2019.2956525">https://doi.org/10.1109/TNSM.2019.2956525</a></p>
+</div>
+<div class="citation" id="r9af682147140-2" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span>2<span class="fn-bracket">]</span></span>
+<p>L. Saino, On the Design of Efficient Caching Systems, Ph.D. thesis
+University College London, Dec. 2015. Available:
+<a class="reference external" href="http://discovery.ucl.ac.uk/1473436/">http://discovery.ucl.ac.uk/1473436/</a></p>
+</div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.tools.cacheperf.hashrouting_model_mesh">
+<span class="sig-name descname"><span class="pre">hashrouting_model_mesh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delay_int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delay_ext</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/tools/cacheperf.html#hashrouting_model_mesh"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.tools.cacheperf.hashrouting_model_mesh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute latency of hashrouting over a mesh topology</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>n</strong><span class="classifier">int</span></dt><dd><p>The number of nodes in the mesh</p>
+</dd>
+<dt><strong>m</strong><span class="classifier">int</span></dt><dd><p>The number of nodes directly connected with an origin</p>
+</dd>
+<dt><strong>h</strong><span class="classifier">float</span></dt><dd><p>The cumulative cache hit ratio of the network</p>
+</dd>
+<dt><strong>delay_int</strong><span class="classifier">float</span></dt><dd><p>The latency on an internal link</p>
+</dd>
+<dt><strong>delay_ext</strong><span class="classifier">float</span></dt><dd><p>The latency on an external link</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>latency</strong><span class="classifier">float</span></dt><dd><p>The average content retrieval latency</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">References</p>
+<div role="list" class="citation-list">
+<div class="citation" id="r38c20a2877e1-1" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></span>
+<p>L. Saino, I. Psaras and G. Pavlou, Framework and Algorithms for
+Operator-managed Content Caching, in IEEE Transactions on
+Network and Service Management (TNSM), Volume 17, Issue 1, March 2020
+<a class="reference external" href="https://doi.org/10.1109/TNSM.2019.2956525">https://doi.org/10.1109/TNSM.2019.2956525</a></p>
+</div>
+<div class="citation" id="r38c20a2877e1-2" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span>2<span class="fn-bracket">]</span></span>
+<p>L. Saino, On the Design of Efficient Caching Systems, Ph.D. thesis
+University College London, Dec. 2015. Available:
+<a class="reference external" href="http://discovery.ucl.ac.uk/1473436/">http://discovery.ucl.ac.uk/1473436/</a></p>
+</div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.tools.cacheperf.hashrouting_model_ring">
+<span class="sig-name descname"><span class="pre">hashrouting_model_ring</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delay_int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delay_ext</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/tools/cacheperf.html#hashrouting_model_ring"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.tools.cacheperf.hashrouting_model_ring" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute latency of hashrouting over a mesh topology</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>n</strong><span class="classifier">int</span></dt><dd><p>The number of nodes in the mesh</p>
+</dd>
+<dt><strong>h</strong><span class="classifier">float</span></dt><dd><p>The cumulative cache hit ratio of the network</p>
+</dd>
+<dt><strong>delay_int</strong><span class="classifier">float</span></dt><dd><p>The latency on an internal link</p>
+</dd>
+<dt><strong>delay_ext</strong><span class="classifier">float</span></dt><dd><p>The latency on an external link</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>latency</strong><span class="classifier">float</span></dt><dd><p>The average content retrieval latency</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">References</p>
+<div role="list" class="citation-list">
+<div class="citation" id="r59cf4d5e0b7a-1" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></span>
+<p>L. Saino, I. Psaras and G. Pavlou, Framework and Algorithms for
+Operator-managed Content Caching, in IEEE Transactions on
+Network and Service Management (TNSM), Volume 17, Issue 1, March 2020
+<a class="reference external" href="https://doi.org/10.1109/TNSM.2019.2956525">https://doi.org/10.1109/TNSM.2019.2956525</a></p>
+</div>
+<div class="citation" id="r59cf4d5e0b7a-2" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span>2<span class="fn-bracket">]</span></span>
+<p>L. Saino, On the Design of Efficient Caching Systems, Ph.D. thesis
+University College London, Dec. 2015. Available:
+<a class="reference external" href="http://discovery.ucl.ac.uk/1473436/">http://discovery.ucl.ac.uk/1473436/</a></p>
+</div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.tools.cacheperf.laoutaris_cache_hit_ratio">
+<span class="sig-name descname"><span class="pre">laoutaris_cache_hit_ratio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">alpha</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">population</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">order</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/tools/cacheperf.html#laoutaris_cache_hit_ratio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.tools.cacheperf.laoutaris_cache_hit_ratio" title="Permalink to this definition">¶</a></dt>
+<dd><p>Estimate the cache hit ratio of an LRU cache under general power-law
+demand using the Laoutaris approximation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>alpha</strong><span class="classifier">float</span></dt><dd><p>The coefficient of the demand power-law distribution</p>
+</dd>
+<dt><strong>population</strong><span class="classifier">int</span></dt><dd><p>The content population</p>
+</dd>
+<dt><strong>cache_size</strong><span class="classifier">int</span></dt><dd><p>The cache size</p>
+</dd>
+<dt><strong>order</strong><span class="classifier">int, optional</span></dt><dd><p>The order of the Taylor expansion. Supports only 2 and 3</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>cache_hit_ratio</strong><span class="classifier">float</span></dt><dd><p>The cache hit ratio</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">References</p>
+<p><a class="reference external" href="http://arxiv.org/pdf/0705.1970.pdf">http://arxiv.org/pdf/0705.1970.pdf</a></p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.tools.cacheperf.laoutaris_characteristic_time">
+<span class="sig-name descname"><span class="pre">laoutaris_characteristic_time</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">alpha</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">population</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">order</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/tools/cacheperf.html#laoutaris_characteristic_time"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.tools.cacheperf.laoutaris_characteristic_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Estimates the Che’s characteristic time of an LRU cache under general
+power-law demand using the Laoutaris approximation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>alpha</strong><span class="classifier">float</span></dt><dd><p>The coefficient of the demand power-law</p>
+</dd>
+<dt><strong>population</strong><span class="classifier">int</span></dt><dd><p>The content population</p>
+</dd>
+<dt><strong>cache_size</strong><span class="classifier">int</span></dt><dd><p>The cache size</p>
+</dd>
+<dt><strong>order</strong><span class="classifier">int, optional</span></dt><dd><p>The order of the Taylor expansion. Supports only 2 and 3</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>cache_hit_ratio</strong><span class="classifier">float</span></dt><dd><p>The cache hit ratio</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">References</p>
+<p><a class="reference external" href="http://arxiv.org/pdf/0705.1970.pdf">http://arxiv.org/pdf/0705.1970.pdf</a></p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.tools.cacheperf.laoutaris_per_content_cache_hit_ratio">
+<span class="sig-name descname"><span class="pre">laoutaris_per_content_cache_hit_ratio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">alpha</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">population</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">order</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/tools/cacheperf.html#laoutaris_per_content_cache_hit_ratio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.tools.cacheperf.laoutaris_per_content_cache_hit_ratio" title="Permalink to this definition">¶</a></dt>
+<dd><p>Estimates the per-content cache hit ratio of an LRU cache under general
+power-law demand using the Laoutaris approximation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>alpha</strong><span class="classifier">float</span></dt><dd><p>The coefficient of the demand power-law distribution</p>
+</dd>
+<dt><strong>population</strong><span class="classifier">int</span></dt><dd><p>The content population</p>
+</dd>
+<dt><strong>cache_size</strong><span class="classifier">int</span></dt><dd><p>The cache size</p>
+</dd>
+<dt><strong>order</strong><span class="classifier">int, optional</span></dt><dd><p>The order of the Taylor expansion. Supports only 2 and 3</p>
+</dd>
+<dt><strong>target</strong><span class="classifier">int, optional</span></dt><dd><p>The item index [1,N] for which cache hit ratio is requested. If not
+specified, the function calculates the cache hit ratio of all the items
+in the population.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>cache_hit_ratio</strong><span class="classifier">array of float or float</span></dt><dd><p>If target is None, returns an array with the cache hit ratios of all
+items in the population. If a target is specified, then it returns
+the cache hit ratio of only the specified item.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">References</p>
+<p><a class="reference external" href="http://arxiv.org/pdf/0705.1970.pdf">http://arxiv.org/pdf/0705.1970.pdf</a></p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.tools.cacheperf.numeric_cache_hit_ratio">
+<span class="sig-name descname"><span class="pre">numeric_cache_hit_ratio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pdf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">warmup</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">measure</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/tools/cacheperf.html#numeric_cache_hit_ratio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.tools.cacheperf.numeric_cache_hit_ratio" title="Permalink to this definition">¶</a></dt>
+<dd><p>Numerically compute the cache hit ratio of a cache under IRM
+stationary demand with a given pdf.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>pdf</strong><span class="classifier">array-like</span></dt><dd><p>The probability density function of an item being requested</p>
+</dd>
+<dt><strong>cache</strong><span class="classifier">Cache</span></dt><dd><p>The cache object (i.e. the instance of a class subclassing
+icarus.Cache)</p>
+</dd>
+<dt><strong>warmup</strong><span class="classifier">int, optional</span></dt><dd><p>The number of warmup requests to generate. If not specified, it is set
+to 10 times the content population</p>
+</dd>
+<dt><strong>measure</strong><span class="classifier">int, optional</span></dt><dd><p>The number of measured requests to generate. If not specified, it is
+set to 30 times the content population</p>
+</dd>
+<dt><strong>seed</strong><span class="classifier">int, optional</span></dt><dd><p>The seed used to generate random numbers</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>cache_hit_ratio</strong><span class="classifier">float</span></dt><dd><p>The cache hit ratio</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.tools.cacheperf.numeric_cache_hit_ratio_2_layers">
+<span class="sig-name descname"><span class="pre">numeric_cache_hit_ratio_2_layers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pdf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">l1_cache</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">l2_cache</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">warmup</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">measure</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/tools/cacheperf.html#numeric_cache_hit_ratio_2_layers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.tools.cacheperf.numeric_cache_hit_ratio_2_layers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Numerically compute the cache hit ratio of a two-layer cache under IRM
+stationary demand with a given pdf.</p>
+<p>Differently from the numeric_cache_hit_ratio function, this function
+allows users to compute the hits at layer 1, layer 2 and overall.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>pdf</strong><span class="classifier">array-like</span></dt><dd><p>The probability density function of an item being requested</p>
+</dd>
+<dt><strong>cache</strong><span class="classifier">Cache</span></dt><dd><p>The cache object (i.e. the instance of a class subclassing
+icarus.Cache)</p>
+</dd>
+<dt><strong>warmup</strong><span class="classifier">int, optional</span></dt><dd><p>The number of warmup requests to generate. If not specified, it is set
+to 10 times the content population</p>
+</dd>
+<dt><strong>measure</strong><span class="classifier">int, optional</span></dt><dd><p>The number of measured requests to generate. If not specified, it is
+set to 30 times the content population</p>
+</dd>
+<dt><strong>seed</strong><span class="classifier">int, optional</span></dt><dd><p>The seed used to generate random numbers</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>cache_hit_ratio</strong><span class="classifier">dict</span></dt><dd><p>Dictionary with keys “l1_hits”, “l2_hits” and “total_hits”</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.tools.cacheperf.numeric_per_content_cache_hit_ratio">
+<span class="sig-name descname"><span class="pre">numeric_per_content_cache_hit_ratio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pdf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">warmup</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">measure</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/tools/cacheperf.html#numeric_per_content_cache_hit_ratio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.tools.cacheperf.numeric_per_content_cache_hit_ratio" title="Permalink to this definition">¶</a></dt>
+<dd><p>Numerically compute the per-content cache hit ratio of a cache under IRM
+stationary demand with a given pdf.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>pdf</strong><span class="classifier">array-like</span></dt><dd><p>The probability density function of an item being requested</p>
+</dd>
+<dt><strong>cache</strong><span class="classifier">Cache</span></dt><dd><p>The cache object (i.e. the instance of a class subclassing
+icarus.Cache)</p>
+</dd>
+<dt><strong>warmup</strong><span class="classifier">int, optional</span></dt><dd><p>The number of warmup requests to generate. If not specified, it is set
+to 10 times the content population</p>
+</dd>
+<dt><strong>measure</strong><span class="classifier">int, optional</span></dt><dd><p>The number of measured requests to generate. If not specified, it is
+set to 30 times the content population</p>
+</dd>
+<dt><strong>seed</strong><span class="classifier">int, optional</span></dt><dd><p>The seed used to generate random numbers</p>
+</dd>
+<dt><strong>target</strong><span class="classifier">int, optional</span></dt><dd><p>The item index [1, N] for which cache hit ratio is requested. If not
+specified, the function calculates the cache hit ratio of all the items
+in the population.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>cache_hit_ratio</strong><span class="classifier">array of float or float</span></dt><dd><p>If target is None, returns an array with the cache hit ratios of all
+items in the population. If a target is specified, then it returns
+the cache hit ratio of only the specified item.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.tools.cacheperf.optimal_cache_hit_ratio">
+<span class="sig-name descname"><span class="pre">optimal_cache_hit_ratio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pdf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_size</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/tools/cacheperf.html#optimal_cache_hit_ratio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.tools.cacheperf.optimal_cache_hit_ratio" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the value of the optimal cache hit ratio of a cache under IRM
+stationary demand with a given pdf.</p>
+<p>In practice this function returns the probability of a cache hit if cache
+is filled with the <em>cache_size</em> most popular times. This value also
+corresponds to the steady-state cache hit ratio of an LFU cache.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>pdf</strong><span class="classifier">array-like</span></dt><dd><p>The probability density function of an item being requested</p>
+</dd>
+<dt><strong>cache_size</strong><span class="classifier">int</span></dt><dd><p>The size of the cache (in number of items)</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>cache_hit_ratio</strong><span class="classifier">float</span></dt><dd><p>The optimal cache hit ratio</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.tools.cacheperf.trace_driven_cache_hit_ratio">
+<span class="sig-name descname"><span class="pre">trace_driven_cache_hit_ratio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">workload</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">warmup_ratio</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.25</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/tools/cacheperf.html#trace_driven_cache_hit_ratio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.tools.cacheperf.trace_driven_cache_hit_ratio" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute cache hit ratio of a cache under an arbitrary trace-driven
+workload.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>workload</strong><span class="classifier">list or array</span></dt><dd><p>List of URLs or content identifiers extracted from a trace. This list
+only needs to contains content identifiers and not timestamps</p>
+</dd>
+<dt><strong>cache</strong><span class="classifier">Cache</span></dt><dd><p>Instance of a cache object</p>
+</dd>
+<dt><strong>warmup_ratio</strong><span class="classifier">float, optional</span></dt><dd><p>Ratio of requests of the workload used to warm up the cache (i.e. whose
+cache hit/miss results are discarded)</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>cache_hit_ratio</strong><span class="classifier">float</span></dt><dd><p>The cache hit ratio</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-icarus.tools.stats">
+<span id="icarus-tools-stats-module"></span><h2>icarus.tools.stats module<a class="headerlink" href="#module-icarus.tools.stats" title="Permalink to this heading">¶</a></h2>
+<p>Provides statistical utilities functions used by the simulator</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="icarus.tools.stats.DiscreteDist">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DiscreteDist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pdf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/tools/stats.html#DiscreteDist"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.tools.stats.DiscreteDist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Implements a discrete distribution with finite population.</p>
+<p>The support must be a finite discrete set of contiguous integers
+{1, …, N}. This definition of discrete distribution.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Attributes<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><a class="reference internal" href="#icarus.tools.stats.cdf" title="icarus.tools.stats.cdf"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cdf</span></code></a></dt><dd><p>Return the Cumulative Density Function (CDF)</p>
+</dd>
+<dt><a class="reference internal" href="#icarus.tools.stats.pdf" title="icarus.tools.stats.pdf"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pdf</span></code></a></dt><dd><p>Return the Probability Density Function (PDF)</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#icarus.tools.stats.DiscreteDist.rv" title="icarus.tools.stats.DiscreteDist.rv"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rv</span></code></a>()</p></td>
+<td><p>Get rand value from the distribution</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py property">
+<dt class="sig sig-object py" id="icarus.tools.stats.DiscreteDist.cdf">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">cdf</span></span><a class="headerlink" href="#icarus.tools.stats.DiscreteDist.cdf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the Cumulative Density Function (CDF)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>cdf</strong><span class="classifier">Numpy array</span></dt><dd><p>Array representing cdf</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="icarus.tools.stats.DiscreteDist.pdf">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">pdf</span></span><a class="headerlink" href="#icarus.tools.stats.DiscreteDist.pdf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the Probability Density Function (PDF)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>pdf</strong><span class="classifier">Numpy array</span></dt><dd><p>Array representing the probability density function of the
+distribution</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="icarus.tools.stats.DiscreteDist.rv">
+<span class="sig-name descname"><span class="pre">rv</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/tools/stats.html#DiscreteDist.rv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.tools.stats.DiscreteDist.rv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get rand value from the distribution</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="icarus.tools.stats.TruncatedZipfDist">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TruncatedZipfDist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/tools/stats.html#TruncatedZipfDist"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.tools.stats.TruncatedZipfDist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#icarus.tools.stats.DiscreteDist" title="icarus.tools.stats.DiscreteDist"><code class="xref py py-class docutils literal notranslate"><span class="pre">DiscreteDist</span></code></a></p>
+<p>Implements a truncated Zipf distribution, i.e. a Zipf distribution with
+a finite population, which can hence take values of alpha &gt; 0.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Attributes<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>alpha</strong></dt><dd></dd>
+<dt><a class="reference internal" href="#icarus.tools.stats.cdf" title="icarus.tools.stats.cdf"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cdf</span></code></a></dt><dd><p>Return the Cumulative Density Function (CDF)</p>
+</dd>
+<dt><a class="reference internal" href="#icarus.tools.stats.pdf" title="icarus.tools.stats.pdf"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pdf</span></code></a></dt><dd><p>Return the Probability Density Function (PDF)</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">rv</span></code>()</p></td>
+<td><p>Get rand value from the distribution</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py property">
+<dt class="sig sig-object py" id="icarus.tools.stats.TruncatedZipfDist.alpha">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">alpha</span></span><a class="headerlink" href="#icarus.tools.stats.TruncatedZipfDist.alpha" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.tools.stats.cdf">
+<span class="sig-name descname"><span class="pre">cdf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/tools/stats.html#cdf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.tools.stats.cdf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the empirical CDF of a set of 1D data</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>data</strong><span class="classifier">array-like</span></dt><dd><p>Array of data</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>x</strong><span class="classifier">array</span></dt><dd><p>All occurrences of data sorted</p>
+</dd>
+<dt><strong>cdf</strong><span class="classifier">array</span></dt><dd><p>The CDF of data.
+More specifically cdf[i] is the probability that x &lt; x[i]</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.tools.stats.means_confidence_interval">
+<span class="sig-name descname"><span class="pre">means_confidence_interval</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">confidence</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.95</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/tools/stats.html#means_confidence_interval"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.tools.stats.means_confidence_interval" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the confidence interval for a given set of means.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>data</strong><span class="classifier">array-like</span></dt><dd><p>The set of samples whose confidence interval is calculated</p>
+</dd>
+<dt><strong>confidence</strong><span class="classifier">float, optional</span></dt><dd><p>The confidence level. It must be a value in the interval (0, 1)</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>mean</strong><span class="classifier">float</span></dt><dd><p>The mean of the sample</p>
+</dd>
+<dt><strong>err</strong><span class="classifier">float</span></dt><dd><p>The standard error of the sample</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">References</p>
+<dl class="simple">
+<dt>[1] N. Matloff, From Algorithms to Z-Scores: Probabilistic and Statistical</dt><dd><p>Modeling in Computer Science.
+Available: <a class="reference external" href="http://heather.cs.ucdavis.edu/probstatbook">http://heather.cs.ucdavis.edu/probstatbook</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.tools.stats.pdf">
+<span class="sig-name descname"><span class="pre">pdf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_bins</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/tools/stats.html#pdf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.tools.stats.pdf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the empirical PDF of a set of 1D data</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>data</strong><span class="classifier">array-like</span></dt><dd><p>Array of data</p>
+</dd>
+<dt><strong>n_bins</strong><span class="classifier">int</span></dt><dd><p>The number of bins</p>
+</dd>
+<dt><strong>Returns</strong></dt><dd></dd>
+<dt><strong>x</strong><span class="classifier">array</span></dt><dd><p>The center point of all bins</p>
+</dd>
+<dt><strong>pdf</strong><span class="classifier">array</span></dt><dd><p>The PDF of data.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.tools.stats.proportions_confidence_interval">
+<span class="sig-name descname"><span class="pre">proportions_confidence_interval</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">confidence</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/tools/stats.html#proportions_confidence_interval"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.tools.stats.proportions_confidence_interval" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the confidence interval of a proportion.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>data</strong><span class="classifier">array-like of bool</span></dt><dd><p>The sample of data whose proportion of True values needs to be
+estimated</p>
+</dd>
+<dt><strong>confidence</strong><span class="classifier">float, optional</span></dt><dd><p>The confidence level. It must be a value in the interval (0, 1)</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">References</p>
+<dl class="simple">
+<dt>[1] N. Matloff, From Algorithms to Z-Scores: Probabilistic and Statistical</dt><dd><p>Modeling in Computer Science.
+Available: <a class="reference external" href="http://heather.cs.ucdavis.edu/probstatbook">http://heather.cs.ucdavis.edu/probstatbook</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-icarus.tools.traces">
+<span id="icarus-tools-traces-module"></span><h2>icarus.tools.traces module<a class="headerlink" href="#module-icarus.tools.traces" title="Permalink to this heading">¶</a></h2>
+<p>Functions for importing and analyzing traffic traces</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.tools.traces.frequencies">
+<span class="sig-name descname"><span class="pre">frequencies</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/tools/traces.html#frequencies"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.tools.traces.frequencies" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extract frequencies from traces. Returns array of sorted frequencies</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>data</strong><span class="classifier">array-like</span></dt><dd><p>An array of generic data (i.e. URLs of web pages)</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>frequencies</strong><span class="classifier">array of int</span></dt><dd><p>The frequencies of the data sorted in descending order</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>This function does not return the mapping between data elements and their
+frequencies, it only returns frequencies.
+This function can be used to get frequencies to pass to the <em>zipf_fit</em>
+function given a set of data, e.g. content request traces.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.tools.traces.one_timers">
+<span class="sig-name descname"><span class="pre">one_timers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/tools/traces.html#one_timers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.tools.traces.one_timers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return fraction of contents requested only once (i.e., one-timers)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>data</strong><span class="classifier">array-like</span></dt><dd><p>An array of generic data (i.e. URLs of web pages)</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>one_timers</strong><span class="classifier">float</span></dt><dd><p>Fraction of content objects requested only once.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.tools.traces.parse_common_log_format">
+<span class="sig-name descname"><span class="pre">parse_common_log_format</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/tools/traces.html#parse_common_log_format"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.tools.traces.parse_common_log_format" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse files saved in the Common Log Format (CLF)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The path to the Common Log Format file to parse</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>events</strong><span class="classifier">iterator</span></dt><dd><p>iterator over the events parsed from the file</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Common Log Format specifications:
+<a class="reference external" href="http://www.w3.org/Daemon/User/Config/Logging.html#common-logfile-format">http://www.w3.org/Daemon/User/Config/Logging.html#common-logfile-format</a></p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.tools.traces.parse_squid">
+<span class="sig-name descname"><span class="pre">parse_squid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/tools/traces.html#parse_squid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.tools.traces.parse_squid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses traces from a Squid log file.
+Parse a Squid log file.</p>
+<p>Squid is an HTTP reverse proxy. Its logs contains traces of all HTTP
+requests served and can be used for trace-driven simulations based on
+realistic HTTP workloads.
+Traces from the IRCache dataset are in this format.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The path to the trace file to parse</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>trace</strong><span class="classifier">iterator of dicts</span></dt><dd><p>An iterator whereby each element is dictionary expressing all
+attributes of an entry of the trace</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Documentation describing the Squid log format is available here:
+<a class="reference external" href="http://wiki.squid-cache.org/Features/LogFormat">http://wiki.squid-cache.org/Features/LogFormat</a></p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.tools.traces.parse_url_list">
+<span class="sig-name descname"><span class="pre">parse_url_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/tools/traces.html#parse_url_list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.tools.traces.parse_url_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse traces from a text file where each line contains a URL requested
+without timestamp or counters</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The path to the trace file to parse</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>trace</strong><span class="classifier">iterator of strings</span></dt><dd><p>An iterator whereby each element is dictionary expressing all
+attributes of an entry of the trace</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.tools.traces.parse_wikibench">
+<span class="sig-name descname"><span class="pre">parse_wikibench</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/tools/traces.html#parse_wikibench"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.tools.traces.parse_wikibench" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses traces from the Wikibench dataset</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The path to the trace file to parse</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>trace</strong><span class="classifier">iterator of dicts</span></dt><dd><p>An iterator whereby each element is dictionary expressing all
+attributes of an entry of the trace</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.tools.traces.parse_youtube_umass">
+<span class="sig-name descname"><span class="pre">parse_youtube_umass</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/tools/traces.html#parse_youtube_umass"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.tools.traces.parse_youtube_umass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse YouTube collected at UMass campus network <a href="#id8"><span class="problematic" id="id7">[1]_</span></a>.</p>
+<p>These data were collected at UMass campus network over a a measurement
+period between June 2007 and March 2008.</p>
+<p>This function parses the request traces, named youtube.parsed.X.Y.dat.
+Each entry of the trace provides the following information elements:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Timestamp</p></li>
+<li><p>YouTube server IP (anonymized)</p></li>
+<li><p>Client IP (anonymized)</p></li>
+<li><p>Request</p></li>
+<li><p>Video ID</p></li>
+<li><p>Content server IP</p></li>
+</ul>
+</div></blockquote>
+<p>Traces are available at <a class="reference external" href="http://traces.cs.umass.edu/index.php/Network/Network">http://traces.cs.umass.edu/index.php/Network/Network</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The path to the trace file to parse</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>trace</strong><span class="classifier">iterator of dicts</span></dt><dd><p>An iterator whereby each element is dictionary expressing all
+attributes of an entry of the trace</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">References</p>
+<dl class="simple">
+<dt>..[1] Michael Zink, Kyoungwon Suh, Yu Gu and Jim Kurose,</dt><dd><p>Watch Global Cache Local: YouTube Network Traces at a Campus Network -
+Measurements and Implications, in Proc. of IEEE MMCN’08</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.tools.traces.trace_stats">
+<span class="sig-name descname"><span class="pre">trace_stats</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/tools/traces.html#trace_stats"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.tools.traces.trace_stats" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print full stats of a trace</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>data</strong><span class="classifier">array-like</span></dt><dd><p>An array of generic data (i.e. URLs of web pages)</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="icarus.tools.traces.zipf_fit">
+<span class="sig-name descname"><span class="pre">zipf_fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obs_freqs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">need_sorting</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/icarus/tools/traces.html#zipf_fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#icarus.tools.traces.zipf_fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the value of the Zipf’s distribution alpha parameter that best
+fits the data provided and the p-value of the fit test.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>obs_freqs</strong><span class="classifier">array</span></dt><dd><p>The array of observed frequencies sorted in descending order</p>
+</dd>
+<dt><strong>need_sorting</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, indicates that obs_freqs is not sorted and this function will
+sort it. If False, assume that the array is already sorted</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>alpha</strong><span class="classifier">float</span></dt><dd><p>The alpha parameter of the best Zipf fit</p>
+</dd>
+<dt><strong>p</strong><span class="classifier">float</span></dt><dd><p>The p-value of the test</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>This function uses the method described in
+<a class="reference external" href="http://stats.stackexchange.com/questions/6780/how-to-calculate-zipfs-law-coefficient-from-a-set-of-top-frequencies">http://stats.stackexchange.com/questions/6780/how-to-calculate-zipfs-law-coefficient-from-a-set-of-top-frequencies</a></p>
+</dd></dl>
+
+</section>
+<section id="module-icarus.tools">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-icarus.tools" title="Permalink to this heading">¶</a></h2>
+<p>This package contains code providing various functionalities useful in
+caching research.</p>
+<p>Examples include code for importing and analyzing traffic traces, modeling the
+behavior of caches and statistical utilities.</p>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">icarus.tools package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-icarus.tools.cacheperf">icarus.tools.cacheperf module</a></li>
+<li><a class="reference internal" href="#module-icarus.tools.stats">icarus.tools.stats module</a></li>
+<li><a class="reference internal" href="#module-icarus.tools.traces">icarus.tools.traces module</a></li>
+<li><a class="reference internal" href="#module-icarus.tools">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="icarus.scenarios.html"
+                          title="previous chapter">icarus.scenarios package</a></p>
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="icarus.scenarios.html" title="icarus.scenarios package"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Icarus 0.8.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="icarus.html" >icarus package</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">icarus.tools package</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2016, Lorenzo Saino, Ioannis Psaras.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.1.1.
+    </div>
+  </body>
+</html>

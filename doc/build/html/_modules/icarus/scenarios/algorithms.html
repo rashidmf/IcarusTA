@@ -1,0 +1,396 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>icarus.scenarios.algorithms &#8212; Icarus 0.8.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinxdoc.css" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Icarus 0.8.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">icarus.scenarios.algorithms</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for icarus.scenarios.algorithms</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Various algorithms used for optimal cache placement.&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">random</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
+
+<span class="kn">import</span> <span class="nn">fnss</span>
+
+<span class="kn">from</span> <span class="nn">icarus.util</span> <span class="kn">import</span> <span class="n">path_links</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;pam&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;extract_cluster_level_topology&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;deploy_clusters&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;compute_clusters&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;compute_p_median&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+
+
+<div class="viewcode-block" id="pam"><a class="viewcode-back" href="../../../apidoc/icarus.scenarios.html#icarus.scenarios.algorithms.pam">[docs]</a><span class="k">def</span> <span class="nf">pam</span><span class="p">(</span><span class="n">distances</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">n_iter</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Compute k-medoids using the PAM algorithm</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    distances : 2-d NumPy array</span>
+<span class="sd">        Array of distances between points</span>
+<span class="sd">    k : int</span>
+<span class="sd">        Number of clusters</span>
+<span class="sd">    n_iter : int</span>
+<span class="sd">        Number of iterations to repeat. Each repetition is executed using a</span>
+<span class="sd">        different initial random assignment. Repetiting the experiment allow</span>
+<span class="sd">        to reach different local optima, possibly achieving a best solution.</span>
+
+<span class="sd">    Return</span>
+<span class="sd">    ------</span>
+<span class="sd">    clusters : 1-d NumPy array</span>
+<span class="sd">        Array mapping point to medoid, e.g. if point i is mapped to medoid j</span>
+<span class="sd">        then clusters[i] = j</span>
+<span class="sd">    medoids : 1-d NumPy array</span>
+<span class="sd">        Array listing (in no particular order) all medoids</span>
+<span class="sd">    cost : float</span>
+<span class="sd">        Cost of the solution</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    Implementation based on:</span>
+<span class="sd">    https://github.com/salspaugh/machine_learning/blob/master/clustering/kmedoids.py</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">assign_points_to_clusters</span><span class="p">(</span><span class="n">medoids</span><span class="p">,</span> <span class="n">distances</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return a 1-d array having for at each index the medoid the element</span>
+<span class="sd">        belongs to.</span>
+
+<span class="sd">        E.g. if point i is mapped to medoid j, clusters[i] = j</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">distances_to_medoids</span> <span class="o">=</span> <span class="n">distances</span><span class="p">[:,</span> <span class="n">medoids</span><span class="p">]</span>
+        <span class="n">clusters</span> <span class="o">=</span> <span class="n">medoids</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">distances_to_medoids</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)]</span>
+        <span class="n">clusters</span><span class="p">[</span><span class="n">medoids</span><span class="p">]</span> <span class="o">=</span> <span class="n">medoids</span>
+        <span class="k">return</span> <span class="n">clusters</span>
+
+    <span class="k">def</span> <span class="nf">compute_new_medoid</span><span class="p">(</span><span class="n">cluster</span><span class="p">,</span> <span class="n">distances</span><span class="p">):</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">distances</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">mask</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ix_</span><span class="p">(</span><span class="n">cluster</span><span class="p">,</span> <span class="n">cluster</span><span class="p">)]</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">cluster_distances</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">masked_array</span><span class="p">(</span>
+            <span class="n">data</span><span class="o">=</span><span class="n">distances</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">mask</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mf">10e9</span>
+        <span class="p">)</span>
+        <span class="n">costs</span> <span class="o">=</span> <span class="n">cluster_distances</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">costs</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">clusters</span><span class="p">(</span><span class="n">distances</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="n">distances</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># number of points</span>
+        <span class="k">if</span> <span class="n">k</span> <span class="o">&gt;</span> <span class="n">m</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;k is greater than the number of points&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="p">,</span> <span class="s2">&quot;choice&quot;</span><span class="p">):</span>
+            <span class="n">curr_medoids</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">),</span> <span class="n">k</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># This is only if I use NumPy &lt; 1.7</span>
+            <span class="n">curr_medoids</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">),</span> <span class="n">k</span><span class="p">))</span>
+
+        <span class="n">old_medoids</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+        <span class="n">new_medoids</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+
+        <span class="c1"># Set a negative value to ensure execution of while loop</span>
+        <span class="n">old_medoids</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+        <span class="c1"># Until the medoids stop updating, do the following:</span>
+        <span class="k">while</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">old_medoids</span> <span class="o">==</span> <span class="n">curr_medoids</span><span class="p">):</span>
+            <span class="c1"># Assign each point to cluster with closest medoid</span>
+            <span class="n">clusters</span> <span class="o">=</span> <span class="n">assign_points_to_clusters</span><span class="p">(</span><span class="n">curr_medoids</span><span class="p">,</span> <span class="n">distances</span><span class="p">)</span>
+
+            <span class="c1"># Update cluster medoids to be lowest cost point.</span>
+            <span class="k">for</span> <span class="n">curr_medoid</span> <span class="ow">in</span> <span class="n">curr_medoids</span><span class="p">:</span>
+                <span class="n">cluster</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">clusters</span> <span class="o">==</span> <span class="n">curr_medoid</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">new_medoids</span><span class="p">[</span><span class="n">curr_medoids</span> <span class="o">==</span> <span class="n">curr_medoid</span><span class="p">]</span> <span class="o">=</span> <span class="n">compute_new_medoid</span><span class="p">(</span>
+                    <span class="n">cluster</span><span class="p">,</span> <span class="n">distances</span>
+                <span class="p">)</span>
+
+            <span class="n">old_medoids</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">curr_medoids</span><span class="p">[:]</span>
+            <span class="n">curr_medoids</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">new_medoids</span><span class="p">[:]</span>
+            <span class="n">cost</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">distances</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">m</span><span class="p">),</span> <span class="n">clusters</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">clusters</span><span class="p">,</span> <span class="n">curr_medoids</span><span class="p">,</span> <span class="n">cost</span>
+
+    <span class="n">min_cost</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+    <span class="n">opt_clusters</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">opt_medoids</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_iter</span><span class="p">):</span>
+        <span class="n">curr_clusters</span><span class="p">,</span> <span class="n">curr_medoids</span><span class="p">,</span> <span class="n">curr_cost</span> <span class="o">=</span> <span class="n">clusters</span><span class="p">(</span><span class="n">distances</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">curr_cost</span> <span class="o">&lt;</span> <span class="n">min_cost</span><span class="p">:</span>
+            <span class="n">min_cost</span> <span class="o">=</span> <span class="n">curr_cost</span>
+            <span class="n">opt_clusters</span> <span class="o">=</span> <span class="n">curr_clusters</span>
+            <span class="n">opt_medoids</span> <span class="o">=</span> <span class="n">curr_medoids</span>
+    <span class="k">return</span> <span class="n">opt_clusters</span><span class="p">,</span> <span class="n">opt_medoids</span><span class="p">,</span> <span class="n">min_cost</span></div>
+
+
+<div class="viewcode-block" id="extract_cluster_level_topology"><a class="viewcode-back" href="../../../apidoc/icarus.scenarios.html#icarus.scenarios.algorithms.extract_cluster_level_topology">[docs]</a><span class="k">def</span> <span class="nf">extract_cluster_level_topology</span><span class="p">(</span><span class="n">topology</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Build a cluster-level topology.</span>
+
+<span class="sd">    Each node in the topology must be have the &#39;cluster&#39; attribute</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    topology : Topology</span>
+<span class="sd">        The router-level topology</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    topology : Topology</span>
+<span class="sd">        The cluster-level topology</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">     * Each router must have a cache deployed</span>
+<span class="sd">     * All sources and receiver must have one single attachment point with a</span>
+<span class="sd">       cache</span>
+<span class="sd">     * Each node must be labelled with cluster</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cluster_map</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">get_node_attributes</span><span class="p">(</span><span class="n">topology</span><span class="p">,</span> <span class="s2">&quot;cluster&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">cluster_map</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">topology</span><span class="o">.</span><span class="n">number_of_nodes</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;There are nodes not labelled with cluster information&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">nx</span><span class="o">.</span><span class="n">number_connected_components</span><span class="p">(</span><span class="n">topology</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;There is more than one connected component&quot;</span><span class="p">)</span>
+    <span class="n">cluster_topology</span> <span class="o">=</span> <span class="n">fnss</span><span class="o">.</span><span class="n">Topology</span><span class="p">()</span>
+    <span class="n">cluster_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">cluster_map</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">cluster_set</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="c1"># There is only one huge cluster</span>
+        <span class="n">cluster_topology</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">cluster_set</span><span class="o">.</span><span class="n">pop</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">cluster_topology</span>
+    <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">topology</span><span class="o">.</span><span class="n">edges</span><span class="p">():</span>
+        <span class="n">cluster_u</span> <span class="o">=</span> <span class="n">cluster_map</span><span class="p">[</span><span class="n">u</span><span class="p">]</span>
+        <span class="n">cluster_v</span> <span class="o">=</span> <span class="n">cluster_map</span><span class="p">[</span><span class="n">v</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">cluster_u</span> <span class="o">!=</span> <span class="n">cluster_v</span><span class="p">:</span>
+            <span class="n">cluster_topology</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">cluster_u</span><span class="p">,</span> <span class="n">cluster_v</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">cluster_topology</span></div>
+
+
+<div class="viewcode-block" id="deploy_clusters"><a class="viewcode-back" href="../../../apidoc/icarus.scenarios.html#icarus.scenarios.algorithms.deploy_clusters">[docs]</a><span class="k">def</span> <span class="nf">deploy_clusters</span><span class="p">(</span><span class="n">topology</span><span class="p">,</span> <span class="n">clusters</span><span class="p">,</span> <span class="n">assign_src_rcv</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Annotate topology with cluster informations</span>
+
+<span class="sd">    This function checks that all ICR candidate nodes are assigned exactly</span>
+<span class="sd">    to one cluster.</span>
+
+<span class="sd">    If assign_src_rcv is True, then it also labels source and receiver nodes</span>
+<span class="sd">    to the closest cluster.</span>
+
+<span class="sd">    This function assumes that:</span>
+<span class="sd">     * each node of the topology is either an icr_candidate, a source or a receiver</span>
+<span class="sd">     * each source and receiver must have degree equal to 1</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    topology : Topology</span>
+<span class="sd">        The topology onto which deploy clusters</span>
+<span class="sd">    clusters : list of sets</span>
+<span class="sd">        Router-cluster assignment. Each element of a list is a set of node</span>
+<span class="sd">        identifiers. Nodes in the same set belong to the same cluster.</span>
+<span class="sd">        The length of the list therefore corresponds to the number of clusters.</span>
+<span class="sd">    assign_src_rcv : bool, optional</span>
+<span class="sd">        If *True*, the function labels source and receiver nodes with the</span>
+<span class="sd">        cluster label of the router they are attached to.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">clustered_nodes</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="n">n_clustered_nodes</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">clusters</span><span class="p">:</span>
+        <span class="n">clustered_nodes</span> <span class="o">=</span> <span class="n">clustered_nodes</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+        <span class="n">n_clustered_nodes</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">n_clustered_nodes</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">clustered_nodes</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;At least one node is listed in more than one cluster&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">clustered_nodes</span> <span class="o">!=</span> <span class="n">topology</span><span class="o">.</span><span class="n">graph</span><span class="p">[</span><span class="s2">&quot;icr_candidates&quot;</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Set of nodes in the cluster do not match ICR candidates&quot;</span><span class="p">)</span>
+    <span class="n">topology</span><span class="o">.</span><span class="n">graph</span><span class="p">[</span><span class="s2">&quot;clusters&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">clusters</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">clusters</span><span class="p">)):</span>
+        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">clusters</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
+            <span class="n">topology</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="s2">&quot;cluster&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">assign_src_rcv</span><span class="p">:</span>
+        <span class="k">return</span>
+    <span class="n">src_rcv</span> <span class="o">=</span> <span class="n">topology</span><span class="o">.</span><span class="n">sources</span><span class="p">()</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">topology</span><span class="o">.</span><span class="n">receivers</span><span class="p">())</span>
+    <span class="n">deg</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">degree</span><span class="p">(</span><span class="n">topology</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">deg</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">src_rcv</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;There are at least one source or receiver with degree &gt;= 1&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">src_rcv</span><span class="p">:</span>
+        <span class="n">next_node</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">topology</span><span class="o">.</span><span class="n">adj</span><span class="p">[</span><span class="n">v</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">topology</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="s2">&quot;cluster&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">topology</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="n">next_node</span><span class="p">][</span><span class="s2">&quot;cluster&quot;</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="compute_clusters"><a class="viewcode-back" href="../../../apidoc/icarus.scenarios.html#icarus.scenarios.algorithms.compute_clusters">[docs]</a><span class="k">def</span> <span class="nf">compute_clusters</span><span class="p">(</span><span class="n">topology</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">distance</span><span class="o">=</span><span class="s2">&quot;delay&quot;</span><span class="p">,</span> <span class="n">nbunch</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_iter</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Cluster nodes of a topologies as to minimize the intra-cluster latency.</span>
+
+<span class="sd">    This function assumes that every link is labelled with latencies and</span>
+<span class="sd">    performs clustering using the k-medoids method with the PAM algorithm.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    topology : Topology</span>
+<span class="sd">        The topology</span>
+<span class="sd">    k : int</span>
+<span class="sd">        The number of clusters</span>
+<span class="sd">    distance : str, optional</span>
+<span class="sd">        The link metric used to represent distance between nodes.</span>
+<span class="sd">        If None, hop count is used instead</span>
+<span class="sd">    n_iter : int, optional</span>
+<span class="sd">        The number of iterations</span>
+
+<span class="sd">    Return</span>
+<span class="sd">    ------</span>
+<span class="sd">    clusters: list of sets</span>
+<span class="sd">        List of clusters (each cluster being a set of nodes)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">topology</span> <span class="o">=</span> <span class="n">topology</span><span class="o">.</span><span class="n">to_undirected</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">nx</span><span class="o">.</span><span class="n">number_connected_components</span><span class="p">(</span><span class="n">topology</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The topology has more than one connected component&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">nbunch</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">topology</span> <span class="o">=</span> <span class="n">topology</span><span class="o">.</span><span class="n">subgraph</span><span class="p">(</span><span class="n">nbunch</span><span class="p">)</span>
+    <span class="n">topology</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">convert_node_labels_to_integers</span><span class="p">(</span><span class="n">topology</span><span class="p">,</span> <span class="n">label_attribute</span><span class="o">=</span><span class="s2">&quot;label&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">distance</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">topology</span><span class="o">.</span><span class="n">edges</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">distance</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">topology</span><span class="o">.</span><span class="n">adj</span><span class="p">[</span><span class="n">u</span><span class="p">][</span><span class="n">v</span><span class="p">]:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Edge (</span><span class="si">%s</span><span class="s2">, </span><span class="si">%s</span><span class="s2">) does not have a </span><span class="si">%s</span><span class="s2"> attribute&quot;</span>
+                    <span class="o">%</span> <span class="p">(</span>
+                        <span class="nb">str</span><span class="p">(</span><span class="n">topology</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="n">u</span><span class="p">][</span><span class="s2">&quot;label&quot;</span><span class="p">]),</span>
+                        <span class="nb">str</span><span class="p">(</span><span class="n">topology</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="s2">&quot;label&quot;</span><span class="p">]),</span>
+                        <span class="n">distance</span><span class="p">,</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
+
+    <span class="n">n</span> <span class="o">=</span> <span class="n">topology</span><span class="o">.</span><span class="n">number_of_nodes</span><span class="p">()</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">nx</span><span class="o">.</span><span class="n">all_pairs_shortest_path</span><span class="p">(</span><span class="n">topology</span><span class="p">))</span>
+    <span class="n">distances</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span>
+
+    <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">path</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">path</span><span class="p">[</span><span class="n">u</span><span class="p">]:</span>
+            <span class="c1"># Note: need to do something about weights and asymmetric paths!</span>
+            <span class="k">if</span> <span class="n">u</span> <span class="o">==</span> <span class="n">v</span> <span class="ow">or</span> <span class="n">distances</span><span class="p">[</span><span class="n">u</span><span class="p">][</span><span class="n">v</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="c1"># Extract all edges of a path</span>
+            <span class="n">edges</span> <span class="o">=</span> <span class="n">path_links</span><span class="p">(</span><span class="n">path</span><span class="p">[</span><span class="n">u</span><span class="p">][</span><span class="n">v</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">distance</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">distances</span><span class="p">[</span><span class="n">u</span><span class="p">][</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="n">distances</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="n">u</span><span class="p">]</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span>
+                    <span class="n">topology</span><span class="o">.</span><span class="n">adj</span><span class="p">[</span><span class="n">u</span><span class="p">][</span><span class="n">v</span><span class="p">][</span><span class="n">distance</span><span class="p">]</span> <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">edges</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">distances</span><span class="p">[</span><span class="n">u</span><span class="p">][</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="n">distances</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="n">u</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">edges</span><span class="p">)</span>
+    <span class="n">clusters</span> <span class="o">=</span> <span class="p">[</span><span class="nb">set</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">k</span><span class="p">)]</span>
+    <span class="n">medoid_assignment</span> <span class="o">=</span> <span class="n">pam</span><span class="p">(</span><span class="n">distances</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">,</span> <span class="n">n_iter</span><span class="o">=</span><span class="n">n_iter</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">medoid_assignment</span> <span class="o">&gt;=</span> <span class="n">n</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Something is wrong with k-medoids algorithm. &quot;</span>
+            <span class="s2">&quot;I got an assignment to a medoid that does not exist&quot;</span>
+        <span class="p">)</span>
+    <span class="n">medoids</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">medoid_assignment</span><span class="p">))</span>
+    <span class="n">medoid_cluster_map</span> <span class="o">=</span> <span class="p">{</span><span class="n">medoids</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">medoids</span><span class="p">))}</span>
+    <span class="c1"># Concert assignments from medoid ID to cluster ID</span>
+    <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+        <span class="n">clusters</span><span class="p">[</span><span class="n">medoid_cluster_map</span><span class="p">[</span><span class="n">medoid_assignment</span><span class="p">[</span><span class="n">v</span><span class="p">]]]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
+            <span class="n">topology</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="s2">&quot;label&quot;</span><span class="p">]</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">clusters</span></div>
+
+
+<div class="viewcode-block" id="compute_p_median"><a class="viewcode-back" href="../../../apidoc/icarus.scenarios.html#icarus.scenarios.algorithms.compute_p_median">[docs]</a><span class="k">def</span> <span class="nf">compute_p_median</span><span class="p">(</span><span class="n">distances</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">n_iter</span><span class="o">=</span><span class="mi">20</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Compute p-median solution using the Adjusted Vertex Substitution (AVS)</span>
+<span class="sd">    algorithm.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    distances : dict of dicts</span>
+<span class="sd">        Distance between nodes</span>
+<span class="sd">    p : int</span>
+<span class="sd">        Number of facilities</span>
+
+<span class="sd">    Return</span>
+<span class="sd">    ------</span>
+<span class="sd">    allocation : dict</span>
+<span class="sd">        Dict mapping each node to the allocated facility</span>
+<span class="sd">    facilities : set</span>
+<span class="sd">        Set of the p facilities identified</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">p</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">distances</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;p value is greater than the number of points&quot;</span><span class="p">)</span>
+    <span class="n">distances_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">distances</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">distances</span><span class="p">)))</span>
+    <span class="n">nodes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">distances</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+    <span class="n">nodes_map</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">enumerate</span><span class="p">(</span><span class="n">nodes</span><span class="p">)))</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">nodes</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">u</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">nodes</span><span class="p">):</span>
+            <span class="n">distances_matrix</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">distances</span><span class="p">[</span><span class="n">u</span><span class="p">][</span><span class="n">v</span><span class="p">]</span>
+    <span class="n">mappings</span><span class="p">,</span> <span class="n">medians</span><span class="p">,</span> <span class="n">cost</span> <span class="o">=</span> <span class="n">pam</span><span class="p">(</span><span class="n">distances_matrix</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">n_iter</span><span class="o">=</span><span class="n">n_iter</span><span class="p">)</span>
+    <span class="n">facilities</span> <span class="o">=</span> <span class="p">{</span><span class="n">nodes_map</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">medians</span><span class="p">}</span>
+    <span class="n">allocation</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">mappings</span><span class="p">):</span>
+        <span class="n">allocation</span><span class="p">[</span><span class="n">nodes_map</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> <span class="n">nodes_map</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">allocation</span><span class="p">,</span> <span class="n">facilities</span><span class="p">,</span> <span class="n">cost</span></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Icarus 0.8.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">icarus.scenarios.algorithms</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2016, Lorenzo Saino, Ioannis Psaras.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.1.1.
+    </div>
+  </body>
+</html>

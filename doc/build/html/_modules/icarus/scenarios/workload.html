@@ -1,0 +1,481 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>icarus.scenarios.workload &#8212; Icarus 0.8.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinxdoc.css" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Icarus 0.8.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">icarus.scenarios.workload</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for icarus.scenarios.workload</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Traffic workloads</span>
+
+<span class="sd">Every traffic workload to be used with Icarus must be modelled as an iterable</span>
+<span class="sd">class, i.e. a class with at least an `__init__` method (through which it is</span>
+<span class="sd">initialized, with values taken from the configuration file) and an `__iter__`</span>
+<span class="sd">method that is called to return a new event.</span>
+
+<span class="sd">Each call to the `__iter__` method must return a 2-tuple in which the first</span>
+<span class="sd">element is the timestamp at which the event occurs and the second is a</span>
+<span class="sd">dictionary, describing the event, which must contain at least the three</span>
+<span class="sd">following attributes:</span>
+<span class="sd"> * receiver: The name of the node issuing the request</span>
+<span class="sd"> * content: The name of the content for which the request is issued</span>
+<span class="sd"> * log: A boolean value indicating whether this request should be logged or not</span>
+<span class="sd">   for measurement purposes.</span>
+
+<span class="sd">Each workload must expose the `contents` attribute which is an iterable of</span>
+<span class="sd">all content identifiers. This is needed for content placement.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">import</span> <span class="nn">csv</span>
+
+<span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
+
+<span class="kn">from</span> <span class="nn">icarus.tools</span> <span class="kn">import</span> <span class="n">TruncatedZipfDist</span>
+<span class="kn">from</span> <span class="nn">icarus.registry</span> <span class="kn">import</span> <span class="n">register_workload</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;StationaryWorkload&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;GlobetraffWorkload&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;TraceDrivenWorkload&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;YCSBWorkload&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+
+
+<div class="viewcode-block" id="StationaryWorkload"><a class="viewcode-back" href="../../../apidoc/icarus.scenarios.html#icarus.scenarios.workload.StationaryWorkload">[docs]</a><span class="nd">@register_workload</span><span class="p">(</span><span class="s2">&quot;STATIONARY&quot;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">StationaryWorkload</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;This function generates events on the fly, i.e. instead of creating an</span>
+<span class="sd">    event schedule to be kept in memory, returns an iterator that generates</span>
+<span class="sd">    events when needed.</span>
+
+<span class="sd">    This is useful for running large schedules of events where RAM is limited</span>
+<span class="sd">    as its memory impact is considerably lower.</span>
+
+<span class="sd">    These requests are Poisson-distributed while content popularity is</span>
+<span class="sd">    Zipf-distributed</span>
+
+<span class="sd">    All requests are mapped to receivers uniformly unless a positive *beta*</span>
+<span class="sd">    parameter is specified.</span>
+
+<span class="sd">    If a *beta* parameter is specified, then receivers issue requests at</span>
+<span class="sd">    different rates. The algorithm used to determine the requests rates for</span>
+<span class="sd">    each receiver is the following:</span>
+<span class="sd">     * All receiver are sorted in decreasing order of degree of the PoP they</span>
+<span class="sd">       are attached to. This assumes that all receivers have degree = 1 and are</span>
+<span class="sd">       attached to a node with degree &gt; 1</span>
+<span class="sd">     * Rates are then assigned following a Zipf distribution of coefficient</span>
+<span class="sd">       beta where nodes with higher-degree PoPs have a higher request rate</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    topology : fnss.Topology</span>
+<span class="sd">        The topology to which the workload refers</span>
+<span class="sd">    n_contents : int</span>
+<span class="sd">        The number of content object</span>
+<span class="sd">    alpha : float</span>
+<span class="sd">        The Zipf alpha parameter</span>
+<span class="sd">    beta : float, optional</span>
+<span class="sd">        Parameter indicating</span>
+<span class="sd">    rate : float, optional</span>
+<span class="sd">        The mean rate of requests per second</span>
+<span class="sd">    n_warmup : int, optional</span>
+<span class="sd">        The number of warmup requests (i.e. requests executed to fill cache but</span>
+<span class="sd">        not logged)</span>
+<span class="sd">    n_measured : int, optional</span>
+<span class="sd">        The number of logged requests after the warmup</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    events : iterator</span>
+<span class="sd">        Iterator of events. Each event is a 2-tuple where the first element is</span>
+<span class="sd">        the timestamp at which the event occurs and the second element is a</span>
+<span class="sd">        dictionary of event attributes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">topology</span><span class="p">,</span>
+        <span class="n">n_contents</span><span class="p">,</span>
+        <span class="n">alpha</span><span class="p">,</span>
+        <span class="n">beta</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">rate</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+        <span class="n">n_warmup</span><span class="o">=</span><span class="mi">10</span> <span class="o">**</span> <span class="mi">5</span><span class="p">,</span>
+        <span class="n">n_measured</span><span class="o">=</span><span class="mi">4</span> <span class="o">*</span> <span class="mi">10</span> <span class="o">**</span> <span class="mi">5</span><span class="p">,</span>
+        <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">):</span>
+        <span class="k">if</span> <span class="n">alpha</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;alpha must be positive&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">beta</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;beta must be positive&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">receivers</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">v</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">topology</span><span class="o">.</span><span class="n">nodes</span><span class="p">()</span> <span class="k">if</span> <span class="n">topology</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="s2">&quot;stack&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;receiver&quot;</span>
+        <span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">zipf</span> <span class="o">=</span> <span class="n">TruncatedZipfDist</span><span class="p">(</span><span class="n">alpha</span><span class="p">,</span> <span class="n">n_contents</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_contents</span> <span class="o">=</span> <span class="n">n_contents</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">contents</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_contents</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">alpha</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rate</span> <span class="o">=</span> <span class="n">rate</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_warmup</span> <span class="o">=</span> <span class="n">n_warmup</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_measured</span> <span class="o">=</span> <span class="n">n_measured</span>
+        <span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">=</span> <span class="n">beta</span>
+        <span class="k">if</span> <span class="n">beta</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">degree</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">degree</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">topology</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">receivers</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">receivers</span><span class="p">,</span>
+                <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">degree</span><span class="p">[</span><span class="nb">iter</span><span class="p">(</span><span class="n">topology</span><span class="o">.</span><span class="n">adj</span><span class="p">[</span><span class="n">x</span><span class="p">])</span><span class="o">.</span><span class="n">next</span><span class="p">()],</span>
+                <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">receiver_dist</span> <span class="o">=</span> <span class="n">TruncatedZipfDist</span><span class="p">(</span><span class="n">beta</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">receivers</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">req_counter</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">t_event</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="k">while</span> <span class="n">req_counter</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_warmup</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_measured</span><span class="p">:</span>
+            <span class="n">t_event</span> <span class="o">+=</span> <span class="n">random</span><span class="o">.</span><span class="n">expovariate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rate</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">receiver</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">receivers</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">receiver</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">receivers</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">receiver_dist</span><span class="o">.</span><span class="n">rv</span><span class="p">()</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="n">content</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">zipf</span><span class="o">.</span><span class="n">rv</span><span class="p">())</span>
+            <span class="n">log</span> <span class="o">=</span> <span class="n">req_counter</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_warmup</span>
+            <span class="n">event</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;receiver&quot;</span><span class="p">:</span> <span class="n">receiver</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">content</span><span class="p">,</span> <span class="s2">&quot;log&quot;</span><span class="p">:</span> <span class="n">log</span><span class="p">}</span>
+            <span class="k">yield</span> <span class="p">(</span><span class="n">t_event</span><span class="p">,</span> <span class="n">event</span><span class="p">)</span>
+            <span class="n">req_counter</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="GlobetraffWorkload"><a class="viewcode-back" href="../../../apidoc/icarus.scenarios.html#icarus.scenarios.workload.GlobetraffWorkload">[docs]</a><span class="nd">@register_workload</span><span class="p">(</span><span class="s2">&quot;GLOBETRAFF&quot;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">GlobetraffWorkload</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Parse requests from GlobeTraff workload generator</span>
+
+<span class="sd">    All requests are mapped to receivers uniformly unless a positive *beta*</span>
+<span class="sd">    parameter is specified.</span>
+
+<span class="sd">    If a *beta* parameter is specified, then receivers issue requests at</span>
+<span class="sd">    different rates. The algorithm used to determine the requests rates for</span>
+<span class="sd">    each receiver is the following:</span>
+<span class="sd">     * All receiver are sorted in decreasing order of degree of the PoP they</span>
+<span class="sd">       are attached to. This assumes that all receivers have degree = 1 and are</span>
+<span class="sd">       attached to a node with degree &gt; 1</span>
+<span class="sd">     * Rates are then assigned following a Zipf distribution of coefficient</span>
+<span class="sd">       beta where nodes with higher-degree PoPs have a higher request rate</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    topology : fnss.Topology</span>
+<span class="sd">        The topology to which the workload refers</span>
+<span class="sd">    reqs_file : str</span>
+<span class="sd">        The GlobeTraff request file</span>
+<span class="sd">    contents_file : str</span>
+<span class="sd">        The GlobeTraff content file</span>
+<span class="sd">    beta : float, optional</span>
+<span class="sd">        Spatial skewness of requests rates</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    events : iterator</span>
+<span class="sd">        Iterator of events. Each event is a 2-tuple where the first element is</span>
+<span class="sd">        the timestamp at which the event occurs and the second element is a</span>
+<span class="sd">        dictionary of event attributes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">topology</span><span class="p">,</span> <span class="n">reqs_file</span><span class="p">,</span> <span class="n">contents_file</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Constructor&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">beta</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;beta must be positive&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">receivers</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">v</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">topology</span><span class="o">.</span><span class="n">nodes</span><span class="p">()</span> <span class="k">if</span> <span class="n">topology</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="s2">&quot;stack&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;receiver&quot;</span>
+        <span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_contents</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">contents_file</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">reader</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">reader</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">content</span><span class="p">,</span> <span class="n">popularity</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">app_type</span> <span class="ow">in</span> <span class="n">reader</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">n_contents</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_contents</span><span class="p">,</span> <span class="n">content</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_contents</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">contents</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_contents</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">request_file</span> <span class="o">=</span> <span class="n">reqs_file</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">=</span> <span class="n">beta</span>
+        <span class="k">if</span> <span class="n">beta</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">degree</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">degree</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">topology</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">receivers</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">receivers</span><span class="p">,</span>
+                <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">degree</span><span class="p">[</span><span class="nb">iter</span><span class="p">(</span><span class="n">topology</span><span class="o">.</span><span class="n">adj</span><span class="p">[</span><span class="n">x</span><span class="p">])</span><span class="o">.</span><span class="n">next</span><span class="p">()],</span>
+                <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">receiver_dist</span> <span class="o">=</span> <span class="n">TruncatedZipfDist</span><span class="p">(</span><span class="n">beta</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">receivers</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">request_file</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">reader</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">reader</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">timestamp</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">size</span> <span class="ow">in</span> <span class="n">reader</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">receiver</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">receivers</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">receiver</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">receivers</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">receiver_dist</span><span class="o">.</span><span class="n">rv</span><span class="p">()</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+                <span class="n">event</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;receiver&quot;</span><span class="p">:</span> <span class="n">receiver</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">content</span><span class="p">,</span> <span class="s2">&quot;size&quot;</span><span class="p">:</span> <span class="n">size</span><span class="p">}</span>
+                <span class="k">yield</span> <span class="p">(</span><span class="n">timestamp</span><span class="p">,</span> <span class="n">event</span><span class="p">)</span>
+        <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="TraceDrivenWorkload"><a class="viewcode-back" href="../../../apidoc/icarus.scenarios.html#icarus.scenarios.workload.TraceDrivenWorkload">[docs]</a><span class="nd">@register_workload</span><span class="p">(</span><span class="s2">&quot;TRACE_DRIVEN&quot;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">TraceDrivenWorkload</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Parse requests from a generic request trace.</span>
+
+<span class="sd">    This workload requires two text files:</span>
+<span class="sd">     * a requests file, where each line corresponds to a string identifying</span>
+<span class="sd">       the content requested</span>
+<span class="sd">     * a contents file, which lists all unique content identifiers appearing</span>
+<span class="sd">       in the requests file.</span>
+
+<span class="sd">    Since the trace do not provide timestamps, requests are scheduled according</span>
+<span class="sd">    to a Poisson process of rate *rate*. All requests are mapped to receivers</span>
+<span class="sd">    uniformly unless a positive *beta* parameter is specified.</span>
+
+<span class="sd">    If a *beta* parameter is specified, then receivers issue requests at</span>
+<span class="sd">    different rates. The algorithm used to determine the requests rates for</span>
+<span class="sd">    each receiver is the following:</span>
+<span class="sd">     * All receiver are sorted in decreasing order of degree of the PoP they</span>
+<span class="sd">       are attached to. This assumes that all receivers have degree = 1 and are</span>
+<span class="sd">       attached to a node with degree &gt; 1</span>
+<span class="sd">     * Rates are then assigned following a Zipf distribution of coefficient</span>
+<span class="sd">       beta where nodes with higher-degree PoPs have a higher request rate</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    topology : fnss.Topology</span>
+<span class="sd">        The topology to which the workload refers</span>
+<span class="sd">    reqs_file : str</span>
+<span class="sd">        The path to the requests file</span>
+<span class="sd">    contents_file : str</span>
+<span class="sd">        The path to the contents file</span>
+<span class="sd">    n_contents : int</span>
+<span class="sd">        The number of content object (i.e. the number of lines of contents_file)</span>
+<span class="sd">    n_warmup : int</span>
+<span class="sd">        The number of warmup requests (i.e. requests executed to fill cache but</span>
+<span class="sd">        not logged)</span>
+<span class="sd">    n_measured : int</span>
+<span class="sd">        The number of logged requests after the warmup</span>
+<span class="sd">    rate : float, optional</span>
+<span class="sd">        The network-wide mean rate of requests per second</span>
+<span class="sd">    beta : float, optional</span>
+<span class="sd">        Spatial skewness of requests rates</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    events : iterator</span>
+<span class="sd">        Iterator of events. Each event is a 2-tuple where the first element is</span>
+<span class="sd">        the timestamp at which the event occurs and the second element is a</span>
+<span class="sd">        dictionary of event attributes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">topology</span><span class="p">,</span>
+        <span class="n">reqs_file</span><span class="p">,</span>
+        <span class="n">contents_file</span><span class="p">,</span>
+        <span class="n">n_contents</span><span class="p">,</span>
+        <span class="n">n_warmup</span><span class="p">,</span>
+        <span class="n">n_measured</span><span class="p">,</span>
+        <span class="n">rate</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+        <span class="n">beta</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Constructor&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">beta</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;beta must be positive&quot;</span><span class="p">)</span>
+        <span class="c1"># Set high buffering to avoid one-line reads</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">buffering</span> <span class="o">=</span> <span class="mi">64</span> <span class="o">*</span> <span class="mi">1024</span> <span class="o">*</span> <span class="mi">1024</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_contents</span> <span class="o">=</span> <span class="n">n_contents</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_warmup</span> <span class="o">=</span> <span class="n">n_warmup</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_measured</span> <span class="o">=</span> <span class="n">n_measured</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reqs_file</span> <span class="o">=</span> <span class="n">reqs_file</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rate</span> <span class="o">=</span> <span class="n">rate</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">receivers</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">v</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">topology</span><span class="o">.</span><span class="n">nodes</span><span class="p">()</span> <span class="k">if</span> <span class="n">topology</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="s2">&quot;stack&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;receiver&quot;</span>
+        <span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">contents</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">contents_file</span><span class="p">,</span> <span class="n">buffering</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">buffering</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">content</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">contents</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">=</span> <span class="n">beta</span>
+        <span class="k">if</span> <span class="n">beta</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">degree</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">degree</span><span class="p">(</span><span class="n">topology</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">receivers</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">receivers</span><span class="p">,</span>
+                <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">degree</span><span class="p">[</span><span class="nb">iter</span><span class="p">(</span><span class="n">topology</span><span class="o">.</span><span class="n">adj</span><span class="p">[</span><span class="n">x</span><span class="p">])</span><span class="o">.</span><span class="n">next</span><span class="p">()],</span>
+                <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">receiver_dist</span> <span class="o">=</span> <span class="n">TruncatedZipfDist</span><span class="p">(</span><span class="n">beta</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">receivers</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">req_counter</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">t_event</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reqs_file</span><span class="p">,</span> <span class="n">buffering</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">buffering</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">content</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">t_event</span> <span class="o">+=</span> <span class="n">random</span><span class="o">.</span><span class="n">expovariate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rate</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">receiver</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">receivers</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">receiver</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">receivers</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">receiver_dist</span><span class="o">.</span><span class="n">rv</span><span class="p">()</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+                <span class="n">log</span> <span class="o">=</span> <span class="n">req_counter</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_warmup</span>
+                <span class="n">event</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;receiver&quot;</span><span class="p">:</span> <span class="n">receiver</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">content</span><span class="p">,</span> <span class="s2">&quot;log&quot;</span><span class="p">:</span> <span class="n">log</span><span class="p">}</span>
+                <span class="k">yield</span> <span class="p">(</span><span class="n">t_event</span><span class="p">,</span> <span class="n">event</span><span class="p">)</span>
+                <span class="n">req_counter</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">if</span> <span class="n">req_counter</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_warmup</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_measured</span><span class="p">:</span>
+                    <span class="k">return</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Trace did not contain enough requests&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="YCSBWorkload"><a class="viewcode-back" href="../../../apidoc/icarus.scenarios.html#icarus.scenarios.workload.YCSBWorkload">[docs]</a><span class="nd">@register_workload</span><span class="p">(</span><span class="s2">&quot;YCSB&quot;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">YCSBWorkload</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Yahoo! Cloud Serving Benchmark (YCSB)</span>
+
+<span class="sd">    The YCSB is a set of reference workloads used to benchmark databases and,</span>
+<span class="sd">    more generally any storage/caching systems. It comprises five workloads:</span>
+
+<span class="sd">    +------------------+------------------------+------------------+</span>
+<span class="sd">    | Workload         | Operations             | Record selection |</span>
+<span class="sd">    +------------------+------------------------+------------------+</span>
+<span class="sd">    | A - Update heavy | Read: 50%, Update: 50% | Zipfian          |</span>
+<span class="sd">    | B - Read heavy   | Read: 95%, Update: 5%  | Zipfian          |</span>
+<span class="sd">    | C - Read only    | Read: 100%             | Zipfian          |</span>
+<span class="sd">    | D - Read latest  | Read: 95%, Insert: 5%  | Latest           |</span>
+<span class="sd">    | E - Short ranges | Scan: 95%, Insert 5%   | Zipfian/Uniform  |</span>
+<span class="sd">    +------------------+------------------------+------------------+</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    At the moment only workloads A, B and C are implemented, since they are the</span>
+<span class="sd">    most relevant for caching systems.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">workload</span><span class="p">,</span>
+        <span class="n">n_contents</span><span class="p">,</span>
+        <span class="n">n_warmup</span><span class="p">,</span>
+        <span class="n">n_measured</span><span class="p">,</span>
+        <span class="n">alpha</span><span class="o">=</span><span class="mf">0.99</span><span class="p">,</span>
+        <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Constructor</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        workload : str</span>
+<span class="sd">            Workload identifier. Currently supported: &quot;A&quot;, &quot;B&quot;, &quot;C&quot;</span>
+<span class="sd">        n_contents : int</span>
+<span class="sd">            Number of content items</span>
+<span class="sd">        n_warmup : int, optional</span>
+<span class="sd">            The number of warmup requests (i.e. requests executed to fill cache but</span>
+<span class="sd">            not logged)</span>
+<span class="sd">        n_measured : int, optional</span>
+<span class="sd">            The number of logged requests after the warmup</span>
+<span class="sd">        alpha : float, optional</span>
+<span class="sd">            Parameter of Zipf distribution</span>
+<span class="sd">        seed : int, optional</span>
+<span class="sd">            The seed for the random generator</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">workload</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;D&quot;</span><span class="p">,</span> <span class="s2">&quot;E&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Incorrect workload ID [A-B-C-D-E]&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">workload</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;D&quot;</span><span class="p">,</span> <span class="s2">&quot;E&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Workloads D and E not yet implemented&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">workload</span> <span class="o">=</span> <span class="n">workload</span>
+        <span class="k">if</span> <span class="n">seed</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">zipf</span> <span class="o">=</span> <span class="n">TruncatedZipfDist</span><span class="p">(</span><span class="n">alpha</span><span class="p">,</span> <span class="n">n_contents</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_warmup</span> <span class="o">=</span> <span class="n">n_warmup</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_measured</span> <span class="o">=</span> <span class="n">n_measured</span>
+
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return an iterator over the workload&quot;&quot;&quot;</span>
+        <span class="n">req_counter</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">while</span> <span class="n">req_counter</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_warmup</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_measured</span><span class="p">:</span>
+            <span class="n">rand</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span>
+            <span class="n">op</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;A&quot;</span><span class="p">:</span> <span class="s2">&quot;READ&quot;</span> <span class="k">if</span> <span class="n">rand</span> <span class="o">&lt;</span> <span class="mf">0.5</span> <span class="k">else</span> <span class="s2">&quot;UPDATE&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;B&quot;</span><span class="p">:</span> <span class="s2">&quot;READ&quot;</span> <span class="k">if</span> <span class="n">rand</span> <span class="o">&lt;</span> <span class="mf">0.95</span> <span class="k">else</span> <span class="s2">&quot;UPDATE&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;C&quot;</span><span class="p">:</span> <span class="s2">&quot;READ&quot;</span><span class="p">,</span>
+            <span class="p">}[</span><span class="bp">self</span><span class="o">.</span><span class="n">workload</span><span class="p">]</span>
+            <span class="n">item</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">zipf</span><span class="o">.</span><span class="n">rv</span><span class="p">())</span>
+            <span class="n">log</span> <span class="o">=</span> <span class="n">req_counter</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_warmup</span>
+            <span class="n">event</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;op&quot;</span><span class="p">:</span> <span class="n">op</span><span class="p">,</span> <span class="s2">&quot;item&quot;</span><span class="p">:</span> <span class="n">item</span><span class="p">,</span> <span class="s2">&quot;log&quot;</span><span class="p">:</span> <span class="n">log</span><span class="p">}</span>
+            <span class="k">yield</span> <span class="n">event</span>
+            <span class="n">req_counter</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">Icarus 0.8.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">icarus.scenarios.workload</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2016, Lorenzo Saino, Ioannis Psaras.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.1.1.
+    </div>
+  </body>
+</html>

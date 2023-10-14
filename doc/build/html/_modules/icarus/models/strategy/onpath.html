@@ -1,0 +1,501 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>icarus.models.strategy.onpath &#8212; Icarus 0.8.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/sphinxdoc.css" />
+    <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+    <script src="../../../../_static/jquery.js"></script>
+    <script src="../../../../_static/underscore.js"></script>
+    <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">Icarus 0.8.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">icarus.models.strategy.onpath</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for icarus.models.strategy.onpath</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Implementations of all on-path strategies&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">random</span>
+
+<span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
+
+<span class="kn">from</span> <span class="nn">icarus.registry</span> <span class="kn">import</span> <span class="n">register_strategy</span>
+<span class="kn">from</span> <span class="nn">icarus.util</span> <span class="kn">import</span> <span class="n">inheritdoc</span><span class="p">,</span> <span class="n">path_links</span>
+
+<span class="kn">from</span> <span class="nn">.base</span> <span class="kn">import</span> <span class="n">Strategy</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;Partition&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Edge&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;LeaveCopyEverywhere&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;LeaveCopyDown&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;ProbCache&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;CacheLessForMore&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;RandomBernoulli&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;RandomChoice&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+
+
+<div class="viewcode-block" id="Partition"><a class="viewcode-back" href="../../../../apidoc/icarus.models.strategy.html#icarus.models.strategy.onpath.Partition">[docs]</a><span class="nd">@register_strategy</span><span class="p">(</span><span class="s2">&quot;PARTITION&quot;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">Partition</span><span class="p">(</span><span class="n">Strategy</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Partition caching strategy.</span>
+
+<span class="sd">    In this strategy the network is divided into as many partitions as the number</span>
+<span class="sd">    of caching nodes and each receiver is statically mapped to one and only one</span>
+<span class="sd">    caching node. When a request is issued it is forwarded to the cache mapped</span>
+<span class="sd">    to the receiver. In case of a miss the request is routed to the source and</span>
+<span class="sd">    then returned to cache, which will store it and forward it back to the</span>
+<span class="sd">    receiver.</span>
+
+<span class="sd">    This requires median cache placement, which optimizes the placement of</span>
+<span class="sd">    caches for this strategy.</span>
+
+<span class="sd">    This strategy is normally used with a small number of caching nodes. This</span>
+<span class="sd">    is the the behaviour normally adopted by Network CDN (NCDN). Google Global</span>
+<span class="sd">    Cache (GGC) operates this way.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">Strategy</span><span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">view</span><span class="p">,</span> <span class="n">controller</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">view</span><span class="p">,</span> <span class="n">controller</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s2">&quot;cache_assignment&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">topology</span><span class="p">()</span><span class="o">.</span><span class="n">graph</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;The topology does not have cache assignment &quot;</span>
+                <span class="s2">&quot;information. Have you used the optimal median &quot;</span>
+                <span class="s2">&quot;cache assignment?&quot;</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cache_assignment</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">topology</span><span class="p">()</span><span class="o">.</span><span class="n">graph</span><span class="p">[</span><span class="s2">&quot;cache_assignment&quot;</span><span class="p">]</span>
+
+<div class="viewcode-block" id="Partition.process_event"><a class="viewcode-back" href="../../../../apidoc/icarus.models.strategy.html#icarus.models.strategy.onpath.Partition.process_event">[docs]</a>    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">Strategy</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">process_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">log</span><span class="p">):</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">content_source</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">start_session</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">log</span><span class="p">)</span>
+        <span class="n">cache</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache_assignment</span><span class="p">[</span><span class="n">receiver</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_request_path</span><span class="p">(</span><span class="n">receiver</span><span class="p">,</span> <span class="n">cache</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">get_content</span><span class="p">(</span><span class="n">cache</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_request_path</span><span class="p">(</span><span class="n">cache</span><span class="p">,</span> <span class="n">source</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">get_content</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_path</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">cache</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">put_content</span><span class="p">(</span><span class="n">cache</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_path</span><span class="p">(</span><span class="n">cache</span><span class="p">,</span> <span class="n">receiver</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">end_session</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="Edge"><a class="viewcode-back" href="../../../../apidoc/icarus.models.strategy.html#icarus.models.strategy.onpath.Edge">[docs]</a><span class="nd">@register_strategy</span><span class="p">(</span><span class="s2">&quot;EDGE&quot;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">Edge</span><span class="p">(</span><span class="n">Strategy</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Edge caching strategy.</span>
+
+<span class="sd">    In this strategy only a cache at the edge is looked up before forwarding</span>
+<span class="sd">    a content request to the original source.</span>
+
+<span class="sd">    In practice, this is like an LCE but it only queries the first cache it</span>
+<span class="sd">    finds in the path. It is assumed to be used with a topology where each</span>
+<span class="sd">    PoP has a cache but it simulates a case where the cache is actually further</span>
+<span class="sd">    down the access network and it is not looked up for transit traffic passing</span>
+<span class="sd">    through the PoP but only for PoP-originated requests.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">Strategy</span><span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">view</span><span class="p">,</span> <span class="n">controller</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">view</span><span class="p">,</span> <span class="n">controller</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Edge.process_event"><a class="viewcode-back" href="../../../../apidoc/icarus.models.strategy.html#icarus.models.strategy.onpath.Edge.process_event">[docs]</a>    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">Strategy</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">process_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">log</span><span class="p">):</span>
+        <span class="c1"># get all required data</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">content_source</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="n">receiver</span><span class="p">,</span> <span class="n">source</span><span class="p">)</span>
+        <span class="c1"># Route requests to original source and queries caches on the path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">start_session</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">log</span><span class="p">)</span>
+        <span class="n">edge_cache</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">path_links</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_request_hop</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">has_cache</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+                <span class="n">edge_cache</span> <span class="o">=</span> <span class="n">v</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">get_content</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+                    <span class="n">serving_node</span> <span class="o">=</span> <span class="n">v</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># Cache miss, get content from source</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_request_path</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">source</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">get_content</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+                    <span class="n">serving_node</span> <span class="o">=</span> <span class="n">source</span>
+                <span class="k">break</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># No caches on the path at all, get it from source</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">get_content</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+            <span class="n">serving_node</span> <span class="o">=</span> <span class="n">v</span>
+
+        <span class="c1"># Return content</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">reversed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="n">receiver</span><span class="p">,</span> <span class="n">serving_node</span><span class="p">)))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_path</span><span class="p">(</span><span class="n">serving_node</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">serving_node</span> <span class="o">==</span> <span class="n">source</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">put_content</span><span class="p">(</span><span class="n">edge_cache</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">end_session</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="LeaveCopyEverywhere"><a class="viewcode-back" href="../../../../apidoc/icarus.models.strategy.html#icarus.models.strategy.onpath.LeaveCopyEverywhere">[docs]</a><span class="nd">@register_strategy</span><span class="p">(</span><span class="s2">&quot;LCE&quot;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">LeaveCopyEverywhere</span><span class="p">(</span><span class="n">Strategy</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Leave Copy Everywhere (LCE) strategy.</span>
+
+<span class="sd">    In this strategy a copy of a content is replicated at any cache on the</span>
+<span class="sd">    path between serving node and receiver.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">Strategy</span><span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">view</span><span class="p">,</span> <span class="n">controller</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">view</span><span class="p">,</span> <span class="n">controller</span><span class="p">)</span>
+
+<div class="viewcode-block" id="LeaveCopyEverywhere.process_event"><a class="viewcode-back" href="../../../../apidoc/icarus.models.strategy.html#icarus.models.strategy.onpath.LeaveCopyEverywhere.process_event">[docs]</a>    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">Strategy</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">process_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">log</span><span class="p">):</span>
+        <span class="c1"># get all required data</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">content_source</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="n">receiver</span><span class="p">,</span> <span class="n">source</span><span class="p">)</span>
+        <span class="c1"># Route requests to original source and queries caches on the path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">start_session</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">log</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">path_links</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_request_hop</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">has_cache</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">get_content</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+                    <span class="n">serving_node</span> <span class="o">=</span> <span class="n">v</span>
+                    <span class="k">break</span>
+            <span class="c1"># No cache hits, get content from source</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">get_content</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+            <span class="n">serving_node</span> <span class="o">=</span> <span class="n">v</span>
+        <span class="c1"># Return content</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">reversed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="n">receiver</span><span class="p">,</span> <span class="n">serving_node</span><span class="p">)))</span>
+        <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">path_links</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_hop</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">has_cache</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+                <span class="c1"># insert content</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">put_content</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">end_session</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="LeaveCopyDown"><a class="viewcode-back" href="../../../../apidoc/icarus.models.strategy.html#icarus.models.strategy.onpath.LeaveCopyDown">[docs]</a><span class="nd">@register_strategy</span><span class="p">(</span><span class="s2">&quot;LCD&quot;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">LeaveCopyDown</span><span class="p">(</span><span class="n">Strategy</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Leave Copy Down (LCD) strategy.</span>
+
+<span class="sd">    According to this strategy, one copy of a content is replicated only in</span>
+<span class="sd">    the caching node you hop away from the serving node in the direction of</span>
+<span class="sd">    the receiver. This strategy is described in [2]_.</span>
+
+<span class="sd">    Rereferences</span>
+<span class="sd">    ------------</span>
+<span class="sd">    ..[1] N. Laoutaris, H. Che, i. Stavrakakis, The LCD interconnection of LRU</span>
+<span class="sd">          caches and its analysis.</span>
+<span class="sd">          Available: http://cs-people.bu.edu/nlaout/analysis_PEVA.pdf</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">Strategy</span><span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">view</span><span class="p">,</span> <span class="n">controller</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">view</span><span class="p">,</span> <span class="n">controller</span><span class="p">)</span>
+
+<div class="viewcode-block" id="LeaveCopyDown.process_event"><a class="viewcode-back" href="../../../../apidoc/icarus.models.strategy.html#icarus.models.strategy.onpath.LeaveCopyDown.process_event">[docs]</a>    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">Strategy</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">process_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">log</span><span class="p">):</span>
+        <span class="c1"># get all required data</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">content_source</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="n">receiver</span><span class="p">,</span> <span class="n">source</span><span class="p">)</span>
+        <span class="c1"># Route requests to original source and queries caches on the path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">start_session</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">log</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">path_links</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_request_hop</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">has_cache</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">get_content</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+                    <span class="n">serving_node</span> <span class="o">=</span> <span class="n">v</span>
+                    <span class="k">break</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># No cache hits, get content from source</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">get_content</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+            <span class="n">serving_node</span> <span class="o">=</span> <span class="n">v</span>
+        <span class="c1"># Return content</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">reversed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="n">receiver</span><span class="p">,</span> <span class="n">serving_node</span><span class="p">)))</span>
+        <span class="c1"># Leave a copy of the content only in the cache one level down the hit</span>
+        <span class="c1"># caching node</span>
+        <span class="n">copied</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">path_links</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_hop</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">copied</span> <span class="ow">and</span> <span class="n">v</span> <span class="o">!=</span> <span class="n">receiver</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">has_cache</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">put_content</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+                <span class="n">copied</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">end_session</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="ProbCache"><a class="viewcode-back" href="../../../../apidoc/icarus.models.strategy.html#icarus.models.strategy.onpath.ProbCache">[docs]</a><span class="nd">@register_strategy</span><span class="p">(</span><span class="s2">&quot;PROB_CACHE&quot;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">ProbCache</span><span class="p">(</span><span class="n">Strategy</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;ProbCache strategy [3]_</span>
+
+<span class="sd">    This strategy caches content objects probabilistically on a path with a</span>
+<span class="sd">    probability depending on various factors, including distance from source</span>
+<span class="sd">    and destination and caching space available on the path.</span>
+
+<span class="sd">    This strategy was originally proposed in [2]_ and extended in [3]_. This</span>
+<span class="sd">    class implements the extended version described in [3]_. In the extended</span>
+<span class="sd">    version of ProbCache the :math`x/c` factor of the ProbCache equation is</span>
+<span class="sd">    raised to the power of :math`c`.</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ..[2] I. Psaras, W. Chai, G. Pavlou, Probabilistic In-Network Caching for</span>
+<span class="sd">          Information-Centric Networks, in Proc. of ACM SIGCOMM ICN &#39;12</span>
+<span class="sd">          Available: http://www.ee.ucl.ac.uk/~uceeips/prob-cache-icn-sigcomm12.pdf</span>
+<span class="sd">    ..[3] I. Psaras, W. Chai, G. Pavlou, In-Network Cache Management and</span>
+<span class="sd">          Resource Allocation for Information-Centric Networks, IEEE</span>
+<span class="sd">          Transactions on Parallel and Distributed Systems, 22 May 2014</span>
+<span class="sd">          Available: http://doi.ieeecomputersociety.org/10.1109/TPDS.2013.304</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">Strategy</span><span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">view</span><span class="p">,</span> <span class="n">controller</span><span class="p">,</span> <span class="n">t_tw</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">view</span><span class="p">,</span> <span class="n">controller</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_tw</span> <span class="o">=</span> <span class="n">t_tw</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cache_size</span> <span class="o">=</span> <span class="n">view</span><span class="o">.</span><span class="n">cache_nodes</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ProbCache.process_event"><a class="viewcode-back" href="../../../../apidoc/icarus.models.strategy.html#icarus.models.strategy.onpath.ProbCache.process_event">[docs]</a>    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">Strategy</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">process_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">log</span><span class="p">):</span>
+        <span class="c1"># get all required data</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">content_source</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="n">receiver</span><span class="p">,</span> <span class="n">source</span><span class="p">)</span>
+        <span class="c1"># Route requests to original source and queries caches on the path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">start_session</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">log</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">hop</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">path</span><span class="p">)):</span>
+            <span class="n">u</span> <span class="o">=</span> <span class="n">path</span><span class="p">[</span><span class="n">hop</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="n">v</span> <span class="o">=</span> <span class="n">path</span><span class="p">[</span><span class="n">hop</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_request_hop</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">has_cache</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">get_content</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+                    <span class="n">serving_node</span> <span class="o">=</span> <span class="n">v</span>
+                    <span class="k">break</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># No cache hits, get content from source</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">get_content</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+            <span class="n">serving_node</span> <span class="o">=</span> <span class="n">v</span>
+        <span class="c1"># Return content</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">reversed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="n">receiver</span><span class="p">,</span> <span class="n">serving_node</span><span class="p">)))</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="nb">len</span><span class="p">([</span><span class="n">node</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">path</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">has_cache</span><span class="p">(</span><span class="n">node</span><span class="p">)])</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="k">for</span> <span class="n">hop</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">path</span><span class="p">)):</span>
+            <span class="n">u</span> <span class="o">=</span> <span class="n">path</span><span class="p">[</span><span class="n">hop</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="n">v</span> <span class="o">=</span> <span class="n">path</span><span class="p">[</span><span class="n">hop</span><span class="p">]</span>
+            <span class="n">N</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span>
+                <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">cache_size</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">path</span><span class="p">[</span><span class="n">hop</span> <span class="o">-</span> <span class="mi">1</span> <span class="p">:]</span> <span class="k">if</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache_size</span><span class="p">]</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache_size</span><span class="p">:</span>
+                <span class="n">x</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_hop</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">v</span> <span class="o">!=</span> <span class="n">receiver</span> <span class="ow">and</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache_size</span><span class="p">:</span>
+                <span class="c1"># The (x/c) factor raised to the power of &quot;c&quot; according to the</span>
+                <span class="c1"># extended version of ProbCache published in IEEE TPDS</span>
+                <span class="n">prob_cache</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">N</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">t_tw</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache_size</span><span class="p">[</span><span class="n">v</span><span class="p">])</span> <span class="o">*</span> <span class="p">(</span><span class="n">x</span> <span class="o">/</span> <span class="n">c</span><span class="p">)</span> <span class="o">**</span> <span class="n">c</span>
+                <span class="k">if</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">prob_cache</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">put_content</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">end_session</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="CacheLessForMore"><a class="viewcode-back" href="../../../../apidoc/icarus.models.strategy.html#icarus.models.strategy.onpath.CacheLessForMore">[docs]</a><span class="nd">@register_strategy</span><span class="p">(</span><span class="s2">&quot;CL4M&quot;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">CacheLessForMore</span><span class="p">(</span><span class="n">Strategy</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Cache less for more strategy [4]_.</span>
+
+<span class="sd">    This strategy caches items only once in the delivery path, precisely in the</span>
+<span class="sd">    node with the greatest betweenness centrality (i.e., that is traversed by</span>
+<span class="sd">    the greatest number of shortest paths). If the argument *use_ego_betw* is</span>
+<span class="sd">    set to *True* then the betweenness centrality of the ego-network is used</span>
+<span class="sd">    instead.</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ..[4] W. Chai, D. He, I. Psaras, G. Pavlou, Cache Less for More in</span>
+<span class="sd">          Information-centric Networks, in IFIP NETWORKING &#39;12</span>
+<span class="sd">          Available: http://www.ee.ucl.ac.uk/~uceeips/centrality-networking12.pdf</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">Strategy</span><span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">view</span><span class="p">,</span> <span class="n">controller</span><span class="p">,</span> <span class="n">use_ego_betw</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">view</span><span class="p">,</span> <span class="n">controller</span><span class="p">)</span>
+        <span class="n">topology</span> <span class="o">=</span> <span class="n">view</span><span class="o">.</span><span class="n">topology</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">use_ego_betw</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">betw</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="n">v</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">betweenness_centrality</span><span class="p">(</span><span class="n">nx</span><span class="o">.</span><span class="n">ego_graph</span><span class="p">(</span><span class="n">topology</span><span class="p">,</span> <span class="n">v</span><span class="p">))[</span><span class="n">v</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">topology</span><span class="o">.</span><span class="n">nodes</span><span class="p">()</span>
+            <span class="p">}</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">betw</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">betweenness_centrality</span><span class="p">(</span><span class="n">topology</span><span class="p">)</span>
+
+<div class="viewcode-block" id="CacheLessForMore.process_event"><a class="viewcode-back" href="../../../../apidoc/icarus.models.strategy.html#icarus.models.strategy.onpath.CacheLessForMore.process_event">[docs]</a>    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">Strategy</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">process_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">log</span><span class="p">):</span>
+        <span class="c1"># get all required data</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">content_source</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="n">receiver</span><span class="p">,</span> <span class="n">source</span><span class="p">)</span>
+        <span class="c1"># Route requests to original source and queries caches on the path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">start_session</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">log</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">path_links</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_request_hop</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">has_cache</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">get_content</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+                    <span class="n">serving_node</span> <span class="o">=</span> <span class="n">v</span>
+                    <span class="k">break</span>
+        <span class="c1"># No cache hits, get content from source</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">get_content</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+            <span class="n">serving_node</span> <span class="o">=</span> <span class="n">v</span>
+        <span class="c1"># Return content</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">reversed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="n">receiver</span><span class="p">,</span> <span class="n">serving_node</span><span class="p">)))</span>
+        <span class="c1"># get the cache with maximum betweenness centrality</span>
+        <span class="c1"># if there are more than one cache with max betw then pick the one</span>
+        <span class="c1"># closer to the receiver</span>
+        <span class="n">max_betw</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="n">designated_cache</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">path</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">has_cache</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">betw</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">max_betw</span><span class="p">:</span>
+                    <span class="n">max_betw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">betw</span><span class="p">[</span><span class="n">v</span><span class="p">]</span>
+                    <span class="n">designated_cache</span> <span class="o">=</span> <span class="n">v</span>
+        <span class="c1"># Forward content</span>
+        <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">path_links</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_hop</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">v</span> <span class="o">==</span> <span class="n">designated_cache</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">put_content</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">end_session</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="RandomBernoulli"><a class="viewcode-back" href="../../../../apidoc/icarus.models.strategy.html#icarus.models.strategy.onpath.RandomBernoulli">[docs]</a><span class="nd">@register_strategy</span><span class="p">(</span><span class="s2">&quot;RAND_BERNOULLI&quot;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">RandomBernoulli</span><span class="p">(</span><span class="n">Strategy</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Bernoulli random cache insertion.</span>
+
+<span class="sd">    In this strategy, a content is randomly inserted in a cache on the path</span>
+<span class="sd">    from serving node to receiver with probability *p*.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">Strategy</span><span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">view</span><span class="p">,</span> <span class="n">controller</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">view</span><span class="p">,</span> <span class="n">controller</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">p</span>
+
+<div class="viewcode-block" id="RandomBernoulli.process_event"><a class="viewcode-back" href="../../../../apidoc/icarus.models.strategy.html#icarus.models.strategy.onpath.RandomBernoulli.process_event">[docs]</a>    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">Strategy</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">process_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">log</span><span class="p">):</span>
+        <span class="c1"># get all required data</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">content_source</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="n">receiver</span><span class="p">,</span> <span class="n">source</span><span class="p">)</span>
+        <span class="c1"># Route requests to original source and queries caches on the path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">start_session</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">log</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">path_links</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_request_hop</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">has_cache</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">get_content</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+                    <span class="n">serving_node</span> <span class="o">=</span> <span class="n">v</span>
+                    <span class="k">break</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># No cache hits, get content from source</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">get_content</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+            <span class="n">serving_node</span> <span class="o">=</span> <span class="n">v</span>
+        <span class="c1"># Return content</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">reversed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="n">receiver</span><span class="p">,</span> <span class="n">serving_node</span><span class="p">)))</span>
+        <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">path_links</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_hop</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">v</span> <span class="o">!=</span> <span class="n">receiver</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">has_cache</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">put_content</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">end_session</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="RandomChoice"><a class="viewcode-back" href="../../../../apidoc/icarus.models.strategy.html#icarus.models.strategy.onpath.RandomChoice">[docs]</a><span class="nd">@register_strategy</span><span class="p">(</span><span class="s2">&quot;RAND_CHOICE&quot;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">RandomChoice</span><span class="p">(</span><span class="n">Strategy</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Random choice strategy</span>
+
+<span class="sd">    This strategy stores the served content exactly in one single cache on the</span>
+<span class="sd">    path from serving node to receiver selected randomly.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">Strategy</span><span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">view</span><span class="p">,</span> <span class="n">controller</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">view</span><span class="p">,</span> <span class="n">controller</span><span class="p">)</span>
+
+<div class="viewcode-block" id="RandomChoice.process_event"><a class="viewcode-back" href="../../../../apidoc/icarus.models.strategy.html#icarus.models.strategy.onpath.RandomChoice.process_event">[docs]</a>    <span class="nd">@inheritdoc</span><span class="p">(</span><span class="n">Strategy</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">process_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">log</span><span class="p">):</span>
+        <span class="c1"># get all required data</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">content_source</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="n">receiver</span><span class="p">,</span> <span class="n">source</span><span class="p">)</span>
+        <span class="c1"># Route requests to original source and queries caches on the path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">start_session</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">receiver</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">log</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">path_links</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_request_hop</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">has_cache</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">get_content</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+                    <span class="n">serving_node</span> <span class="o">=</span> <span class="n">v</span>
+                    <span class="k">break</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># No cache hits, get content from source</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">get_content</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+            <span class="n">serving_node</span> <span class="o">=</span> <span class="n">v</span>
+        <span class="c1"># Return content</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">reversed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="n">receiver</span><span class="p">,</span> <span class="n">serving_node</span><span class="p">)))</span>
+        <span class="n">caches</span> <span class="o">=</span> <span class="p">[</span><span class="n">v</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">path</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">view</span><span class="o">.</span><span class="n">has_cache</span><span class="p">(</span><span class="n">v</span><span class="p">)]</span>
+        <span class="n">designated_cache</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">caches</span><span class="p">)</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">caches</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">path_links</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">forward_content_hop</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">v</span> <span class="o">==</span> <span class="n">designated_cache</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">put_content</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">controller</span><span class="o">.</span><span class="n">end_session</span><span class="p">()</span></div></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">Icarus 0.8.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">icarus.models.strategy.onpath</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2016, Lorenzo Saino, Ioannis Psaras.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.1.1.
+    </div>
+  </body>
+</html>
